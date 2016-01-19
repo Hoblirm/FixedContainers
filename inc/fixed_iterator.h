@@ -3,78 +3,105 @@
 
 #include <cstdlib>
 
-template<class T> struct fixed_reverse_iterator
+template<class T> struct fixed_reverse_iterator_base
 {
-  T* ptr;
+   T* mPtr;
 
-  fixed_reverse_iterator<T>(T* p) :
-      ptr(p)
-  {
-  }
+   fixed_reverse_iterator_base<T > (T * p) :
+   mPtr(p)
+   {
+   }
 
-  fixed_reverse_iterator<T>& operator++()
-  {
-    --ptr;
-    return *this;
-  }
+   bool operator==(fixed_reverse_iterator_base<T> obj) const
+   {
+      return (mPtr == obj.mPtr);
+   }
 
-  fixed_reverse_iterator<T>& operator--()
-  {
-    ++ptr;
-    return *this;
-  }
+   bool operator!=(fixed_reverse_iterator_base<T> obj) const
+   {
+      return (mPtr != obj.mPtr);
+   }
 
-  bool operator==(fixed_reverse_iterator<T> obj) const
-  {
-    return (ptr == obj.ptr);
-  }
+   bool operator<(fixed_reverse_iterator_base<T> obj) const
+   {
+      return (mPtr > obj.mPtr);
+   }
 
-  bool operator!=(fixed_reverse_iterator<T> obj) const
-  {
-    return (ptr != obj.ptr);
-  }
+   bool operator<=(fixed_reverse_iterator_base<T> obj) const
+   {
+      return (mPtr >= obj.mPtr);
+   }
 
-  bool operator<(fixed_reverse_iterator<T> obj) const
-  {
-    return (ptr > obj.ptr);
-  }
+   bool operator>(fixed_reverse_iterator_base<T> obj) const
+   {
+      return (mPtr < obj.mPtr);
+   }
 
-  bool operator<=(fixed_reverse_iterator<T> obj) const
-  {
-    return (ptr >= obj.ptr);
-  }
+   bool operator>=(fixed_reverse_iterator_base<T> obj) const
+   {
+      return (mPtr <= obj.mPtr);
+   }
 
-  bool operator>(fixed_reverse_iterator<T> obj) const
-  {
-    return (ptr < obj.ptr);
-  }
+   const T& operator*() const
+   {
+      return *mPtr;
+   }
 
-  bool operator>=(fixed_reverse_iterator<T> obj) const
-  {
-    return (ptr <= obj.ptr);
-  }
-
-  const T& operator*() const
-  {
-    return *ptr;
-  }
-
-  const T* operator->() const
-  {
-    return ptr;
-  }
-
-  T& operator*()
-  {
-    return *ptr;
-  }
-
-  T* operator->()
-  {
-    return ptr;
-  }
+   const T* operator->() const
+   {
+      return mPtr;
+   }
 
 };
 
+template<class T> struct fixed_const_reverse_iterator : public fixed_reverse_iterator_base<T>
+{
 
+   fixed_const_reverse_iterator<T > (T * p) : fixed_reverse_iterator_base<T>(p)
+   {
+   }
+
+   fixed_const_reverse_iterator<T>& operator++()
+   {
+      --(this->mPtr);
+      return *this;
+   }
+
+   fixed_const_reverse_iterator<T>& operator--()
+   {
+      ++(this->mPtr);
+      return *this;
+   }
+
+};
+
+template<class T> struct fixed_reverse_iterator : public fixed_reverse_iterator_base<T>
+{
+
+   fixed_reverse_iterator<T > (T * p) : fixed_reverse_iterator_base<T>(p)
+   {
+   }
+
+   fixed_reverse_iterator<T>& operator++()
+   {
+      --(this->mPtr);
+      return *this;
+   }
+
+   fixed_reverse_iterator<T>& operator--()
+   {
+      ++(this->mPtr);
+      return *this;
+   }
+
+   T& operator*()
+   {
+      return *(this->mPtr);
+   }
+
+   T* operator->()
+   {
+      return this->mPtr;
+   }
+};
 #endif /* FIXED_ITERATOR_H */
