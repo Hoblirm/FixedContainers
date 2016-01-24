@@ -34,12 +34,17 @@ public:
       return ::operator new(sz);
     }
   }
-
+protected:
+  allocation_guard();
 private:
   static bool sEnabled;
 };
 
 bool allocation_guard::sEnabled = false;
+
+allocation_guard::allocation_guard()
+{
+}
 
 void allocation_guard::enable()
 {

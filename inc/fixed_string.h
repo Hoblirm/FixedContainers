@@ -5,17 +5,15 @@
 
 class fixed_string_base: public fixed_array_base<char>
 {
-public:
-  fixed_string_base(size_t capacity) :
-      fixed_array_base(capacity)
+protected:
+  fixed_string_base(size_t size) :
+      fixed_array_base<char>(size)
   {
-
   }
 
-  fixed_string_base(size_t capacity, char* ptr) :
-      fixed_array_base(capacity, ptr)
+  fixed_string_base(size_t size, char* ptr) :
+      fixed_array_base<char>(size, ptr)
   {
-
   }
 };
 
@@ -38,7 +36,7 @@ template<size_t N> fixed_string<N>::fixed_string() :
 template<size_t N> fixed_string<N>::fixed_string(const fixed_string<N> & obj) :
     fixed_string_base(obj.size(), mAry)
 {
-  for (int i = 0; i < this->mCapacity; i++)
+  for (int i = 0; i < this->mSize; i++)
   {
     this->mAryPtr[i] = obj[i];
   }
@@ -57,7 +55,7 @@ template<size_t N> fixed_string<N>::operator fixed_string<0>&()
 template<> class fixed_string<0> : public fixed_string_base
 {
 public:
-  fixed_string(size_t capacity);
+  fixed_string(size_t size);
   fixed_string(const fixed_string<> & obj);
   ~fixed_string();
 
@@ -65,8 +63,8 @@ private:
   void allocate();
 };
 
-fixed_string<0>::fixed_string(size_t capacity) :
-    fixed_string_base(capacity)
+fixed_string<0>::fixed_string(size_t size) :
+    fixed_string_base(size)
 {
   allocate();
 }
@@ -75,7 +73,7 @@ fixed_string<0>::fixed_string(const fixed_string<> & obj) :
     fixed_string_base(obj.size())
 {
   allocate();
-  for (int i = 0; i < this->mCapacity; i++)
+  for (int i = 0; i < this->mSize; i++)
   {
     this->mAryPtr[i] = obj[i];
   }
@@ -94,7 +92,7 @@ void fixed_string<0>::allocate()
   }
   else
   {
-    this->mAryPtr = new char[this->mCapacity]();
+    this->mAryPtr = new char[this->mSize];
   }
 }
 

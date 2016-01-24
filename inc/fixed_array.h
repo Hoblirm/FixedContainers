@@ -56,31 +56,16 @@ public:
   void swap(fixed_array_base<T>& obj);
 
 protected:
-  fixed_array_base(size_t capacity);
-  fixed_array_base(size_t capacity, T* ptr);
-  virtual ~fixed_array_base() = 0; //This is necessary to make class abstract.
+  fixed_array_base(size_t size);
+  fixed_array_base(size_t size, T* ptr);
 
   T* mAryPtr;
-  size_t mCapacity;
+  size_t mSize;
 };
-
-template<class T> fixed_array_base<T>::fixed_array_base(size_t capacity) :
-    mCapacity(capacity)
-{
-}
-
-template<class T> fixed_array_base<T>::fixed_array_base(size_t capacity, T* ptr) :
-    mCapacity(capacity), mAryPtr(ptr)
-{
-}
-
-template<class T> fixed_array_base<T>::~fixed_array_base()
-{
-}
 
 template<class T> T& fixed_array_base<T>::at(size_t n)
 {
-  if (n < mCapacity)
+  if (n < mSize)
   {
     return mAryPtr[n];
   }
@@ -92,7 +77,7 @@ template<class T> T& fixed_array_base<T>::at(size_t n)
 
 template<class T> const T& fixed_array_base<T>::at(size_t n) const
 {
-  if (n < mCapacity)
+  if (n < mSize)
   {
     return mAryPtr[n];
   }
@@ -104,12 +89,12 @@ template<class T> const T& fixed_array_base<T>::at(size_t n) const
 
 template<class T> T& fixed_array_base<T>::back()
 {
-  return mAryPtr[mCapacity - 1];
+  return mAryPtr[mSize - 1];
 }
 
 template<class T> const T& fixed_array_base<T>::back() const
 {
-  return mAryPtr[mCapacity - 1];
+  return mAryPtr[mSize - 1];
 }
 
 template<class T> T* fixed_array_base<T>::begin()
@@ -129,12 +114,12 @@ template<class T> const T* fixed_array_base<T>::cbegin() const
 
 template<class T> const T* fixed_array_base<T>::cend() const
 {
-  return &mAryPtr[mCapacity];
+  return &mAryPtr[mSize];
 }
 
 template<class T> fixed_const_reverse_iterator<T> fixed_array_base<T>::crbegin() const
 {
-  return fixed_const_reverse_iterator<T>(&mAryPtr[mCapacity - 1]);
+  return fixed_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
 }
 
 template<class T> fixed_const_reverse_iterator<T> fixed_array_base<T>::crend() const
@@ -154,17 +139,17 @@ template<class T> const T* fixed_array_base<T>::data() const
 
 template<class T> bool fixed_array_base<T>::empty() const
 {
-  return (0 == mCapacity);
+  return (0 == mSize);
 }
 
 template<class T> T* fixed_array_base<T>::end()
 {
-  return &mAryPtr[mCapacity];
+  return &mAryPtr[mSize];
 }
 
 template<class T> const T* fixed_array_base<T>::end() const
 {
-  return &mAryPtr[mCapacity];
+  return &mAryPtr[mSize];
 }
 
 template<class T> void fixed_array_base<T>::fill(const T& v)
@@ -187,20 +172,20 @@ template<class T> const T& fixed_array_base<T>::front() const
 
 template<class T> size_t fixed_array_base<T>::max_size() const
 {
-  return mCapacity;
+  return mSize;
 }
 
 /*
  template<class T> fixed_array_base<T>& fixed_array_base<T>::operator=(const fixed_array_base<T>& obj)
  {
- if (mCapacity != obj.size())
+ if (mSize != obj.size())
  {
  if (mAryPtr)
  delete[] mAryPtr;
  allocate(obj.size());
  }
 
- for (int i = 0; i < mCapacity; i++)
+ for (int i = 0; i < mSize; i++)
  {
  mAryPtr[i] = obj[i];
  }
@@ -220,12 +205,12 @@ template<class T> const T& fixed_array_base<T>::operator[](size_t n) const
 
 template<class T> fixed_reverse_iterator<T> fixed_array_base<T>::rbegin()
 {
-  return fixed_reverse_iterator<T>(&mAryPtr[mCapacity - 1]);
+  return fixed_reverse_iterator<T>(&mAryPtr[mSize - 1]);
 }
 
 template<class T> fixed_const_reverse_iterator<T> fixed_array_base<T>::rbegin() const
 {
-  return fixed_const_reverse_iterator<T>(&mAryPtr[mCapacity - 1]);
+  return fixed_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
 }
 
 template<class T> fixed_reverse_iterator<T> fixed_array_base<T>::rend()
@@ -240,21 +225,31 @@ template<class T> fixed_const_reverse_iterator<T> fixed_array_base<T>::rend() co
 
 template<class T> size_t fixed_array_base<T>::size() const
 {
-  return mCapacity;
+  return mSize;
 }
 
 template<class T> void fixed_array_base<T>::swap(fixed_array_base<T>& obj)
 {
-  if (mCapacity == obj.size())
+  if (mSize == obj.size())
   {
     T tmp;
-    for (int i = 0; i < mCapacity; i++)
+    for (int i = 0; i < mSize; i++)
     {
       tmp = mAryPtr[i];
       mAryPtr[i] = obj[i];
       obj[i] = tmp;
     }
   }
+}
+
+template<class T> fixed_array_base<T>::fixed_array_base(size_t size) :
+    mSize(size)
+{
+}
+
+template<class T> fixed_array_base<T>::fixed_array_base(size_t size, T* ptr) :
+    mSize(size), mAryPtr(ptr)
+{
 }
 
 template<class T, size_t N = 0> class fixed_array: public fixed_array_base<T>
@@ -276,7 +271,7 @@ template<class T, size_t N> fixed_array<T, N>::fixed_array() :
 template<class T, size_t N> fixed_array<T, N>::fixed_array(const fixed_array<T, N> & obj) :
     fixed_array_base<T>(obj.size(), mAry)
 {
-  for (int i = 0; i < this->mCapacity; i++)
+  for (int i = 0; i < this->mSize; i++)
   {
     this->mAryPtr[i] = obj[i];
   }
@@ -295,7 +290,7 @@ template<class T, size_t N> fixed_array<T, N>::operator fixed_array<T,0>&()
 template<class T> class fixed_array<T, 0> : public fixed_array_base<T>
 {
 public:
-  fixed_array(size_t capacity);
+  fixed_array(size_t size);
   fixed_array(const fixed_array<T> & obj);
   ~fixed_array();
 
@@ -303,8 +298,8 @@ private:
   void allocate();
 };
 
-template<class T> fixed_array<T, 0>::fixed_array(size_t capacity) :
-    fixed_array_base<T>(capacity)
+template<class T> fixed_array<T, 0>::fixed_array(size_t size) :
+    fixed_array_base<T>(size)
 {
   allocate();
 }
@@ -313,7 +308,7 @@ template<class T> fixed_array<T, 0>::fixed_array(const fixed_array<T> & obj) :
     fixed_array_base<T>(obj.size())
 {
   allocate();
-  for (int i = 0; i < this->mCapacity; i++)
+  for (int i = 0; i < this->mSize; i++)
   {
     this->mAryPtr[i] = obj[i];
   }
@@ -332,7 +327,7 @@ template<class T> void fixed_array<T, 0>::allocate()
   }
   else
   {
-    this->mAryPtr = new T[this->mCapacity]();
+    this->mAryPtr = new T[this->mSize];
   }
 }
 
