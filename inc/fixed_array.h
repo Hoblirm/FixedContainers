@@ -42,8 +42,7 @@ public:
 
   size_t max_size() const;
 
-  //fixed_array_base<T>& operator=(const fixed_array_base<T>& obj);
-
+  fixed_array_base<T>& operator=(const fixed_array_base<T>& obj);
   reference operator[](size_t n);
   const_reference operator[](size_t n) const;
 
@@ -71,7 +70,7 @@ template<class T> T& fixed_array_base<T>::at(size_t n)
   }
   else
   {
-    throw std::out_of_range("Fixed container caught out-of-bounds exception.");
+    throw std::out_of_range("Fixed container called at() with out-of-bounds index.");
   }
 }
 
@@ -83,7 +82,7 @@ template<class T> const T& fixed_array_base<T>::at(size_t n) const
   }
   else
   {
-    throw std::out_of_range("Fixed container caught out-of-bounds exception.");
+    throw std::out_of_range("Fixed container called at() with out-of-bounds index.");
   }
 }
 
@@ -175,24 +174,21 @@ template<class T> size_t fixed_array_base<T>::max_size() const
   return mSize;
 }
 
-/*
- template<class T> fixed_array_base<T>& fixed_array_base<T>::operator=(const fixed_array_base<T>& obj)
- {
- if (mSize != obj.size())
- {
- if (mAryPtr)
- delete[] mAryPtr;
- allocate(obj.size());
- }
+template<class T> fixed_array_base<T>& fixed_array_base<T>::operator=(const fixed_array_base<T>& obj)
+{
+  if (obj.size() != mSize)
+  {
+    throw std::runtime_error("fixed_array: assignment operator's parameter size doesn't match");
+  }
 
- for (int i = 0; i < mSize; i++)
- {
- mAryPtr[i] = obj[i];
- }
+  for (int i = 0; i < obj.size(); i++)
+  {
+    this->mAryPtr[i] = obj[i];
+  }
 
- return *this;
- }
- */
+  return *this;
+}
+
 template<class T> T& fixed_array_base<T>::operator[](size_t n)
 {
   return mAryPtr[n];
@@ -257,6 +253,8 @@ template<class T, size_t N = 0> class fixed_array: public fixed_array_base<T>
 public:
   fixed_array();
   fixed_array(const fixed_array<T, N> & obj);
+  fixed_array<T, N>& operator=(const fixed_array<T, N>& obj);
+  fixed_array<T, N>& operator=(const fixed_array<T, 0>& obj);
   operator const fixed_array<T,0>&() const;
   operator fixed_array<T,0>&();
 private:
@@ -277,6 +275,21 @@ template<class T, size_t N> fixed_array<T, N>::fixed_array(const fixed_array<T, 
   }
 }
 
+template<class T, size_t N> fixed_array<T, N>& fixed_array<T, N>::operator=(const fixed_array<T, N> & obj)
+{
+  for (int i = 0; i < obj.size(); i++)
+  {
+    this->mAryPtr[i] = obj[i];
+  }
+  return *this;
+}
+
+template<class T, size_t N> fixed_array<T, N>& fixed_array<T, N>::operator=(const fixed_array<T, 0> & obj)
+{
+  fixed_array_base<T>::operator=(obj);
+  return *this;
+}
+
 template<class T, size_t N> fixed_array<T, N>::operator const fixed_array<T,0>&() const
 {
   return *((fixed_array<T, 0>*) this);
@@ -293,6 +306,7 @@ public:
   fixed_array(size_t size);
   fixed_array(const fixed_array<T> & obj);
   ~fixed_array();
+  fixed_array<T, 0>& operator=(const fixed_array<T, 0> & obj);
 
 private:
   void allocate();
@@ -318,6 +332,13 @@ template<class T> fixed_array<T, 0>::~fixed_array()
 {
   delete[] this->mAryPtr;
 }
+
+template<class T> fixed_array<T, 0>& fixed_array<T, 0>::operator=(const fixed_array<T, 0> & obj)
+{
+  fixed_array_base<T>::operator=(obj);
+  return *this;
+}
+
 
 template<class T> void fixed_array<T, 0>::allocate()
 {

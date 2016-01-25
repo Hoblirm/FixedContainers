@@ -330,6 +330,74 @@ public:
     }
   }
 
+  void test_assignment_operator(void)
+  {
+    //#1 Test default assignment.
+    fixed_array<int, 3> foo;
+    foo[0] = 1;
+    foo[1] = 5;
+    foo[2] = 17;
+
+    fixed_array<int, 3> bar;
+    bar.fill(2);
+
+    bar = foo;
+    TS_ASSERT_EQUALS(bar.size(), 3);
+    TS_ASSERT_EQUALS(bar[0], 1);
+    TS_ASSERT_EQUALS(bar[1], 5);
+    TS_ASSERT_EQUALS(bar[2], 17);
+
+    //Ensure that assignments to bar doesn't impact the value of foo.
+    bar.fill(0);
+    TS_ASSERT_EQUALS(foo.size(), 3);
+    TS_ASSERT_EQUALS(foo[0], 1);
+    TS_ASSERT_EQUALS(foo[1], 5);
+    TS_ASSERT_EQUALS(foo[2], 17);
+
+    fixed_array<int> bar2(3);
+    bar2.fill(2);
+
+    //#2 Test assignment with specialized parameter.
+    fixed_array<int> larger(4);
+    TS_ASSERT_THROWS(larger = foo, std::runtime_error);
+
+    bar2 = foo;
+    TS_ASSERT_EQUALS(bar2.size(), 3);
+    TS_ASSERT_EQUALS(bar2[0], 1);
+    TS_ASSERT_EQUALS(bar2[1], 5);
+    TS_ASSERT_EQUALS(bar2[2], 17);
+
+    //Ensure that assignments to bar2 doesn't impact the value of foo.
+    bar2.fill(0);
+    TS_ASSERT_EQUALS(foo.size(), 3);
+    TS_ASSERT_EQUALS(foo[0], 1);
+    TS_ASSERT_EQUALS(foo[1], 5);
+    TS_ASSERT_EQUALS(foo[2], 17);
+
+    //#3 Test specialized assignment.
+    fixed_array<int> foo2(3);
+    foo2[0] = 1;
+    foo2[1] = 5;
+    foo2[2] = 17;
+
+    TS_ASSERT_THROWS(larger = foo2, std::runtime_error);
+
+    bar2.fill(2);
+
+    bar2 = foo;
+    TS_ASSERT_EQUALS(bar2.size(), 3);
+    TS_ASSERT_EQUALS(bar2[0], 1);
+    TS_ASSERT_EQUALS(bar2[1], 5);
+    TS_ASSERT_EQUALS(bar2[2], 17);
+
+    //Ensure that assignments to bar2 doesn't impact the value of foo.
+    bar2.fill(0);
+    TS_ASSERT_EQUALS(foo2.size(), 3);
+    TS_ASSERT_EQUALS(foo2[0], 1);
+    TS_ASSERT_EQUALS(foo2[1], 5);
+    TS_ASSERT_EQUALS(foo2[2], 17);
+  }
+
   void assignment_method(fixed_array<int>& x)
   {
     for (int i = 0; i < x.size(); i++)
