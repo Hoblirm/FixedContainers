@@ -464,4 +464,27 @@ public:
       TS_ASSERT_EQUALS(b.Array()[i], a.Array()[i]);
     }
   }
+
+  void test_relational_operators(void)
+  {
+    int aAry[5] = { 10, 20, 30, 40, 50 };
+    int bAry[5] = { 10, 20, 30, 40, 50 };
+    int cAry[5] = { 50, 40, 30, 20, 10 };
+    fixed_array<int, 5> a;
+    fixed_array<int, 5> b;
+    fixed_array<int> c(5);
+    for (int i = 0; i < 5; ++i)
+    {
+      a[i] = b[i] = (i * 10) + 10;
+      c[i] = 50 - (i * 10);
+    }
+
+    TS_ASSERT((a == b));
+    TS_ASSERT(b != c);
+    TS_ASSERT(b < c);
+    TS_ASSERT(c > b);
+    TS_ASSERT(a <= b);
+    TS_ASSERT(a >= b);
+  }
+
 };

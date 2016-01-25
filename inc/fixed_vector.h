@@ -30,17 +30,17 @@ protected:
   size_t mCapacity;
 
   fixed_vector_base(size_t capacity) :
-      mCapacity(capacity), fixed_array_base<T>(0)
+     fixed_array_base<T>(0), mCapacity(capacity)
   {
   }
 
   fixed_vector_base(size_t capacity, T* ptr) :
-      mCapacity(capacity), fixed_array_base<T>(0, ptr)
+      fixed_array_base<T>(0, ptr), mCapacity(capacity)
   {
   }
 
   fixed_vector_base(size_t capacity, size_t size) :
-      mCapacity(capacity), fixed_array_base<T>(size)
+      fixed_array_base<T>(size), mCapacity(capacity)
   {
     if (size > capacity)
     {
@@ -49,7 +49,7 @@ protected:
   }
 
   fixed_vector_base(size_t capacity, size_t size, T* ptr) :
-      mCapacity(capacity), fixed_array_base<T>(size, ptr)
+      fixed_array_base<T>(size, ptr), mCapacity(capacity)
   {
     if (size > capacity)
     {

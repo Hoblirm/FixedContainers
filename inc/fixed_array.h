@@ -58,8 +58,8 @@ protected:
   fixed_array_base(size_t size);
   fixed_array_base(size_t size, T* ptr);
 
-  T* mAryPtr;
   size_t mSize;
+  T* mAryPtr;
 };
 
 template<class T> T& fixed_array_base<T>::at(size_t n)
@@ -307,6 +307,7 @@ public:
   fixed_array(const fixed_array<T> & obj);
   ~fixed_array();
   fixed_array<T, 0>& operator=(const fixed_array<T, 0> & obj);
+  // bool operator==(const fixed_array<T, 0>& rhs);
 
 private:
   void allocate();
@@ -339,7 +340,6 @@ template<class T> fixed_array<T, 0>& fixed_array<T, 0>::operator=(const fixed_ar
   return *this;
 }
 
-
 template<class T> void fixed_array<T, 0>::allocate()
 {
   if (allocation_guard::is_enabled())
@@ -350,6 +350,85 @@ template<class T> void fixed_array<T, 0>::allocate()
   {
     this->mAryPtr = new T[this->mSize];
   }
+}
+
+template<class T>
+bool operator==(const fixed_array_base<T>& lhs, const fixed_array_base<T>& rhs)
+{
+  if (lhs.size() != rhs.size())
+  {
+    return false;
+  }
+  else
+  {
+    for (int i = 0; i < lhs.size(); ++i)
+    {
+      if (lhs[i] != rhs[i])
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+template<class T>
+bool operator<(const fixed_array_base<T>& lhs, const fixed_array_base<T>& rhs)
+{
+  if (lhs.size() < rhs.size())
+  {
+    for (int i = 0; i < lhs.size(); ++i)
+    {
+      if (lhs[i] < rhs[i])
+      {
+        return true;
+      }
+      else if (lhs[i] > rhs[i])
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+  else
+  {
+    for (int i = 0; i < rhs.size(); ++i)
+    {
+      if (lhs[i] < rhs[i])
+      {
+        return true;
+      }
+      else if (lhs[i] > rhs[i])
+      {
+        return false;
+      }
+    }
+    return false;
+  }
+}
+
+template<class T>
+bool operator!=(const fixed_array_base<T>& lhs, const fixed_array_base<T>& rhs)
+{
+  return !(lhs == rhs);
+}
+
+template<class T>
+bool operator>(const fixed_array_base<T>& lhs, const fixed_array_base<T>& rhs)
+{
+  return rhs < lhs;
+}
+
+template<class T>
+bool operator<=(const fixed_array_base<T>& lhs, const fixed_array_base<T>& rhs)
+{
+  return !(rhs < lhs);
+}
+
+template<class T>
+bool operator>=(const fixed_array_base<T>& lhs, const fixed_array_base<T>& rhs)
+{
+  return !(lhs < rhs);
 }
 
 #endif /* FIXED_ARRAY_H */

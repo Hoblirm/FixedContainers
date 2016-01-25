@@ -540,4 +540,16 @@ public:
     }
   }
 
+  void test_relational_operators(void)
+  {
+    fixed_vector<int, 8> foo(3, 100);   // three ints with a value of 100
+    fixed_vector<int, 8> bar(2, 200);   // two ints with a value of 200
+
+    TS_ASSERT(!(foo == bar));
+    TS_ASSERT(foo != bar);
+    TS_ASSERT(foo < bar);
+    TS_ASSERT(!(foo > bar));
+    TS_ASSERT(foo <= bar);
+    TS_ASSERT(!(foo >= bar));
+  }
 };

@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <exception>
+#include <stdexcept>
 
 class allocation_guard
 {

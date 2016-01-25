@@ -4,8 +4,10 @@ aix:
 	xlC_r -w -O2 -o ./bin/aix_run main.cpp -I./inc
 cxxtest:
 	${CXXTEST_HOME}/bin/cxxtestgen --error-printer -o ./test/src/test.cpp ./test/inc/object_pool_test.h ./test/inc/allocation_guard_test.h ./test/inc/fixed_array_test.h ./test/inc/fixed_string_test.h ./test/inc/fixed_vector_test.h 
-	g++ -g -w -o ./test/bin/test_bin ./test/src/test.cpp -I./inc -I./ -I${CXXTEST_HOME} 
+	g++ -g -w -Wall -o ./test/bin/test_bin ./test/src/test.cpp -I./inc -I./ -I${CXXTEST_HOME} 
 	./test/bin/test_bin
+warn:
+	g++ -Wall -o run main.cpp -I./inc
 clean:
 	rm -rf ./obj/*
 	rm -rf ./bin/*
