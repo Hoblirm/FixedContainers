@@ -315,7 +315,7 @@ public:
 
   void test_swap(void)
   {
-    fixed_vector<int, 8> foo(3, 100);   // three ints with a value of 100
+    fixed_vector<int, 16> foo(3, 100);   // three ints with a value of 100
     fixed_vector<int> bar(8, 5, 200);   // five ints with a value of 200
 
     foo.swap(bar);
@@ -346,6 +346,11 @@ public:
     {
       TS_ASSERT_EQUALS(bar[i], 200);
     }
+
+    foo.push_back(100);
+    foo.push_back(100);
+    foo.push_back(100);
+    TS_ASSERT_THROWS(bar.swap(foo), std::runtime_error);
   }
 
   void test_default_constructor(void)
