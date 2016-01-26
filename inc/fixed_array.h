@@ -307,8 +307,6 @@ public:
   fixed_array(const fixed_array<T> & obj);
   ~fixed_array();
   fixed_array<T, 0>& operator=(const fixed_array<T, 0> & obj);
-  // bool operator==(const fixed_array<T, 0>& rhs);
-
 private:
   void allocate();
 };
