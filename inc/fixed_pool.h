@@ -9,6 +9,7 @@ public:
   T* allocate();
   void release(T* ptr);
 
+  size_t outstanding() const;
   size_t available() const;
   size_t capacity() const;
 
@@ -50,6 +51,11 @@ template<class T> void fixed_pool_base<T>::release(T* ptr)
 template<class T> size_t fixed_pool_base<T>::available() const
 {
   return mCapacity - mIndex;
+}
+
+template<class T> size_t fixed_pool_base<T>::outstanding() const
+{
+  return mIndex;
 }
 
 template<class T> size_t fixed_pool_base<T>::capacity() const

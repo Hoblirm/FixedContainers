@@ -56,6 +56,24 @@ public:
     }
   }
 
+  // It should return the number of objects allocated by the pool.
+   void test_outstanding(void)
+   {
+     fixed_pool<Foo> pool(10);
+     Foo* ptrList[10];
+     for (int i = 0; i < 10; i++)
+     {
+       TS_ASSERT_EQUALS(pool.outstanding(), i);
+       ptrList[i] = pool.allocate();
+     }
+
+     for (int i = 10; i > 0; i--)
+     {
+       TS_ASSERT_EQUALS(pool.outstanding(), i);
+       pool.release(ptrList[i-1]);
+     }
+   }
+
   // It should be able to allocate objects in order.
   void test_allocate_ordered(void)
   {

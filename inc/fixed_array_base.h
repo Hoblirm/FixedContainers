@@ -2,17 +2,18 @@
 #define FIXED_ARRAY_BASE_H
 
 #include <allocation_guard.h>
-#include <fixed_iterator.h>
+#include <fixed_array_iterator.h>
 
 template<class T> class fixed_array_base: public allocation_guard
 {
 public:
-  typedef T* iterator;
-  typedef const T* const_iterator;
-  typedef fixed_reverse_iterator<T> reverse_iterator;
-  typedef fixed_const_reverse_iterator<T> const_reverse_iterator;
+  typedef T value_type;
   typedef T& reference;
   typedef const T& const_reference;
+  typedef T* iterator;
+  typedef const T* const_iterator;
+  typedef fixed_array_reverse_iterator<T> reverse_iterator;
+  typedef fixed_array_const_reverse_iterator<T> const_reverse_iterator;
 
   reference at(size_t n);
   const_reference at(size_t n) const;
@@ -27,8 +28,8 @@ public:
   const_reverse_iterator crbegin() const;
   const_reverse_iterator crend() const;
 
-  T* data();
-  const T* data() const;
+  value_type* data();
+  const value_type* data() const;
 
   bool empty() const;
 
@@ -116,14 +117,14 @@ template<class T> const T* fixed_array_base<T>::cend() const
   return &mAryPtr[mSize];
 }
 
-template<class T> fixed_const_reverse_iterator<T> fixed_array_base<T>::crbegin() const
+template<class T> fixed_array_const_reverse_iterator<T> fixed_array_base<T>::crbegin() const
 {
-  return fixed_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
+  return fixed_array_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
 }
 
-template<class T> fixed_const_reverse_iterator<T> fixed_array_base<T>::crend() const
+template<class T> fixed_array_const_reverse_iterator<T> fixed_array_base<T>::crend() const
 {
-  return fixed_const_reverse_iterator<T>(&mAryPtr[-1]);
+  return fixed_array_const_reverse_iterator<T>(&mAryPtr[-1]);
 }
 
 template<class T> T* fixed_array_base<T>::data()
@@ -199,24 +200,24 @@ template<class T> const T& fixed_array_base<T>::operator[](size_t n) const
   return mAryPtr[n];
 }
 
-template<class T> fixed_reverse_iterator<T> fixed_array_base<T>::rbegin()
+template<class T> fixed_array_reverse_iterator<T> fixed_array_base<T>::rbegin()
 {
-  return fixed_reverse_iterator<T>(&mAryPtr[mSize - 1]);
+  return fixed_array_reverse_iterator<T>(&mAryPtr[mSize - 1]);
 }
 
-template<class T> fixed_const_reverse_iterator<T> fixed_array_base<T>::rbegin() const
+template<class T> fixed_array_const_reverse_iterator<T> fixed_array_base<T>::rbegin() const
 {
-  return fixed_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
+  return fixed_array_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
 }
 
-template<class T> fixed_reverse_iterator<T> fixed_array_base<T>::rend()
+template<class T> fixed_array_reverse_iterator<T> fixed_array_base<T>::rend()
 {
-  return fixed_reverse_iterator<T>(&mAryPtr[-1]);
+  return fixed_array_reverse_iterator<T>(&mAryPtr[-1]);
 }
 
-template<class T> fixed_const_reverse_iterator<T> fixed_array_base<T>::rend() const
+template<class T> fixed_array_const_reverse_iterator<T> fixed_array_base<T>::rend() const
 {
-  return fixed_const_reverse_iterator<T>(&mAryPtr[-1]);
+  return fixed_array_const_reverse_iterator<T>(&mAryPtr[-1]);
 }
 
 template<class T> size_t fixed_array_base<T>::size() const
