@@ -31,11 +31,11 @@ class fixed_pool_test: public CxxTest::TestSuite
 {
 public:
 
-  // It should return the capacity of the pool
-  void test_capacity(void)
+  // It should return the max_size of the pool
+  void test_max_size(void)
   {
     fixed_pool<Foo> pool(10);
-    TS_ASSERT_EQUALS(pool.capacity(), 10);
+    TS_ASSERT_EQUALS(pool.max_size(), 10);
   }
 
   // It should return the available objects in the pool.
@@ -52,7 +52,7 @@ public:
     for (int i = 0; i < 10; i++)
     {
       TS_ASSERT_EQUALS(pool.available(), i);
-      pool.release(ptrList[i]);
+      pool.deallocate(ptrList[i]);
     }
   }
 
@@ -70,7 +70,7 @@ public:
      for (int i = 10; i > 0; i--)
      {
        TS_ASSERT_EQUALS(pool.outstanding(), i);
-       pool.release(ptrList[i-1]);
+       pool.deallocate(ptrList[i-1]);
      }
    }
 
@@ -81,8 +81,8 @@ public:
 
     Foo* a = pool.allocate();
     Foo* b = pool.allocate();
-    pool.release(b);
-    pool.release(a);
+    pool.deallocate(b);
+    pool.deallocate(a);
 
     a = pool.allocate();
     b = pool.allocate();
@@ -101,8 +101,8 @@ public:
 
     Foo* a = pool.allocate();
     Foo* b = pool.allocate();
-    pool.release(a);
-    pool.release(b);
+    pool.deallocate(a);
+    pool.deallocate(b);
 
     a = pool.allocate();
     b = pool.allocate();
@@ -114,7 +114,7 @@ public:
     TS_ASSERT_EQUALS(b->id, 2);
   }
 
-  // It should throw an exception if capacity is exceeded.
+  // It should throw an exception if max_size is exceeded.
   void test_allocate_exception(void)
   {
     bool exception_caught = false;
@@ -134,7 +134,7 @@ public:
 
   void modify_method(fixed_pool<Foo>& x)
   {
-    for (int i = 0; i < x.capacity(); i++)
+    for (int i = 0; i < x.max_size(); i++)
     {
       x.allocate();
     }

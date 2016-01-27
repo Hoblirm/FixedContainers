@@ -4,250 +4,411 @@
 #include <fixed_pool.h>
 #include <fixed_list_iterator.h>
 
-template<class T> class fixed_list_base: public allocation_guard
+template<class T, class Pool> class fixed_list_base : public allocation_guard
 {
 public:
-  typedef T value_type;
-  typedef T& reference;
-  typedef const T& const_reference;
-  typedef fixed_list_iterator<T> iterator;
-  typedef fixed_list_const_iterator<T> const_iterator;
-  typedef fixed_list_reverse_iterator<T> reverse_iterator;
-  typedef fixed_list_const_reverse_iterator<T> const_reverse_iterator;
+   typedef T value_type;
+   typedef T& reference;
+   typedef fixed_list_node<T> node;
+   typedef const T& const_reference;
+   typedef fixed_list_iterator<T> iterator;
+   typedef fixed_list_const_iterator<T> const_iterator;
+   typedef fixed_list_reverse_iterator<T> reverse_iterator;
+   typedef fixed_list_const_reverse_iterator<T> const_reverse_iterator;
 
-  reference back();
-  const_reference back() const;
+   void assign(size_t size, const_reference val);
+   void assign(const_iterator first, const_iterator last);
 
-  iterator begin();
-  const_iterator begin() const;
-  const_iterator cbegin() const;
-  const_iterator cend() const;
-  const_reverse_iterator crbegin() const;
-  const_reverse_iterator crend() const;
+   reference back();
+   const_reference back() const;
 
-  bool empty() const;
+   iterator begin();
+   const_iterator begin() const;
+   const_iterator cbegin() const;
+   const_iterator cend() const;
+   const_reverse_iterator crbegin() const;
+   const_reverse_iterator crend() const;
 
-  iterator end();
-  const_iterator end() const;
+   bool empty() const;
 
-  reference front();
-  const_reference front() const;
+   iterator end();
+   const_iterator end() const;
 
-  size_t max_size() const;
+   reference front();
+   const_reference front() const;
 
-  fixed_list_base<T>& operator=(const fixed_list_base<T>& obj);
-  reference operator[](size_t n);
-  const_reference operator[](size_t n) const;
+   size_t max_size() const;
 
-  reverse_iterator rbegin();
-  const_reverse_iterator rbegin() const;
-  reverse_iterator rend();
-  const_reverse_iterator rend() const;
+   fixed_list_base<T,Pool>& operator=(const fixed_list_base<T,Pool>& obj);
 
-  size_t size() const;
-  void swap(fixed_list_base<T>& obj);
+   void pop_back();
+   void push_back(const_reference val);
+
+   reverse_iterator rbegin();
+   const_reverse_iterator rbegin() const;
+   reverse_iterator rend();
+   const_reverse_iterator rend() const;
+
+   size_t size() const;
+   void swap(fixed_list_base<T,Pool>& obj);
 
 protected:
-  fixed_list_base(size_t size);
-  fixed_list_base(size_t size, T* ptr);
+   fixed_list_base(size_t size);
 
+   node* mHead;
+   node* mTail;
 
-  size_t mSize;
-  T* mAryPtr;
+private:
+   void push_back_no_throw(const_reference val);
+protected:
+   Pool mPool;
+   //**Note: The mPool member must be defined last!  This template class is different between specialized versions of fixed_list.  
+   // Since the size varies, it is critical that this variable is defined at the end to allow casting between the specialized and non-specialized lists.
 };
 
-
-template<class T> T& fixed_list_base<T>::back()
+template<class T> void fixed_list_base<T>::assign(size_t size, fixed_list_base<T>::const_reference val)
 {
-  return mAryPtr[mSize - 1];
+   if (size > mPool.outstanding())
+   {
+      throw std::runtime_error("fixed_list: assign() fill range exceeds capacity");
+   }
+
+   if (mPool.outstanding() < size)
+   {
+      for (fixed_list_base<T>::iterator it = begin(); it != end(); ++it)
+      {
+         *it = val;
+      }
+      while (mPool.outstanding() < size)
+      {
+         //Capacity check done above. Safe to do the faster no_throw method.
+         push_back_no_throw(val);
+      }
+   }
+   else
+   {
+      fixed_list_base<T>::iterator it = begin();
+      for (int i = 0; i < size; ++i)
+      {
+         *(it++) = val;
+      }
+      while (mPool.outstanding() > size)
+      {
+         pop_back();
+      }
+   }
 }
 
-template<class T> const T& fixed_list_base<T>::back() const
+template<class T> void fixed_list_base<T>::assign(fixed_list_base<T>::const_iterator first, fixed_list_base::const_iterator last)
 {
-  return mAryPtr[mSize - 1];
+
+   fixed_list_base<T>::iterator lit = begin();
+   fixed_list_base<T>::const_iterator rit = first;
+   size_t rsize = 0;
+   while ((lit != end()) && (rit != last))
+   {
+      *(lit++) = *(rit++);
+   }
+   while (mPool.outstanding() > rsize)
+   {
+      pop_back();
+   }
+   while (rit != last)
+   {
+      push_back(*(rit++));
+   }
 }
 
-template<class T> fixed_list_const_reverse_iterator<T> fixed_list_base<T>::crbegin() const
+template<class T> fixed_list_base<T>::reference fixed_list_base<T>::back()
 {
-  return fixed_list_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
+   return mTail->val;
 }
 
-template<class T> fixed_list_const_reverse_iterator<T> fixed_list_base<T>::crend() const
+template<class T> fixed_list_base<T>::const_reference T& fixed_list_base<T>::back() const
 {
-  return fixed_list_const_reverse_iterator<T>(NULL);
+   return mTail->val;
+}
+
+template<class T> fixed_list_base<T>::const_reverse_iterator fixed_list_base<T>::crbegin() const
+{
+   return fixed_list_const_reverse_iterator<T > (mHead);
+}
+
+template<class T>fixed_list_base<T>::const_reverse_iterator<T> fixed_list_base<T>::crend() const
+{
+   return fixed_list_const_reverse_iterator<T > (NULL);
 }
 
 template<class T> bool fixed_list_base<T>::empty() const
 {
-  return (0 == mSize);
+   return (0 == mPool.outstanding());
 }
 
-template<class T> T& fixed_list_base<T>::front()
+template<class T> fixed_list_base<T>::reference fixed_list_base<T>::front()
 {
-  return mAryPtr[0];
+   return mHead->val;
 }
 
-template<class T> const T& fixed_list_base<T>::front() const
+template<class T> fixed_list_base<T>::const_reference fixed_list_base<T>::front() const
 {
-  return mAryPtr[0];
+   return mHead->val;
 }
 
 template<class T> size_t fixed_list_base<T>::max_size() const
 {
-  return mSize;
+   return mPool.max_size();
 }
 
 template<class T> fixed_list_base<T>& fixed_list_base<T>::operator=(const fixed_list_base<T>& obj)
 {
-  if (obj.size() != mSize)
-  {
-    throw std::runtime_error("fixed_list: assignment operator's parameter size doesn't match");
-  }
+   if (obj.size() > mPool.max_size())
+   {
+      throw std::runtime_error("fixed_list: assignment operator's parameter size exceeds capacity");
+   }
 
-  for (int i = 0; i < obj.size(); i++)
-  {
-    this->mAryPtr[i] = obj[i];
-  }
+   fixed_list_base<T>::iterator lit = begin();
+   fixed_list_base<T>::iterator rit = obj.begin();
 
-  return *this;
+   while ((lit != end()) && (rit != obj.end()))
+   {
+      *(lit++) = *(rit++);
+   }
+   while (mPool.outstanding() > obj.size())
+   {
+      pop_back();
+   }
+   while (rit != obj.end())
+   {
+      //Capacity was check above. We can use the quicker no_throw method.
+      push_back_no_throw(*(rit++));
+   }
+
+   return *this;
 }
 
-template<class T> T& fixed_list_base<T>::operator[](size_t n)
+template<class T> void fixed_list_base<T>::pop_back()
 {
-  return mAryPtr[n];
+   node* prev = mTail->prev;
+   if (NULL != prev)
+   {
+      prev->next = NULL;
+   }
+   mPool.deallocate(mTail);
+   mTail = prev;
 }
 
-template<class T> const T& fixed_list_base<T>::operator[](size_t n) const
+template<class T> void fixed_list_base<T>::push_back(const T& val)
 {
-  return mAryPtr[n];
+   if (mPool.outstanding == mPool.max_size)
+   {
+      throw std::runtime_error("fixed_list: push_back() caused size to exceed capacity");
+   }
+   
+   push_back_no_throw();
 }
 
-template<class T> fixed_list_reverse_iterator<T> fixed_list_base<T>::rbegin()
+template<class T> void fixed_list_base<T>::push_back_no_throw(const T& val)
 {
-  return fixed_list_reverse_iterator<T>(&mAryPtr[mSize - 1]);
+   node* next = mPool.allocate_no_throw();
+   next->prev = mTail;
+   next->data = val;
+   next->next = NULL;
+   if (NULL != mTail)
+   {
+      mTail->next = next;
+   }
+   mTail = next;
 }
 
-template<class T> fixed_list_const_reverse_iterator<T> fixed_list_base<T>::rbegin() const
+template<class T> fixed_list_base<T>::reverse_iterator fixed_list_base<T>::rbegin()
 {
-  return fixed_list_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
+   return fixed_list_reverse_iterator<T > (mHead);
 }
 
-template<class T> fixed_list_reverse_iterator<T> fixed_list_base<T>::rend()
+template<class T> fixed_list_base<T>::const_reverse_iterator fixed_list_base<T>::rbegin() const
 {
-  return fixed_list_reverse_iterator<T>(NULL);
+   return fixed_list_const_reverse_iterator<T > (mHead);
 }
 
-template<class T> fixed_list_const_reverse_iterator<T> fixed_list_base<T>::rend() const
+template<class T> fixed_list_base<T>::reverse_iterator fixed_list_base<T>::rend()
 {
-  return fixed_list_const_reverse_iterator<T>(NULL);
+   return fixed_list_reverse_iterator<T > (NULL);
+}
+
+template<class T> fixed_list_base<T>::const_reverse_iterator fixed_list_base<T>::rend() const
+{
+   return fixed_list_const_reverse_iterator<T > (NULL);
 }
 
 template<class T> size_t fixed_list_base<T>::size() const
 {
-  return mSize;
+   return mPool.outstanding();
 }
 
 template<class T> void fixed_list_base<T>::swap(fixed_list_base<T>& obj)
 {
-  if (mSize == obj.size())
-  {
-    T tmp;
-    for (int i = 0; i < mSize; i++)
-    {
-      tmp = mAryPtr[i];
-      mAryPtr[i] = obj[i];
-      obj[i] = tmp;
-    }
-  }
+   if ((obj.size() > mPool.max_size()) || (mPool.outstanding() > obj.max_size()))
+   {
+      throw std::runtime_error("fixed_list: swap() parameters' size exceed capacity");
+   }
+
+   size_t lsize = mPool.outstanding();
+   size_t rsize = obj.size();
+   if (lsize < rsize)
+   {
+      T tmp;
+      fixed_list_base<T>::iterator lit = begin();
+      fixed_list_base<T>::iterator rit = obj.begin();
+      while (lit != lhs.end())
+      {
+         tmp = *lit;
+         *lit = *rit;
+         *rit = tmp;
+         ++lit;
+         ++rit;
+      }
+
+      fixed_list_base<T>::reverse_iterator rrit = obj.rbegin();
+      while (mPool.outstanding() < rsize)
+      {
+         //Capacity check done at the top of method. Safe to do the faster no_throw method.
+         push_back_no_throw(*(rrit++));
+         obj.pop_back();
+      }
+      /*while (mPool.outstanding < rsize)
+      {
+         mPool.push_back(*(rit++));
+      }
+      while (obj.size() > lsize)
+      {
+         obj.pop_back();
+      }*/
+   }
+   else
+   {
+      T tmp;
+      fixed_list_base<T>::iterator lit = begin();
+      fixed_list_base<T>::iterator rit = obj.begin();
+      while (rit != rhs.end())
+      {
+         tmp = *lit;
+         *lit = *rit;
+         *rit = tmp;
+         ++lit;
+         ++rit;
+      }
+
+      fixed_list_base<T>::reverse_iterator rlit = rbegin();
+      while (obj.size() < lsize)
+      {
+         //Capacity check done at the top of method. Safe to do the faster no_throw method.
+         obj.push_back_no_throw(*(rlit++));
+         pop_back();
+      }
+      /*while (obj.size() < lsize)
+      {
+         obj.push_back(*(rlit++));
+      }
+      while (mPool.outstanding() > rsize)
+      {
+         pop_back();
+      }*/
+   }
+
 }
 
 template<class T> fixed_list_base<T>::fixed_list_base(size_t size) :
-    mSize(size)
-{
-}
-
-template<class T> fixed_list_base<T>::fixed_list_base(size_t size, T* ptr) :
-    mSize(size), mAryPtr(ptr)
+mHead(NULL), mTail(NULL), mPool(size)
 {
 }
 
 template<class T>
 bool operator==(const fixed_list_base<T>& lhs, const fixed_list_base<T>& rhs)
 {
-  if (lhs.size() != rhs.size())
-  {
-    return false;
-  }
-  else
-  {
-    for (int i = 0; i < lhs.size(); ++i)
-    {
-      if (lhs[i] != rhs[i])
+   if (lhs.size() != rhs.size())
+   {
+      return false;
+   }
+   else
+   {
+      fixed_list_base<T>::iterator lit = lhs.begin();
+      fixed_list_base<T>::iterator rit = rhs.begin();
+      while (lit != lhs.end())
       {
-        return false;
+         if (*(lit++) != *(rit++))
+         {
+            return false;
+         }
       }
-    }
-    return true;
-  }
+      return true;
+   }
 }
 
 template<class T>
 bool operator<(const fixed_list_base<T>& lhs, const fixed_list_base<T>& rhs)
 {
-  if (lhs.size() < rhs.size())
-  {
-    for (int i = 0; i < lhs.size(); ++i)
-    {
-      if (lhs[i] < rhs[i])
+   if (lhs.size() < rhs.size())
+   {
+      fixed_list_base<T>::iterator lit = lhs.begin();
+      fixed_list_base<T>::iterator rit = rhs.begin();
+      while (lit != lhs.end())
       {
-        return true;
+         if (*lit < *rit)
+         {
+            return true;
+         }
+         else if (*lit > *rit)
+         {
+            return false;
+         }
+         ++lit;
+         ++rit;
       }
-      else if (lhs[i] > rhs[i])
+      return true;
+   }
+   else
+   {
+      fixed_list_base<T>::iterator lit = lhs.begin();
+      fixed_list_base<T>::iterator rit = rhs.begin();
+      while (rit != rhs.end())
       {
-        return false;
+         if (*lit < *rit)
+         {
+            return true;
+         }
+         else if (*lit > *rit)
+         {
+            return false;
+         }
+         ++lit;
+         ++rit;
       }
-    }
-    return true;
-  }
-  else
-  {
-    for (int i = 0; i < rhs.size(); ++i)
-    {
-      if (lhs[i] < rhs[i])
-      {
-        return true;
-      }
-      else if (lhs[i] > rhs[i])
-      {
-        return false;
-      }
-    }
-    return false;
-  }
+      return false;
+   }
 }
 
 template<class T>
 bool operator!=(const fixed_list_base<T>& lhs, const fixed_list_base<T>& rhs)
 {
-  return !(lhs == rhs);
+   return !(lhs == rhs);
 }
 
 template<class T>
 bool operator>(const fixed_list_base<T>& lhs, const fixed_list_base<T>& rhs)
 {
-  return rhs < lhs;
+   return rhs < lhs;
 }
 
 template<class T>
 bool operator<=(const fixed_list_base<T>& lhs, const fixed_list_base<T>& rhs)
 {
-  return !(rhs < lhs);
+   return !(rhs < lhs);
 }
 
 template<class T>
 bool operator>=(const fixed_list_base<T>& lhs, const fixed_list_base<T>& rhs)
 {
-  return !(lhs < rhs);
+   return !(lhs < rhs);
 }
 
 #endif /* FIXED_LIST_BASE_H */

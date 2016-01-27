@@ -7,11 +7,12 @@ template<class T> class fixed_pool_base: allocation_guard
 {
 public:
   T* allocate();
-  void release(T* ptr);
+  T* allocate_no_throw();
+  void deallocate(T* ptr);
 
   size_t outstanding() const;
   size_t available() const;
-  size_t capacity() const;
+  size_t max_size() const;
 
 protected:
   fixed_pool_base(size_t capacity);
@@ -43,7 +44,12 @@ template<class T> T* fixed_pool_base<T>::allocate()
   return mPtrList[mIndex++];
 }
 
-template<class T> void fixed_pool_base<T>::release(T* ptr)
+template<class T> T* fixed_pool_base<T>::allocate_no_throw()
+{
+  return mPtrList[mIndex++];
+}
+
+template<class T> void fixed_pool_base<T>::deallocate(T* ptr)
 {
   mPtrList[--mIndex] = ptr;
 }
@@ -58,7 +64,7 @@ template<class T> size_t fixed_pool_base<T>::outstanding() const
   return mIndex;
 }
 
-template<class T> size_t fixed_pool_base<T>::capacity() const
+template<class T> size_t fixed_pool_base<T>::max_size() const
 {
   return mCapacity;
 }

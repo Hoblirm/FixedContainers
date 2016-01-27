@@ -8,7 +8,7 @@ class fixed_vector_base: public fixed_array_base<T>
 {
 public:
 
-  void assign(size_t size, int val);
+  void assign(size_t size, const_reference val);
   void assign(const T* first, const T* last);
 
   size_t capacity() const;
@@ -61,7 +61,7 @@ private:
   void set_size(size_t size);
 };
 
-template<class T> void fixed_vector_base<T>::assign(size_t size, int val)
+template<class T> void fixed_vector_base<T>::assign(size_t size, fixed_vector_base::const_reference val)
 {
   if (size > mCapacity)
   {
