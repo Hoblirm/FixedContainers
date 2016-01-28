@@ -70,7 +70,7 @@ protected:
 
 template<class T, class Pool> void fixed_list_base<T, Pool>::assign(size_t size, fixed_list_base<T, Pool>::const_reference val)
 {
-   if (size > mPool.outstanding())
+   if (size > mPool.max_size())
    {
       throw std::runtime_error("fixed_list: assign() fill range exceeds capacity");
    }
@@ -104,13 +104,13 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::assign(size_t size,
 template<class T, class Pool> void fixed_list_base<T, Pool>::assign(fixed_list_base<T, Pool>::const_iterator first,
 fixed_list_base::const_iterator last)
 {
-
    typename fixed_list_base<T, Pool>::iterator lit = begin();
    typename fixed_list_base<T, Pool>::const_iterator rit = first;
    size_t rsize = 0;
    while ((lit != end()) && (rit != last))
    {
       *(lit++) = *(rit++);
+      ++rsize;
    }
    while (mPool.outstanding() > rsize)
    {
@@ -130,6 +130,7 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::assign(const T* fir
    while ((lit != end()) && (rit != last))
    {
       *(lit++) = *(rit++);
+      ++rsize;
    }
    while (mPool.outstanding() > rsize)
    {
@@ -214,28 +215,7 @@ template<class T, class Pool> size_t fixed_list_base<T, Pool>::max_size() const
 
 template<class T, class Pool> fixed_list_base<T, Pool>& fixed_list_base<T, Pool>::operator=(const fixed_list_base<T, Pool>& obj)
 {
-   if (obj.size() > mPool.max_size())
-   {
-      throw std::runtime_error("fixed_list: assignment operator's parameter size exceeds capacity");
-   }
-
-   typename fixed_list_base<T, Pool>::iterator lit = begin();
-   typename fixed_list_base<T, Pool>::iterator rit = obj.begin();
-
-   while ((lit != end()) && (rit != obj.end()))
-   {
-      *(lit++) = *(rit++);
-   }
-   while (mPool.outstanding() > obj.size())
-   {
-      pop_back();
-   }
-   while (rit != obj.end())
-   {
-      //Capacity was check above. We can use the quicker no_throw method.
-      push_back_no_throw(*(rit++));
-   }
-
+   assign(obj.begin(),obj.end());
    return *this;
 }
 
@@ -245,6 +225,10 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::pop_back()
    if (NULL != prev)
    {
       prev->next = NULL;
+   }
+   else
+   {
+	   mHead = NULL;
    }
    mPool.deallocate(mTail);
    mTail = prev;
@@ -269,6 +253,10 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::push_back_no_throw(
    if (NULL != mTail)
    {
       mTail->next = next;
+   }
+   else
+   {
+   	   mHead = next;
    }
    mTail = next;
 }

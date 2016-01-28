@@ -92,9 +92,9 @@ template<class T, class Node = fixed_forward_list_node<T> > struct fixed_forward
   {
   }
 
-  operator const fixed_forward_list_const_iterator<T>&() const
+  operator fixed_forward_list_const_iterator<T>&() const
   {
-     return *this;
+	  return *((fixed_forward_list_const_iterator<T>*)this);
   }
   
   fixed_forward_list_iterator<T, Node>& operator++()
@@ -175,9 +175,10 @@ template<class T> struct fixed_list_iterator: public fixed_forward_list_iterator
   {
   }
 
-  operator const fixed_list_const_iterator<T>&() const
+
+  operator fixed_list_const_iterator<T>&() const
   {
-     return *this;
+     return *((fixed_list_const_iterator<T>*)this);
   }
   
   fixed_list_iterator<T>& operator++()
@@ -263,7 +264,7 @@ template<class T> struct fixed_list_reverse_iterator: public fixed_forward_list_
 
   operator const fixed_list_const_reverse_iterator<T>&() const
   {
-     return *this;
+	  return *((fixed_list_const_reverse_iterator<T>*)this);
   }
   
   fixed_list_reverse_iterator<T>& operator++()

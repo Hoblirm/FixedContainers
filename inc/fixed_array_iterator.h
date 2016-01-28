@@ -3,7 +3,7 @@
 
 #include <cstdlib>
 
-//TODO: Need to add +, -, +=, -=, []
+//TODO: Need to add +, -, +=, -=, [], posfix++.--, and casting() to const
 template<class T> struct fixed_array_reverse_iterator_base
 {
    T* mPtr;
