@@ -13,7 +13,7 @@ public:
   size_t outstanding() const;
   size_t available() const;
   size_t max_size() const;
-
+  
 protected:
   fixed_pool_base(size_t capacity);
   fixed_pool_base(size_t capacity, T* contentPtr, T** ptrPtr);
@@ -76,7 +76,8 @@ public:
   operator const fixed_pool<T,0>&() const;
   operator fixed_pool<T,0>&();
 private:
-  fixed_pool(const fixed_pool<T, N> & obj);
+   //TODO: bring back or remove.
+  //fixed_pool(const fixed_pool<T, N> & obj);
   fixed_pool<T, N>& operator=(const fixed_pool<T, N>& obj);
   T mContentAry[N];
   T* mPtrAry[N];
@@ -107,7 +108,8 @@ public:
   fixed_pool(size_t size);
   ~fixed_pool();
 private:
-  fixed_pool(const fixed_pool<T> & obj);
+   //TODO: bring back or remove.
+  //fixed_pool(const fixed_pool<T> & obj);
   fixed_pool<T, 0>& operator=(const fixed_pool<T, 0> & obj);
   void allocate_pool();
 };

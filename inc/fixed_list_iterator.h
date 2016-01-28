@@ -53,6 +53,11 @@ template<class T, class Node = fixed_forward_list_node<T> > struct fixed_forward
     T, Node>
 {
 
+  fixed_forward_list_const_iterator<T, Node>() :
+      fixed_forward_list_iterator_base<T, Node>(NULL)
+  {
+  }
+   
   fixed_forward_list_const_iterator<T, Node>(Node* p) :
       fixed_forward_list_iterator_base<T, Node>(p)
   {
@@ -63,26 +68,51 @@ template<class T, class Node = fixed_forward_list_node<T> > struct fixed_forward
     this->mPtr = this->mPtr->next;
     return *this;
   }
+  
+   fixed_forward_list_const_iterator<T> operator++(T) 
+  {
+   fixed_forward_list_const_iterator<T> tmp(this->mPtr); 
+   operator++(); 
+   return tmp;
+}
+   
 };
 
 template<class T, class Node = fixed_forward_list_node<T> > struct fixed_forward_list_iterator: public fixed_forward_list_iterator_base<
     T, Node>
 {
 
+   fixed_forward_list_iterator<T, Node>() :
+      fixed_forward_list_iterator_base<T, Node>(NULL)
+  {
+  }
+    
   fixed_forward_list_iterator<T, Node>(Node* p) :
       fixed_forward_list_iterator_base<T, Node>(p)
   {
   }
 
+  operator const fixed_forward_list_const_iterator<T>&() const
+  {
+     return *this;
+  }
+  
   fixed_forward_list_iterator<T, Node>& operator++()
   {
     this->mPtr = this->mPtr->next;
     return *this;
   }
 
+   fixed_forward_list_iterator<T> operator++(T) 
+  {
+   fixed_forward_list_iterator<T> tmp(this->mPtr); 
+   operator++(); 
+   return tmp;
+}
+   
   T& operator*()
   {
-    return *(this->mPtr);
+    return (this->mPtr)->val;
   }
 
   T* operator->()
@@ -94,8 +124,13 @@ template<class T, class Node = fixed_forward_list_node<T> > struct fixed_forward
 template<class T> struct fixed_list_const_iterator: public fixed_forward_list_const_iterator<T, fixed_list_node<T> >
 {
 
+   fixed_list_const_iterator<T>() :
+      fixed_forward_list_const_iterator<T, fixed_list_node<T> >(NULL)
+  {
+  }
+   
   fixed_list_const_iterator<T>(fixed_list_node<T>* p) :
-      fixed_forward_list_const_iterator<T>(p)
+      fixed_forward_list_const_iterator<T, fixed_list_node<T> >(p)
   {
   }
 
@@ -105,42 +140,84 @@ template<class T> struct fixed_list_const_iterator: public fixed_forward_list_co
     return *this;
   }
 
+   fixed_list_const_iterator<T> operator++(T) 
+  {
+   fixed_list_const_iterator<T> tmp(this->mPtr); 
+   operator++(); 
+   return tmp;
+}
+   
   fixed_list_const_iterator<T>& operator--()
   {
     this->mPtr = this->mPtr->prev;
     return *this;
   }
 
+   fixed_list_const_iterator<T> operator--(T) 
+  {
+   fixed_list_const_iterator<T> tmp(this->mPtr); 
+   operator--(); 
+   return tmp;
+}
+   
 };
 
 template<class T> struct fixed_list_iterator: public fixed_forward_list_iterator<T, fixed_list_node<T> >
 {
 
+   fixed_list_iterator<T>() :
+      fixed_forward_list_iterator<T, fixed_list_node<T> >(NULL)
+  {
+  }
+   
   fixed_list_iterator<T>(fixed_list_node<T>* p) :
-      fixed_forward_list_iterator<T>(p)
+      fixed_forward_list_iterator<T, fixed_list_node<T> >(p)
   {
   }
 
+  operator const fixed_list_const_iterator<T>&() const
+  {
+     return *this;
+  }
+  
   fixed_list_iterator<T>& operator++()
   {
     this->mPtr = this->mPtr->next;
     return *this;
   }
 
+  fixed_list_iterator<T> operator++(T) 
+  {
+   fixed_list_iterator<T> tmp(this->mPtr); 
+   operator++(); 
+   return tmp;
+}
+  
   fixed_list_iterator<T>& operator--()
   {
     this->mPtr = this->mPtr->prev;
     return *this;
   }
 
+  fixed_list_iterator<T> operator--(T) 
+  {
+   fixed_list_iterator<T> tmp(this->mPtr); 
+   operator--(); 
+   return tmp;
+}
 };
 
 template<class T> struct fixed_list_const_reverse_iterator: public fixed_forward_list_const_iterator<T,
     fixed_list_node<T> >
 {
 
+   fixed_list_const_reverse_iterator<T>() :
+      fixed_forward_list_const_iterator<T, fixed_list_node<T> >(NULL)
+  {
+  }
+   
   fixed_list_const_reverse_iterator<T>(fixed_list_node<T>* p) :
-      fixed_forward_list_const_iterator<T>(p)
+      fixed_forward_list_const_iterator<T, fixed_list_node<T> >(p)
   {
   }
 
@@ -150,32 +227,70 @@ template<class T> struct fixed_list_const_reverse_iterator: public fixed_forward
     return *this;
   }
 
+  fixed_list_const_reverse_iterator<T> operator++(T) 
+  {
+   fixed_list_const_reverse_iterator<T> tmp(this->mPtr); 
+   operator++(); 
+   return tmp;
+}
+  
   fixed_list_const_reverse_iterator<T>& operator--()
   {
     this->mPtr = this->mPtr->next;
     return *this;
   }
 
+  fixed_list_const_reverse_iterator<T> operator--(T) 
+  {
+   fixed_list_const_reverse_iterator<T> tmp(this->mPtr); 
+   operator--(); 
+   return tmp;
+}
+  
 };
 
 template<class T> struct fixed_list_reverse_iterator: public fixed_forward_list_iterator<T, fixed_list_node<T> >
 {
+   fixed_list_reverse_iterator<T>() :
+      fixed_forward_list_iterator<T, fixed_list_node<T> >(NULL)
+  {
+  }
+   
   fixed_list_reverse_iterator<T>(fixed_list_node<T>* p) :
-      fixed_forward_list_iterator<T>(p)
+      fixed_forward_list_iterator<T, fixed_list_node<T> >(p)
   {
   }
 
+  operator const fixed_list_const_reverse_iterator<T>&() const
+  {
+     return *this;
+  }
+  
   fixed_list_reverse_iterator<T>& operator++()
   {
     this->mPtr = this->mPtr->prev;
     return *this;
   }
-
+  
+fixed_list_reverse_iterator<T> operator++(T) 
+{
+   fixed_list_reverse_iterator<T> tmp(this->mPtr); 
+   operator++(); 
+   return tmp;
+}
+  
   fixed_list_reverse_iterator<T>& operator--()
   {
     this->mPtr = this->mPtr->next;
     return *this;
   }
+  
+  fixed_list_reverse_iterator<T> operator--(T) 
+  {
+   fixed_list_reverse_iterator<T> tmp(this->mPtr); 
+   operator--(); 
+   return tmp;
+}
 };
 
 #endif /* FIXED_LIST_ITERATOR_H */
