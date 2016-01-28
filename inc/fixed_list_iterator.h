@@ -6,66 +6,75 @@
 template<class T>
 struct fixed_list_node
 {
-  fixed_list_node* prev;
+  T val;
   fixed_list_node* next;
-  T data;
+  fixed_list_node* prev;
 };
 
-template<class T> struct fixed_forward_list_iterator_base
+template<class T>
+struct fixed_forward_list_node
 {
-  fixed_list_node<T>* mPtr;
+  T val;
+  fixed_forward_list_node* next;
+};
 
-  fixed_forward_list_iterator_base<T>(fixed_list_node<T>* p) :
+template<class T, class Node> struct fixed_forward_list_iterator_base
+{
+  Node* mPtr;
+
+  fixed_forward_list_iterator_base<T, Node>(Node* p) :
       mPtr(p)
   {
   }
 
-  bool operator==(fixed_forward_list_iterator_base<T> obj) const
+  bool operator==(fixed_forward_list_iterator_base<T, Node> obj) const
   {
     return (mPtr == obj.mPtr);
   }
 
-  bool operator!=(fixed_forward_list_iterator_base<T> obj) const
+  bool operator!=(fixed_forward_list_iterator_base<T, Node> obj) const
   {
     return (mPtr != obj.mPtr);
   }
 
   const T& operator*() const
   {
-    return mPtr->data;
+    return mPtr->val;
   }
 
   const T* operator->() const
   {
-    return &(mPtr->data);
+    return &(mPtr->val);
   }
 
 };
 
-template<class T> struct fixed_forward_list_const_iterator: public fixed_forward_list_iterator_base<T>
+template<class T, class Node = fixed_forward_list_node<T> > struct fixed_forward_list_const_iterator: public fixed_forward_list_iterator_base<
+    T, Node>
 {
 
-  fixed_forward_list_const_iterator<T>(fixed_list_node<T>* p) :
-      fixed_forward_list_iterator_base<T>(p)
+  fixed_forward_list_const_iterator<T, Node>(Node* p) :
+      fixed_forward_list_iterator_base<T, Node>(p)
   {
   }
 
-  fixed_forward_list_const_iterator<T>& operator++()
+  fixed_forward_list_const_iterator<T, Node>& operator++()
   {
     this->mPtr = this->mPtr->next;
     return *this;
   }
 };
 
-template<class T> struct fixed_forward_list_iterator: public fixed_forward_list_iterator_base<T>
+template<class T, class Node = fixed_forward_list_node<T> > struct fixed_forward_list_iterator: public fixed_forward_list_iterator_base<
+    T, Node>
 {
 
-  fixed_forward_list_iterator<T>(fixed_list_node<T>* p) :
-      fixed_forward_list_iterator_base<T>(p)
+  fixed_forward_list_iterator<T, Node>(Node* p) :
+      fixed_forward_list_iterator_base<T, Node>(p)
   {
   }
 
-  fixed_forward_list_iterator<T>& operator++()
+  fixed_forward_list_iterator<T, Node>& operator++()
   {
     this->mPtr = this->mPtr->next;
     return *this;
@@ -78,11 +87,11 @@ template<class T> struct fixed_forward_list_iterator: public fixed_forward_list_
 
   T* operator->()
   {
-    return &((this->mPtr)->data);
+    return &((this->mPtr)->val);
   }
 };
 
-template<class T> struct fixed_list_const_iterator: public fixed_forward_list_const_iterator<T>
+template<class T> struct fixed_list_const_iterator: public fixed_forward_list_const_iterator<T, fixed_list_node<T> >
 {
 
   fixed_list_const_iterator<T>(fixed_list_node<T>* p) :
@@ -104,7 +113,7 @@ template<class T> struct fixed_list_const_iterator: public fixed_forward_list_co
 
 };
 
-template<class T> struct fixed_list_iterator: public fixed_forward_list_iterator<T>
+template<class T> struct fixed_list_iterator: public fixed_forward_list_iterator<T, fixed_list_node<T> >
 {
 
   fixed_list_iterator<T>(fixed_list_node<T>* p) :
@@ -126,11 +135,12 @@ template<class T> struct fixed_list_iterator: public fixed_forward_list_iterator
 
 };
 
-template<class T> struct fixed_list_const_reverse_iterator: public fixed_forward_list_const_iterator<T>
+template<class T> struct fixed_list_const_reverse_iterator: public fixed_forward_list_const_iterator<T,
+    fixed_list_node<T> >
 {
 
   fixed_list_const_reverse_iterator<T>(fixed_list_node<T>* p) :
-    fixed_forward_list_const_iterator<T>(p)
+      fixed_forward_list_const_iterator<T>(p)
   {
   }
 
@@ -148,10 +158,10 @@ template<class T> struct fixed_list_const_reverse_iterator: public fixed_forward
 
 };
 
-template<class T> struct fixed_list_reverse_iterator: public fixed_forward_list_iterator<T>
+template<class T> struct fixed_list_reverse_iterator: public fixed_forward_list_iterator<T, fixed_list_node<T> >
 {
   fixed_list_reverse_iterator<T>(fixed_list_node<T>* p) :
-    fixed_forward_list_iterator<T>(p)
+      fixed_forward_list_iterator<T>(p)
   {
   }
 

@@ -7,7 +7,7 @@ aix:
 cxx:
 	${CXXTEST_HOME}/bin/cxxtestgen --error-printer -o ./test/src/test.cpp ${TEST_FILES} 
 	g++ -g -w -Wall -o ./test/bin/test_bin ./test/src/test.cpp -I./inc -I./ -I${CXXTEST_HOME} 
-	g++ -Wall -o run main.cpp -I./inc
+	g++ -Wall -o run ./src/warn.cpp -I./inc
 	./test/bin/test_bin
 clean:
 	rm -rf ./obj/*
