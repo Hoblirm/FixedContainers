@@ -200,10 +200,9 @@ public:
     //We are setting foo to an empty list.  Although the list is empty, the node content is still contained in
     //a memory pool.  The assignment method is intended to simply disconnect the leaked list, and to not perform
 
-    //Size is zero, but the capacity is still eight.  Behavior-wise
-    //it doesn't matter what the contents are since the size is zero.  However, we want to ensure that the
-    //assignment operator doesn't perform extra work by resetting these values.  This happens if no assignment
-    //operator is defined and a default one is used.
+    //We are going to empty the list out.  Although the list is empty, the nodes still exist in a memory pool.
+    //The nodes are going to be inspected to ensure that a member-wise copy didn't impact the nodes.  This test
+    //is to ensure the default assignment operator is not removed.  As it will cause the undesired member-wise copy.
     fixed_list_node<int>* pool_begin = (fixed_list_node<int>*)(&(*foo.begin()));
     fixed_list<int, 8>::iterator prev_it = foo.begin();
     fixed_list<int, 8> tmp(1,7);
@@ -274,6 +273,41 @@ public:
       TS_ASSERT_EQUALS(mylist.size(), size);
     }
     TS_ASSERT_EQUALS(sum, 600);
+  }
+
+  void test_pop_front(void)
+    {
+	  fixed_list<int,8> mylist;
+	    mylist.push_back (100);
+	    mylist.push_back (200);
+	    mylist.push_back (300);
+
+
+	      mylist.pop_front();
+	      TS_ASSERT_EQUALS(mylist.size(),2);
+	      TS_ASSERT_EQUALS(mylist.size(),0);
+	      TS_ASSERT_EQUALS(mylist.size(),0);
+
+	      mylist.pop_front();
+	      TS_ASSERT_EQUALS(mylist.size(),1);
+	      TS_ASSERT_EQUALS(mylist.size(),0);
+
+	      mylist.pop_front();
+	      TS_ASSERT_EQUALS(mylist.size(),0);
+    }
+
+  void test_push_front(void)
+  {
+	  fixed_list<int,8> mylist (2,100);         // two ints with a value of 100
+	    mylist.push_front (200);
+	    mylist.push_front (300);
+
+	    fixed_list<int,8>::iterator it = mylist.begin();
+
+	    TS_ASSERT_EQUALS(*(it++),300);
+	    TS_ASSERT_EQUALS(*(it++),200);
+	    TS_ASSERT_EQUALS(*(it++),100);
+	    TS_ASSERT_EQUALS(*(it++),100);
   }
 
   void test_rbegin_and_rend(void)

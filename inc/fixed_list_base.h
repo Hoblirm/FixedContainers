@@ -43,7 +43,9 @@ public:
    fixed_list_base<T, Pool>& operator=(const fixed_list_base<T, Pool>& obj);
 
    void pop_back();
+   void pop_front();
    void push_back(const_reference val);
+   void push_front(const_reference val);
 
    reverse_iterator rbegin();
    const_reverse_iterator rbegin() const;
@@ -234,6 +236,21 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::pop_back()
    mTail = prev;
 }
 
+template<class T, class Pool> void fixed_list_base<T, Pool>::pop_front()
+{
+   node* next = mHead->next;
+   if (NULL != next)
+   {
+      next->prev = NULL;
+   }
+   else
+   {
+	   mTail = NULL;
+   }
+   mPool.deallocate(mHead);
+   mHead = next;
+}
+
 template<class T, class Pool> void fixed_list_base<T, Pool>::push_back(const T& val)
 {
    if (mPool.outstanding() == mPool.max_size())
@@ -246,19 +263,41 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::push_back(const T& 
 
 template<class T, class Pool> void fixed_list_base<T, Pool>::push_back_no_throw(const T& val)
 {
-   node* next = mPool.allocate_no_throw();
-   next->prev = mTail;
-   next->val = val;
-   next->next = NULL;
+   node* nd = mPool.allocate_no_throw();
+   nd->prev = mTail;
+   nd->val = val;
+   nd->next = NULL;
    if (NULL != mTail)
    {
-      mTail->next = next;
+      mTail->next = nd;
    }
    else
    {
-   	   mHead = next;
+   	   mHead = nd;
    }
-   mTail = next;
+   mTail = nd;
+}
+
+template<class T, class Pool> void fixed_list_base<T, Pool>::push_front(const T& val)
+{
+   if (mPool.outstanding() == mPool.max_size())
+   {
+      throw std::runtime_error("fixed_list: push_front() caused size to exceed capacity");
+   }
+
+   node* nd = mPool.allocate_no_throw();
+   nd->next = mHead;
+   nd->val = val;
+   nd->prev = NULL;
+   if (NULL != mHead)
+   {
+      mHead->prev = nd;
+   }
+   else
+   {
+   	   mTail = nd;
+   }
+   mHead = nd;
 }
 
 template<class T, class Pool> typename fixed_list_base<T, Pool>::reverse_iterator fixed_list_base<T, Pool>::rbegin()
