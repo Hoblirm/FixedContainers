@@ -86,7 +86,7 @@ private:
 template<class T, size_t N> fixed_pool<T, N>::fixed_pool() :
     fixed_pool_base<T>(N, mContentAry, mPtrAry)
 {
-  for (int i = 0; i < this->mCapacity; i++)
+  for (size_t i = 0; i < this->mCapacity; i++)
   {
     mPtrAry[i] = &mContentAry[i];
   }
@@ -118,7 +118,7 @@ template<class T> fixed_pool<T, 0>::fixed_pool(size_t size) :
     fixed_pool_base<T>(size)
 {
   allocate_pool();
-  for (int i = 0; i < this->mCapacity; i++)
+  for (size_t i = 0; i < this->mCapacity; i++)
   {
     this->mPtrList[i] = &(this->mContentList[i]);
   }

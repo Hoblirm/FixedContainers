@@ -26,7 +26,7 @@
 *.exe
 *.out
 *.app
-/nbproject/private/
+nbproject
 .project
 .cproject
 .settings

@@ -298,28 +298,23 @@ template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_
   else
   {
     node* lhs = position.mNodePtr->prev;
-
+    node* nd = mPool.allocate_no_throw();
+    nd->val = val;
+    nd->next = position.mNodePtr;
+    position.mNodePtr->prev = nd;
+      
     if (NULL != lhs)
     {
-      node* mid = mPool.allocate_no_throw();
-      mid->val = val;
-      mid->next = position.mNodePtr;
-      mid->prev = lhs;
-
-      lhs->next = mid;
-      position.mNodePtr->prev = mid;
+      nd->prev = lhs;
+      lhs->next = nd;
     }
     else
-    {
-      node* mid = mPool.allocate_no_throw();
-      mid->val = val;
-      mid->next = position.mNodePtr;
-      mid->prev = NULL;
-
-      position.mNodePtr->prev = mid;
-      mHead = mid;
+    {      
+      nd->prev = NULL;
+      mHead = nd;
       //list cannot be empty due to position NULL check; therefore tail doesn't need to be examined
     }
+    position.mNodePtr = nd;
   }
 
   return position;
@@ -328,7 +323,7 @@ template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_
 template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_base<T, Pool>::iterator position,
     size_t n, fixed_list_base<T, Pool>::const_reference val)
 {
- /* size_t size = mPool.outstanding() + n;
+  size_t size = mPool.outstanding() + n;
   if (size > mPool.max_size())
   {
     throw std::runtime_error("fixed_list: insert() fill range exceeds capacity");
@@ -345,80 +340,110 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_b
   else
   {
     node* lhs = position.mNodePtr->prev;
-
+    node* nd = NULL;
+    for (size_t i = 0; i < n; ++i)
+       {
+          nd = mPool.allocate_no_throw();
+          nd->val = val;
+          nd->next = position.mNodePtr;
+          position.mNodePtr->prev = nd;
+          position.mNodePtr = nd;
+       }
+    
     if (NULL != lhs)
     {
-      //STOPPED HERE
-      node* mid = mPool.allocate_no_throw();
-      mid->val = val;
-      mid->prev = lhs;
-      lhs->next = mid;
-
-      mid->next = position.mNodePtr;
-      position.mNodePtr->prev = mid;
+       nd->prev = lhs;
+       lhs->next = nd;
     }
     else
     {
-      node* mid = mPool.allocate_no_throw();
-      mid->val = val;
-      mid->next = position.mNodePtr;
-      mid->prev = NULL;
-
-      position.mNodePtr->prev = mid;
-      mHead = mid;
+       nd->prev = NULL;
+       mHead = nd;
       //list cannot be empty due to position NULL check; therefore tail doesn't need to be examined
     }
-
-  }*/
-
+  }
 }
 
 template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_base<T, Pool>::iterator position,
     fixed_list_base<T, Pool>::const_iterator first, fixed_list_base<T, Pool>::const_iterator last)
 {
- /* size_t n = last - first;
-  if ((this->mSize + n) > mCapacity)
+  if (NULL == position.mNodePtr)
   {
-    throw std::runtime_error("fixed_list: insert() fill range exceeds capacity");
+    //List is empty, or we are inserting at the end of the list.
+    for (const_iterator it = first; it != last;++it)
+    {
+      push_back(*it);
+    }
   }
-
-  //Slide everything to the right 'n' spaces to make room for the new elements.
-  for (T* it = (fixed_array_base<T>::end() + (n - 1)); it != (position + (n - 1)); --it)
+  else
   {
-    *it = *(it - n);
+    node* lhs = position.mNodePtr->prev;
+    node* nd = NULL;
+    const_iterator it = first;
+    
+    if (NULL == lhs)
+    {
+       nd = mPool.allocate();
+       nd->val = *it;
+       nd->prev = NULL;
+       mHead = lhs = nd;
+       ++it;
+    }
+    
+    while (it != last)
+       {
+          nd = mPool.allocate();
+          nd->val = *it;
+          nd->prev = lhs;
+          lhs->next = nd;
+          lhs = nd;
+          ++it;
+       }
+    
+    nd->next = position.mNodePtr;
+    position.mNodePtr->prev = nd;
   }
-
-  //Insert the new elements into the remaining space.
-  for (T* it = position; it != (position + n); ++it)
-  {
-    *it = *(first++);
-  }
-
-  this->mSize += n;*/
 }
 
 template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_base<T, Pool>::iterator position,
     const T* first, const T* last)
 {
-  /*size_t n = last - first;
-  if ((this->mSize + n) > mCapacity)
+  if (NULL == position.mNodePtr)
   {
-    throw std::runtime_error("fixed_list: insert() fill range exceeds capacity");
+    //List is empty, or we are inserting at the end of the list.
+    for (const T* it = first; it != last;++it)
+    {
+      push_back(*it);
+    }
   }
-
-  //Slide everything to the right 'n' spaces to make room for the new elements.
-  for (T* it = (fixed_array_base<T>::end() + (n - 1)); it != (position + (n - 1)); --it)
+  else
   {
-    *it = *(it - n);
+    node* lhs = position.mNodePtr->prev;
+    node* nd = NULL;
+    const T* it = first;
+    
+    if (NULL == lhs)
+    {
+       nd = mPool.allocate();
+       nd->val = *it;
+       nd->prev = NULL;
+       mHead = lhs = nd;
+       ++it;
+    }
+    
+    while (it != last)
+       {
+          nd = mPool.allocate();
+          nd->val = *it;
+          nd->prev = lhs;
+          lhs->next = nd;
+          lhs = nd;
+          ++it;
+       }
+    
+    nd->next = position.mNodePtr;
+    position.mNodePtr->prev = nd;
   }
-
-  //Insert the new elements into the remaining space.
-  for (T* it = position; it != (position + n); ++it)
-  {
-    *it = *(first++);
-  }
-
-  this->mSize += n;*/
 }
 
 template<class T, class Pool> size_t fixed_list_base<T, Pool>::max_size() const
