@@ -3,8 +3,9 @@
 #include <allocation_guard.h>
 #include <string>
 
-class guarded_class: public allocation_guard
+struct guarded_class: public allocation_guard
 {
+  char data[256];
 };
 
 class allocation_guard_test: public CxxTest::TestSuite
@@ -28,6 +29,11 @@ public:
 
     allocation_guard::disable();
     TS_ASSERT_THROWS_NOTHING(ptr = new guarded_class);
+    //Ensure the object is allocated by writing to it and not getting a seg fault.
+    for (int i=0;i<256;++i)
+    {
+      ptr->data[i]=(char)i;
+    }
     delete ptr;
   }
 

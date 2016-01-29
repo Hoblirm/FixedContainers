@@ -9,6 +9,7 @@ class fixed_vector_base: public fixed_array_base<T>
 public:
 
   void assign(size_t size, const T& val);
+  //TODO: Get template to work with fixed_vector assign() to use multiple iterators.
   void assign(const T* first, const T* last);
 
   size_t capacity() const;
@@ -18,6 +19,7 @@ public:
   T* erase(T* first, T* last);
   T* insert(T* position, const T& val);
   void insert(T* position, size_t n, const T& val);
+  //TODO: Get template to work with fixed_vector insert() to use multiple iterators.
   void insert(T* position, const T* first, const T* last);
   size_t max_size() const;
   fixed_vector_base<T>& operator=(const fixed_vector_base<T>& obj);
