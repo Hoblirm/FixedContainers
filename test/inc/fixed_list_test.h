@@ -239,38 +239,41 @@ public:
     TS_ASSERT_EQUALS(*(i++), 100);
     TS_ASSERT_EQUALS(*(i++), 100);
 
-    /*
+
     // "it" no longer valid, get a new one:
     it = mylist.begin();
-    fixed_list<int, 16> anothervector(2, 400);
-    mylist.insert(it + 2, anothervector.begin(), anothervector.end());
+    ++it;
+    ++it;
+    fixed_list<int, 16> anotherlist(2, 400);
+    mylist.insert(it, anotherlist.begin(), anotherlist.end());
     TS_ASSERT_EQUALS(mylist.size(), 8);
-    it = mylist.begin();
-    TS_ASSERT_EQUALS(*(it++), 300);
-    TS_ASSERT_EQUALS(*(it++), 300);
-    TS_ASSERT_EQUALS(*(it++), 400);
-    TS_ASSERT_EQUALS(*(it++), 400);
-    TS_ASSERT_EQUALS(*(it++), 200);
-    TS_ASSERT_EQUALS(*(it++), 100);
-    TS_ASSERT_EQUALS(*(it++), 100);
-    TS_ASSERT_EQUALS(*(it++), 100);
+    i = mylist.begin();
+    TS_ASSERT_EQUALS(*(i++), 300);
+    TS_ASSERT_EQUALS(*(i++), 300);
+    TS_ASSERT_EQUALS(*(i++), 400);
+    TS_ASSERT_EQUALS(*(i++), 400);
+    TS_ASSERT_EQUALS(*(i++), 200);
+    TS_ASSERT_EQUALS(*(i++), 100);
+    TS_ASSERT_EQUALS(*(i++), 100);
+    TS_ASSERT_EQUALS(*(i++), 100);
 
     int myarray[] = { 501, 502, 503, 12, 13, 14, 15, 16, 17 };
-    TS_ASSERT_THROWS(mylist.insert(mylist.begin(), myarray, myarray + 9), std::runtime_error);
     mylist.insert(mylist.begin(), myarray, myarray + 3);
     TS_ASSERT_EQUALS(mylist.size(), 11);
-    it = mylist.begin();
-    TS_ASSERT_EQUALS(*(it++), 501);
-    TS_ASSERT_EQUALS(*(it++), 502);
-    TS_ASSERT_EQUALS(*(it++), 503);
-    TS_ASSERT_EQUALS(*(it++), 300);
-    TS_ASSERT_EQUALS(*(it++), 300);
-    TS_ASSERT_EQUALS(*(it++), 400);
-    TS_ASSERT_EQUALS(*(it++), 400);
-    TS_ASSERT_EQUALS(*(it++), 200);
-    TS_ASSERT_EQUALS(*(it++), 100);
-    TS_ASSERT_EQUALS(*(it++), 100);
-    TS_ASSERT_EQUALS(*(it++), 100);*/
+    i = mylist.begin();
+    TS_ASSERT_EQUALS(*(i++), 501);
+    TS_ASSERT_EQUALS(*(i++), 502);
+    TS_ASSERT_EQUALS(*(i++), 503);
+    TS_ASSERT_EQUALS(*(i++), 300);
+    TS_ASSERT_EQUALS(*(i++), 300);
+    TS_ASSERT_EQUALS(*(i++), 400);
+    TS_ASSERT_EQUALS(*(i++), 400);
+    TS_ASSERT_EQUALS(*(i++), 200);
+    TS_ASSERT_EQUALS(*(i++), 100);
+    TS_ASSERT_EQUALS(*(i++), 100);
+    TS_ASSERT_EQUALS(*(i++), 100);
+
+    TS_ASSERT_THROWS(mylist.insert(mylist.begin(), myarray, myarray + 9), std::runtime_error);
   }
 
   void test_max_size(void)
