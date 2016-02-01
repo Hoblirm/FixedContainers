@@ -7,7 +7,7 @@ template<class T> class fixed_pool_base: allocation_guard
 {
 public:
   T* allocate();
-  T* allocate_no_throw();
+  T* allocate_no_throw();//TODO should probably make protected... though not until list inherits from this class.
   void deallocate(T* ptr);
 
   size_t outstanding() const;

@@ -4,7 +4,7 @@
 #include <fixed_pool.h>
 #include <fixed_list_iterator.h>
 
-template<class T, class Pool> class fixed_list_base: public allocation_guard
+template<class T, class Alloc = std::allocator<fixed_list_node<T> > > class fixed_list_base: public allocation_guard
 {
 public:
   typedef T value_type;
@@ -39,6 +39,8 @@ public:
   iterator erase(iterator position);
   iterator erase(iterator first, iterator last);
 
+  bool fixed() const;
+
   reference front();
   const_reference front() const;
 
@@ -50,7 +52,7 @@ public:
 
   size_t max_size() const;
 
-  fixed_list_base<T, Pool>& operator=(const fixed_list_base<T, Pool>& obj);
+  fixed_list_base<T, Alloc>& operator=(const fixed_list_base<T, Alloc>& obj);
 
   void pop_back();
   void pop_front();
@@ -63,38 +65,36 @@ public:
   const_reverse_iterator rend() const;
 
   size_t size() const;
-  void swap(fixed_list_base<T, Pool>& obj);
+  void swap(fixed_list_base<T, Alloc>& obj);
 
 protected:
   fixed_list_base();
-  fixed_list_base(size_t size);
+  fixed_list_base(fixed_pool_base<fixed_list_node<T> >* pool_ptr);
 
   node* mHead;
   node* mTail;
+  size_t mSize; //TODO we could inherit (or pull in...) the fixed pool which would remove the need for this extra variable.  Size of mPool is used for fixed lists, while this variable is only use for expandable lists.
+  fixed_pool_base<fixed_list_node<T> >* mPool;
 
 private:
   void push_back_no_throw(const_reference val);
-protected:
-  Pool mPool;
-  //**Note: The mPool member must be defined last!  This template class is different between specialized versions of fixed_list.
-  // Since the size varies, it is critical that this variable is defined at the end to allow casting between the specialized and non-specialized lists.
 };
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::assign(size_t size,
-    fixed_list_base<T, Pool>::const_reference val)
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::assign(size_t rsize,
+    fixed_list_base<T, Alloc>::const_reference val)
 {
-  if (size > mPool.max_size())
+  if (rsize > max_size())
   {
     throw std::runtime_error("fixed_list: assign() fill range exceeds capacity");
   }
 
-  if (mPool.outstanding() < size)
+  if (size() < rsize)
   {
     for (iterator it = begin(); it != end(); ++it)
     {
       *it = val;
     }
-    while (mPool.outstanding() < size)
+    while (size() < rsize)
     {
       //Capacity check done above. Safe to do the faster no_throw method.
       push_back_no_throw(val);
@@ -103,29 +103,29 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::assign(size_t size,
   else
   {
     iterator it = begin();
-    for (int i = 0; i < size; ++i)
+    for (int i = 0; i < rsize; ++i)
     {
       *(it++) = val;
     }
-    while (mPool.outstanding() > size)
+    while (size() > rsize)
     {
       pop_back();
     }
   }
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::assign(fixed_list_base<T, Pool>::const_iterator first,
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::assign(fixed_list_base<T, Alloc>::const_iterator first,
     fixed_list_base::const_iterator last)
 {
-  typename fixed_list_base<T, Pool>::iterator lit = begin();
-  typename fixed_list_base<T, Pool>::const_iterator rit = first;
+  typename fixed_list_base<T, Alloc>::iterator lit = begin();
+  typename fixed_list_base<T, Alloc>::const_iterator rit = first;
   size_t rsize = 0;
   while ((lit != end()) && (rit != last))
   {
     *(lit++) = *(rit++);
     ++rsize;
   }
-  while (mPool.outstanding() > rsize)
+  while (size() > rsize)
   {
     pop_back();
   }
@@ -135,9 +135,9 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::assign(fixed_list_b
   }
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::assign(const T* first, const T* last)
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::assign(const T* first, const T* last)
 {
-  typename fixed_list_base<T, Pool>::iterator lit = begin();
+  typename fixed_list_base<T, Alloc>::iterator lit = begin();
   const T* rit = first;
   size_t rsize = 0;
   while ((lit != end()) && (rit != last))
@@ -145,7 +145,7 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::assign(const T* fir
     *(lit++) = *(rit++);
     ++rsize;
   }
-  while (mPool.outstanding() > rsize)
+  while (size() > rsize)
   {
     pop_back();
   }
@@ -155,64 +155,64 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::assign(const T* fir
   }
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::reference fixed_list_base<T, Pool>::back()
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::reference fixed_list_base<T, Alloc>::back()
 {
   return mTail->val;
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::const_reference fixed_list_base<T, Pool>::back() const
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_reference fixed_list_base<T, Alloc>::back() const
 {
   return mTail->val;
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_list_base<T, Pool>::begin()
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::iterator fixed_list_base<T, Alloc>::begin()
 {
-  return typename fixed_list_base<T, Pool>::iterator(mHead);
+  return typename fixed_list_base<T, Alloc>::iterator(mHead);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::const_iterator fixed_list_base<T, Pool>::begin() const
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_iterator fixed_list_base<T, Alloc>::begin() const
 {
 
-  return typename fixed_list_base<T, Pool>::const_iterator(mHead);
+  return typename fixed_list_base<T, Alloc>::const_iterator(mHead);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::const_iterator fixed_list_base<T, Pool>::cbegin() const
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_iterator fixed_list_base<T, Alloc>::cbegin() const
 {
-  return typename fixed_list_base<T, Pool>::const_iterator(mHead);
+  return typename fixed_list_base<T, Alloc>::const_iterator(mHead);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::const_iterator fixed_list_base<T, Pool>::cend() const
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_iterator fixed_list_base<T, Alloc>::cend() const
 {
-  return typename fixed_list_base<T, Pool>::const_iterator(NULL);
+  return typename fixed_list_base<T, Alloc>::const_iterator(NULL);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::const_reverse_iterator fixed_list_base<T, Pool>::crbegin() const
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_reverse_iterator fixed_list_base<T, Alloc>::crbegin() const
 {
   return fixed_list_const_reverse_iterator<T>(mTail);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::const_reverse_iterator fixed_list_base<T, Pool>::crend() const
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_reverse_iterator fixed_list_base<T, Alloc>::crend() const
 {
   return fixed_list_const_reverse_iterator<T>(NULL);
 }
 
-template<class T, class Pool> bool fixed_list_base<T, Pool>::empty() const
+template<class T, class Alloc> bool fixed_list_base<T, Alloc>::empty() const
 {
-  return (0 == mPool.outstanding());
+  return (0 == size());
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_list_base<T, Pool>::end()
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::iterator fixed_list_base<T, Alloc>::end()
 {
-  return typename fixed_list_base<T, Pool>::iterator(NULL);
+  return typename fixed_list_base<T, Alloc>::iterator(NULL);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::const_iterator fixed_list_base<T, Pool>::end() const
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_iterator fixed_list_base<T, Alloc>::end() const
 {
-  return typename fixed_list_base<T, Pool>::const_iterator(NULL);
+  return typename fixed_list_base<T, Alloc>::const_iterator(NULL);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_list_base<T, Pool>::erase(
-    typename fixed_list_base<T, Pool>::iterator position)
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::iterator fixed_list_base<T, Alloc>::erase(
+    typename fixed_list_base<T, Alloc>::iterator position)
 {
   node* lhs = position.mNodePtr->prev;
   node* rhs = position.mNodePtr->next;
@@ -235,13 +235,13 @@ template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_
     mTail = lhs;  //tail is being erased; must update
   }
 
-  mPool.deallocate(position.mNodePtr);
+  mPool->deallocate(position.mNodePtr);
 
   return iterator(rhs);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_list_base<T, Pool>::erase(
-    typename fixed_list_base<T, Pool>::iterator first, typename fixed_list_base<T, Pool>::iterator last)
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::iterator fixed_list_base<T, Alloc>::erase(
+    typename fixed_list_base<T, Alloc>::iterator first, typename fixed_list_base<T, Alloc>::iterator last)
 {
   node* lhs = first.mNodePtr->prev;
   node* rhs = last.mNodePtr;
@@ -266,26 +266,31 @@ template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_
 
   for (iterator it = first; it != last; ++it)
   {
-    mPool.deallocate(it.mNodePtr);
+    mPool->deallocate(it.mNodePtr);
   }
 
   return last;
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::reference fixed_list_base<T, Pool>::front()
+template<class T, class Alloc> bool fixed_list_base<T, Alloc>::fixed() const
+{
+  return (NULL != mPool);
+}
+
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::reference fixed_list_base<T, Alloc>::front()
 {
   return mHead->val;
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::const_reference fixed_list_base<T, Pool>::front() const
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_reference fixed_list_base<T, Alloc>::front() const
 {
   return mHead->val;
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_list_base<T, Pool>::insert(
-    typename fixed_list_base<T, Pool>::iterator position, typename fixed_list_base<T, Pool>::const_reference val)
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::iterator fixed_list_base<T, Alloc>::insert(
+    typename fixed_list_base<T, Alloc>::iterator position, typename fixed_list_base<T, Alloc>::const_reference val)
 {
-  if (mPool.outstanding() == mPool.max_size())
+  if (size() == max_size())
   {
     throw std::runtime_error("fixed_list: insert() called when size was at capacity");
   }
@@ -298,18 +303,18 @@ template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_
   else
   {
     node* lhs = position.mNodePtr->prev;
-    node* nd = mPool.allocate_no_throw();
+    node* nd = mPool->allocate_no_throw();
     nd->val = val;
     nd->next = position.mNodePtr;
     position.mNodePtr->prev = nd;
-      
+
     if (NULL != lhs)
     {
       nd->prev = lhs;
       lhs->next = nd;
     }
     else
-    {      
+    {
       nd->prev = NULL;
       mHead = nd;
       //list cannot be empty due to position NULL check; therefore tail doesn't need to be examined
@@ -320,11 +325,11 @@ template<class T, class Pool> typename fixed_list_base<T, Pool>::iterator fixed_
   return position;
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_base<T, Pool>::iterator position,
-    size_t n, fixed_list_base<T, Pool>::const_reference val)
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::insert(fixed_list_base<T, Alloc>::iterator position,
+    size_t n, fixed_list_base<T, Alloc>::const_reference val)
 {
-  size_t size = mPool.outstanding() + n;
-  if (size > mPool.max_size())
+  size_t rsize = size() + n;
+  if (rsize > max_size())
   {
     throw std::runtime_error("fixed_list: insert() fill range exceeds capacity");
   }
@@ -332,7 +337,7 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_b
   if (NULL == position.mNodePtr)
   {
     //List is empty, or we are inserting at the end of the list.
-    while (mPool.outstanding() < size)
+    while (size() < rsize)
     {
       push_back_no_throw(val);
     }
@@ -342,35 +347,35 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_b
     node* lhs = position.mNodePtr->prev;
     node* nd = NULL;
     for (size_t i = 0; i < n; ++i)
-       {
-          nd = mPool.allocate_no_throw();
-          nd->val = val;
-          nd->next = position.mNodePtr;
-          position.mNodePtr->prev = nd;
-          position.mNodePtr = nd;
-       }
-    
+    {
+      nd = mPool->allocate_no_throw();
+      nd->val = val;
+      nd->next = position.mNodePtr;
+      position.mNodePtr->prev = nd;
+      position.mNodePtr = nd;
+    }
+
     if (NULL != lhs)
     {
-       nd->prev = lhs;
-       lhs->next = nd;
+      nd->prev = lhs;
+      lhs->next = nd;
     }
     else
     {
-       nd->prev = NULL;
-       mHead = nd;
+      nd->prev = NULL;
+      mHead = nd;
       //list cannot be empty due to position NULL check; therefore tail doesn't need to be examined
     }
   }
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_base<T, Pool>::iterator position,
-    fixed_list_base<T, Pool>::const_iterator first, fixed_list_base<T, Pool>::const_iterator last)
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::insert(fixed_list_base<T, Alloc>::iterator position,
+    fixed_list_base<T, Alloc>::const_iterator first, fixed_list_base<T, Alloc>::const_iterator last)
 {
   if (NULL == position.mNodePtr)
   {
     //List is empty, or we are inserting at the end of the list.
-    for (const_iterator it = first; it != last;++it)
+    for (const_iterator it = first; it != last; ++it)
     {
       push_back(*it);
     }
@@ -380,38 +385,38 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_b
     node* lhs = position.mNodePtr->prev;
     node* nd = NULL;
     const_iterator it = first;
-    
+
     if (NULL == lhs)
     {
-       nd = mPool.allocate();
-       nd->val = *it;
-       nd->prev = NULL;
-       mHead = lhs = nd;
-       ++it;
+      nd = mPool->allocate();
+      nd->val = *it;
+      nd->prev = NULL;
+      mHead = lhs = nd;
+      ++it;
     }
-    
+
     while (it != last)
-       {
-          nd = mPool.allocate();
-          nd->val = *it;
-          nd->prev = lhs;
-          lhs->next = nd;
-          lhs = nd;
-          ++it;
-       }
-    
+    {
+      nd = mPool->allocate();
+      nd->val = *it;
+      nd->prev = lhs;
+      lhs->next = nd;
+      lhs = nd;
+      ++it;
+    }
+
     nd->next = position.mNodePtr;
     position.mNodePtr->prev = nd;
   }
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_base<T, Pool>::iterator position,
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::insert(fixed_list_base<T, Alloc>::iterator position,
     const T* first, const T* last)
 {
   if (NULL == position.mNodePtr)
   {
     //List is empty, or we are inserting at the end of the list.
-    for (const T* it = first; it != last;++it)
+    for (const T* it = first; it != last; ++it)
     {
       push_back(*it);
     }
@@ -421,44 +426,52 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::insert(fixed_list_b
     node* lhs = position.mNodePtr->prev;
     node* nd = NULL;
     const T* it = first;
-    
+
     if (NULL == lhs)
     {
-       nd = mPool.allocate();
-       nd->val = *it;
-       nd->prev = NULL;
-       mHead = lhs = nd;
-       ++it;
+      nd = mPool->allocate();
+      nd->val = *it;
+      nd->prev = NULL;
+      mHead = lhs = nd;
+      ++it;
     }
-    
+
     while (it != last)
-       {
-          nd = mPool.allocate();
-          nd->val = *it;
-          nd->prev = lhs;
-          lhs->next = nd;
-          lhs = nd;
-          ++it;
-       }
-    
+    {
+      nd = mPool->allocate();
+      nd->val = *it;
+      nd->prev = lhs;
+      lhs->next = nd;
+      lhs = nd;
+      ++it;
+    }
+
     nd->next = position.mNodePtr;
     position.mNodePtr->prev = nd;
   }
 }
 
-template<class T, class Pool> size_t fixed_list_base<T, Pool>::max_size() const
+template<class T, class Alloc> size_t fixed_list_base<T, Alloc>::max_size() const
 {
-  return mPool.max_size();
+  if (NULL == mPool)
+  {
+    Alloc alloc;
+    return alloc.max_size();
+  }
+  else
+  {
+    return mPool->max_size();
+  }
 }
 
-template<class T, class Pool> fixed_list_base<T, Pool>& fixed_list_base<T, Pool>::operator=(
-    const fixed_list_base<T, Pool>& obj)
+template<class T, class Alloc> fixed_list_base<T, Alloc>& fixed_list_base<T, Alloc>::operator=(
+    const fixed_list_base<T, Alloc>& obj)
 {
   assign(obj.begin(), obj.end());
   return *this;
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::pop_back()
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::pop_back()
 {
   node* prev = mTail->prev;
   if (NULL != prev)
@@ -469,11 +482,20 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::pop_back()
   {
     mHead = NULL;
   }
-  mPool.deallocate(mTail);
+  if (NULL != mPool)
+  {
+    mPool->deallocate(mTail);
+  }
+  else
+  {
+    Alloc alloc;
+    alloc.deallocate(mTail, 1);
+    --mSize;
+  }
   mTail = prev;
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::pop_front()
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::pop_front()
 {
   node* next = mHead->next;
   if (NULL != next)
@@ -484,13 +506,22 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::pop_front()
   {
     mTail = NULL;
   }
-  mPool.deallocate(mHead);
+  if (NULL != mPool)
+  {
+    mPool->deallocate(mHead);
+  }
+  else
+  {
+    Alloc alloc;
+    alloc.deallocate(mHead, 1);
+    --mSize;
+  }
   mHead = next;
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::push_back(const T& val)
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::push_back(const T& val)
 {
-  if (mPool.outstanding() == mPool.max_size())
+  if (size() == max_size())
   {
     throw std::runtime_error("fixed_list: push_back() caused size to exceed capacity");
   }
@@ -498,9 +529,19 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::push_back(const T& 
   push_back_no_throw(val);
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::push_back_no_throw(const T& val)
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::push_back_no_throw(const T& val)
 {
-  node* nd = mPool.allocate_no_throw();
+  node* nd;
+  if (NULL != mPool)
+  {
+    nd = mPool->allocate_no_throw();
+  }
+  else
+  {
+    Alloc alloc;
+    nd = alloc.allocate(1);
+    ++mSize;
+  }
   nd->prev = mTail;
   nd->val = val;
   nd->next = NULL;
@@ -515,14 +556,24 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::push_back_no_throw(
   mTail = nd;
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::push_front(const T& val)
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::push_front(const T& val)
 {
-  if (mPool.outstanding() == mPool.max_size())
+  if (size() == max_size())
   {
     throw std::runtime_error("fixed_list: push_front() caused size to exceed capacity");
   }
 
-  node* nd = mPool.allocate_no_throw();
+  node* nd;
+  if (NULL != mPool)
+  {
+    nd = mPool->allocate_no_throw();
+  }
+  else
+  {
+    Alloc alloc;
+    nd = alloc.allocate(1);
+    ++mSize;
+  }
   nd->next = mHead;
   nd->val = val;
   nd->prev = NULL;
@@ -537,45 +588,52 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::push_front(const T&
   mHead = nd;
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::reverse_iterator fixed_list_base<T, Pool>::rbegin()
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::reverse_iterator fixed_list_base<T, Alloc>::rbegin()
 {
   return fixed_list_reverse_iterator<T>(mTail);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::const_reverse_iterator fixed_list_base<T, Pool>::rbegin() const
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_reverse_iterator fixed_list_base<T, Alloc>::rbegin() const
 {
   return fixed_list_const_reverse_iterator<T>(mTail);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::reverse_iterator fixed_list_base<T, Pool>::rend()
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::reverse_iterator fixed_list_base<T, Alloc>::rend()
 {
   return fixed_list_reverse_iterator<T>(NULL);
 }
 
-template<class T, class Pool> typename fixed_list_base<T, Pool>::const_reverse_iterator fixed_list_base<T, Pool>::rend() const
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_reverse_iterator fixed_list_base<T, Alloc>::rend() const
 {
   return fixed_list_const_reverse_iterator<T>(NULL);
 }
 
-template<class T, class Pool> size_t fixed_list_base<T, Pool>::size() const
+template<class T, class Alloc> size_t fixed_list_base<T, Alloc>::size() const
 {
-  return mPool.outstanding();
+  if (mPool)
+  {
+    return mPool->outstanding();
+  }
+  else
+  {
+    return mSize;
+  }
 }
 
-template<class T, class Pool> void fixed_list_base<T, Pool>::swap(fixed_list_base<T, Pool>& obj)
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::swap(fixed_list_base<T, Alloc>& obj)
 {
-  if ((obj.size() > mPool.max_size()) || (mPool.outstanding() > obj.max_size()))
+  if ((obj.size() > max_size()) || (size() > obj.max_size()))
   {
     throw std::runtime_error("fixed_list: swap() parameters' size exceed capacity");
   }
 
-  size_t lsize = mPool.outstanding();
+  size_t lsize = size();
   size_t rsize = obj.size();
   if (lsize < rsize)
   {
     T tmp;
-    typename fixed_list_base<T, Pool>::iterator lit = begin();
-    typename fixed_list_base<T, Pool>::iterator rit = obj.begin();
+    typename fixed_list_base<T, Alloc>::iterator lit = begin();
+    typename fixed_list_base<T, Alloc>::iterator rit = obj.begin();
     while (lit != end())
     {
       tmp = *lit;
@@ -585,16 +643,16 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::swap(fixed_list_bas
       ++rit;
     }
 
-    typename fixed_list_base<T, Pool>::reverse_iterator rrit = obj.rbegin();
-    while (mPool.outstanding() < rsize)
+    typename fixed_list_base<T, Alloc>::reverse_iterator rrit = obj.rbegin();
+    while (size() < rsize)
     {
       //Capacity check done at the top of method. Safe to do the faster no_throw method.
       push_back_no_throw(*(rrit++));
       obj.pop_back();
     }
-    /*while (mPool.outstanding < rsize)
+    /*while (mPool->outstanding < rsize)
      {
-     mPool.push_back(*(rit++));
+     mPool->push_back(*(rit++));
      }
      while (obj.size() > lsize)
      {
@@ -604,8 +662,8 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::swap(fixed_list_bas
   else
   {
     T tmp;
-    typename fixed_list_base<T, Pool>::iterator lit = begin();
-    typename fixed_list_base<T, Pool>::iterator rit = obj.begin();
+    typename fixed_list_base<T, Alloc>::iterator lit = begin();
+    typename fixed_list_base<T, Alloc>::iterator rit = obj.begin();
     while (rit != obj.end())
     {
       tmp = *lit;
@@ -615,7 +673,7 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::swap(fixed_list_bas
       ++rit;
     }
 
-    typename fixed_list_base<T, Pool>::reverse_iterator rlit = rbegin();
+    typename fixed_list_base<T, Alloc>::reverse_iterator rlit = rbegin();
     while (obj.size() < lsize)
     {
       //Capacity check done at the top of method. Safe to do the faster no_throw method.
@@ -626,7 +684,7 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::swap(fixed_list_bas
      {
      obj.push_back(*(rlit++));
      }
-     while (mPool.outstanding() > rsize)
+     while (size() > rsize)
      {
      pop_back();
      }*/
@@ -634,18 +692,18 @@ template<class T, class Pool> void fixed_list_base<T, Pool>::swap(fixed_list_bas
 
 }
 
-template<class T, class Pool> fixed_list_base<T, Pool>::fixed_list_base() :
-    mHead(NULL), mTail(NULL), mPool()
+template<class T, class Alloc> fixed_list_base<T, Alloc>::fixed_list_base() :
+    mHead(NULL), mTail(NULL), mSize(0), mPool(NULL)
 {
 }
 
-template<class T, class Pool> fixed_list_base<T, Pool>::fixed_list_base(size_t size) :
-    mHead(NULL), mTail(NULL), mPool(size)
+template<class T, class Alloc> fixed_list_base<T, Alloc>::fixed_list_base(fixed_pool_base<fixed_list_node<T> > *pool_ptr) :
+    mHead(NULL), mTail(NULL), mSize(0), mPool(pool_ptr)
 {
 }
 
-template<class T, class Pool>
-bool operator==(const fixed_list_base<T, Pool>& lhs, const fixed_list_base<T, Pool>& rhs)
+template<class T, class Alloc>
+bool operator==(const fixed_list_base<T, Alloc>& lhs, const fixed_list_base<T, Alloc>& rhs)
 {
   if (lhs.size() != rhs.size())
   {
@@ -653,8 +711,8 @@ bool operator==(const fixed_list_base<T, Pool>& lhs, const fixed_list_base<T, Po
   }
   else
   {
-    typename fixed_list_base<T, Pool>::const_iterator lit = lhs.begin();
-    typename fixed_list_base<T, Pool>::const_iterator rit = rhs.begin();
+    typename fixed_list_base<T, Alloc>::const_iterator lit = lhs.begin();
+    typename fixed_list_base<T, Alloc>::const_iterator rit = rhs.begin();
     while (lit != lhs.end())
     {
       if (*(lit++) != *(rit++))
@@ -666,13 +724,13 @@ bool operator==(const fixed_list_base<T, Pool>& lhs, const fixed_list_base<T, Po
   }
 }
 
-template<class T, class Pool>
-bool operator<(const fixed_list_base<T, Pool>& lhs, const fixed_list_base<T, Pool>& rhs)
+template<class T, class Alloc>
+bool operator<(const fixed_list_base<T, Alloc>& lhs, const fixed_list_base<T, Alloc>& rhs)
 {
   if (lhs.size() < rhs.size())
   {
-    typename fixed_list_base<T, Pool>::const_iterator lit = lhs.begin();
-    typename fixed_list_base<T, Pool>::const_iterator rit = rhs.begin();
+    typename fixed_list_base<T, Alloc>::const_iterator lit = lhs.begin();
+    typename fixed_list_base<T, Alloc>::const_iterator rit = rhs.begin();
     while (lit != lhs.end())
     {
       if (*lit < *rit)
@@ -690,8 +748,8 @@ bool operator<(const fixed_list_base<T, Pool>& lhs, const fixed_list_base<T, Poo
   }
   else
   {
-    typename fixed_list_base<T, Pool>::const_iterator lit = lhs.begin();
-    typename fixed_list_base<T, Pool>::const_iterator rit = rhs.begin();
+    typename fixed_list_base<T, Alloc>::const_iterator lit = lhs.begin();
+    typename fixed_list_base<T, Alloc>::const_iterator rit = rhs.begin();
     while (rit != rhs.end())
     {
       if (*lit < *rit)
@@ -709,26 +767,26 @@ bool operator<(const fixed_list_base<T, Pool>& lhs, const fixed_list_base<T, Poo
   }
 }
 
-template<class T, class Pool>
-bool operator!=(const fixed_list_base<T, Pool>& lhs, const fixed_list_base<T, Pool>& rhs)
+template<class T, class Alloc>
+bool operator!=(const fixed_list_base<T, Alloc>& lhs, const fixed_list_base<T, Alloc>& rhs)
 {
   return !(lhs == rhs);
 }
 
-template<class T, class Pool>
-bool operator>(const fixed_list_base<T, Pool>& lhs, const fixed_list_base<T, Pool>& rhs)
+template<class T, class Alloc>
+bool operator>(const fixed_list_base<T, Alloc>& lhs, const fixed_list_base<T, Alloc>& rhs)
 {
   return rhs < lhs;
 }
 
-template<class T, class Pool>
-bool operator<=(const fixed_list_base<T, Pool>& lhs, const fixed_list_base<T, Pool>& rhs)
+template<class T, class Alloc>
+bool operator<=(const fixed_list_base<T, Alloc>& lhs, const fixed_list_base<T, Alloc>& rhs)
 {
   return !(rhs < lhs);
 }
 
-template<class T, class Pool>
-bool operator>=(const fixed_list_base<T, Pool>& lhs, const fixed_list_base<T, Pool>& rhs)
+template<class T, class Alloc>
+bool operator>=(const fixed_list_base<T, Alloc>& lhs, const fixed_list_base<T, Alloc>& rhs)
 {
   return !(lhs < rhs);
 }

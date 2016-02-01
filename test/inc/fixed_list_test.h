@@ -10,7 +10,7 @@ public:
   {
     fixed_list<int, 7> first;
     fixed_list<int, 5> second;
-    fixed_list<int> third(3);
+    fixed_list<int> third;
 
     TS_ASSERT_THROWS(first.assign(8, 100), std::runtime_error);
     first.assign(7, 100);             // 7 ints with a value of 100
@@ -54,7 +54,7 @@ public:
   {
     unsigned size = 3;
     int ary[] = { 0, 1, 2 };
-    fixed_list<int> a(size, ary, ary + 3);
+    fixed_list<int> a(ary, ary + 3);
     TS_ASSERT_EQUALS(a.back(), size - 1);
   }
 
@@ -62,7 +62,7 @@ public:
   {
     unsigned size = 3;
     int ary[3] = { 0, 1, 2 };
-    const fixed_list<int> a(size, ary, ary + 3);
+    const fixed_list<int> a(ary, ary + 3);
     TS_ASSERT_EQUALS(a.back(), size - 1);
   }
 
@@ -70,7 +70,7 @@ public:
   {
     unsigned size = 3;
     int ary[] = { 0, 1, 2 };
-    fixed_list<int> a(size, ary, ary + 3);
+    fixed_list<int> a(ary, ary + 3);
 
     int i = 0;
     for (fixed_list<int>::iterator it = a.begin(); it != a.end(); ++it)
@@ -87,7 +87,7 @@ public:
     unsigned size = 3;
 
     int ary[3] = { 0, 1, 2 };
-    const fixed_list<int> a(size, ary, ary + 3);
+    const fixed_list<int> a(ary, ary + 3);
 
     int i = 0;
     for (fixed_list<int>::const_iterator it = a.begin(); it != a.end(); ++it)
@@ -103,7 +103,7 @@ public:
     unsigned size = 3;
 
     int ary[3] = { 0, 1, 2 };
-    const fixed_list<int> a(size, ary, ary + 3);
+    const fixed_list<int> a(ary, ary + 3);
 
     int i = 0;
     for (fixed_list<int>::const_iterator it = a.cbegin(); it != a.cend(); ++it)
@@ -119,7 +119,7 @@ public:
     unsigned size = 3;
 
     int ary[3] = { 0, 1, 2 };
-    const fixed_list<int> a(size, ary, ary + 3);
+    const fixed_list<int> a(ary, ary + 3);
 
     int i = size - 1;
     for (fixed_list<int>::const_reverse_iterator it = a.crbegin(); it != a.crend(); ++it)
@@ -199,7 +199,7 @@ public:
   {
     unsigned size = 3;
     int ary[] = { 3, 2, 1 };
-    fixed_list<int> a(size, ary, ary + 3);
+    fixed_list<int> a(ary, ary + 3);
     TS_ASSERT_EQUALS(a.front(), size);
   }
 
@@ -207,13 +207,13 @@ public:
   {
     unsigned size = 3;
     int ary[3] = { 3, 2, 1 };
-    const fixed_list<int> a(size, ary, ary + 3);
+    const fixed_list<int> a(ary, ary + 3);
     TS_ASSERT_EQUALS(a.front(), size);
   }
 
   void test_insert(void)
   {
-    fixed_list<int> emptylist(0);
+    fixed_list<int> emptylist;
     TS_ASSERT_THROWS(emptylist.insert(emptylist.begin(), 1), std::runtime_error);
 
     fixed_list<int, 16> mylist(3, 100);
@@ -279,7 +279,7 @@ public:
   void test_max_size(void)
   {
     unsigned size = 3;
-    fixed_list<int> a(size);
+    fixed_list<int> a;
     TS_ASSERT_EQUALS(a.max_size(), size);
     fixed_list<int, 3> b;
     TS_ASSERT_EQUALS(b.max_size(), size);
@@ -339,7 +339,7 @@ public:
 
     foo.assign(foo_ints, foo_ints + 3);
 
-    fixed_list<int> bar2(8, 5, 2);
+    fixed_list<int> bar2(5, 2);
     TS_ASSERT_THROWS(bar2 = larger, std::runtime_error);
 
     bar2 = foo;
@@ -426,7 +426,7 @@ public:
     unsigned size = 3;
 
     int ary[3] = { 0, 1, 2 };
-    fixed_list<int> a(size, ary, ary + 3);
+    fixed_list<int> a(ary, ary + 3);
 
     int i = size - 1;
     for (fixed_list<int>::reverse_iterator it = a.rbegin(); it != a.rend(); ++it)
@@ -443,7 +443,7 @@ public:
     unsigned size = 3;
 
     int ary[3] = { 0, 1, 2 };
-    const fixed_list<int> a(size, ary, ary + 3);
+    const fixed_list<int> a(ary, ary + 3);
 
     int i = size - 1;
     for (fixed_list<int>::const_reverse_iterator it = a.rbegin(); it != a.rend(); ++it)
@@ -457,14 +457,14 @@ public:
   void test_size(void)
   {
     unsigned size = 3;
-    const fixed_list<int> a(size, 3, 0);
+    const fixed_list<int> a(3, 0);
     TS_ASSERT_EQUALS(a.size(), size);
   }
 
   void test_swap(void)
   {
-    fixed_list<int> foo(16, 3, 100);   // three ints with a value of 100
-    fixed_list<int> bar(8, 5, 200);   // five ints with a value of 200
+    fixed_list<int,16> foo(3, 100);   // three ints with a value of 100
+    fixed_list<int> bar(5, 200);   // five ints with a value of 200
 
     foo.swap(bar);
     TS_ASSERT_EQUALS(foo.size(), 5);
@@ -581,7 +581,7 @@ public:
     unsigned size = 3;
 
     int ary[3] = { 0, 1, 2 };
-    fixed_list<int> a(size, ary, ary + 3);
+    fixed_list<int> a(ary, ary + 3);
 
     allocation_guard::enable();
     TS_ASSERT_THROWS(fixed_list<int> b(a), std::runtime_error);
