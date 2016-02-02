@@ -620,7 +620,7 @@ public:
       int bAry[5] = {10, 20, 30, 40, 50};
       int cAry[5] = {50, 40, 30, 20, 10};
       fixed_list<int, 5 > a(aAry, aAry + 5);
-      fixed_list<int, 5 > b(bAry, bAry + 5);
+      fixed_list<int> b(bAry, bAry + 5);
       fixed_list<int, 5 > c(cAry, cAry + 5);
 
       TS_ASSERT((a == b));
