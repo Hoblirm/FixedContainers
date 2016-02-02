@@ -3,7 +3,7 @@
 
 #include <limits>
 #include <allocation_guard.h>
-//TODO... maybe see if you could just inherit from std::allocator.
+
 namespace flex 
 {
   template<class T> class allocator : public allocation_guard
