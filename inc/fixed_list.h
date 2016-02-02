@@ -3,121 +3,121 @@
 
 #include <fixed_list_base.h>
 
-template<class T, size_t N = 0> class fixed_list: public fixed_list_base<T,flex::allocator<fixed_list_node<T> > >
+template<class T, size_t N = 0, class Alloc = flex::allocator<fixed_list_node<T> > > class fixed_list: public fixed_list_base<T,Alloc>
 {
 public:
   fixed_list();
   fixed_list(size_t size, const T& val = T());
   fixed_list(const T* first, const T* last);
-  fixed_list(const fixed_list<T, 0> & obj);
-  fixed_list<T, N>& operator=(const fixed_list<T, N>& obj);
-  fixed_list<T, N>& operator=(const fixed_list<T, 0>& obj);
-  operator const fixed_list<T,0>&() const;
-  operator fixed_list<T,0>&();
+  fixed_list(const fixed_list<T,0,Alloc> & obj);
+  fixed_list<T,N,Alloc>& operator=(const fixed_list<T,N,Alloc>& obj);
+  fixed_list<T,N,Alloc>& operator=(const fixed_list<T,0,Alloc>& obj);
+  operator const fixed_list<T,0,Alloc>&() const;
+  operator fixed_list<T,0,Alloc>&();
 private:
   fixed_pool<fixed_list_node<T>,N> mPool;
 };
 
-template<class T, size_t N> fixed_list<T, N>::fixed_list() :
-    fixed_list_base<T,flex::allocator<fixed_list_node<T> > >(&mPool)
+template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>::fixed_list() :
+    fixed_list_base<T,Alloc >(&mPool)
 {
 }
 
-template<class T, size_t N> fixed_list<T, N>::fixed_list(size_t size, const T& val) :
-    fixed_list_base<T,flex::allocator<fixed_list_node<T> > >(&mPool)
+template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>::fixed_list(size_t size, const T& val) :
+    fixed_list_base<T,Alloc >(&mPool)
 {
-  fixed_list_base<T,flex::allocator<fixed_list_node<T> > >::assign(size,val);
+  fixed_list_base<T,Alloc >::assign(size,val);
 }
 
-template<class T, size_t N> fixed_list<T, N>::fixed_list(const T* first, const T* last) :
-    fixed_list_base<T,flex::allocator<fixed_list_node<T> > >(&mPool)
+template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>::fixed_list(const T* first, const T* last) :
+    fixed_list_base<T,Alloc >(&mPool)
 {
-  fixed_list_base<T,flex::allocator<fixed_list_node<T> > >::assign(first,last);
+  fixed_list_base<T,Alloc >::assign(first,last);
 }
 
-template<class T, size_t N> fixed_list<T, N>::fixed_list(const fixed_list<T, 0> & obj) :
-    fixed_list_base<T,flex::allocator<fixed_list_node<T> > >(&mPool)
+template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>::fixed_list(const fixed_list<T,0,Alloc> & obj) :
+    fixed_list_base<T,Alloc >(&mPool)
 {
   *this = obj;
 }
 
-template<class T, size_t N> fixed_list<T, N>& fixed_list<T, N>::operator=(const fixed_list<T, N>& obj)
+template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>& fixed_list<T,N,Alloc>::operator=(const fixed_list<T,N,Alloc>& obj)
 {
-  fixed_list_base<T,flex::allocator<fixed_list_node<T> > >::assign(obj.begin(),obj.end());
+  fixed_list_base<T,Alloc >::assign(obj.begin(),obj.end());
   return *this;
 }
 
-template<class T, size_t N> fixed_list<T, N>& fixed_list<T, N>::operator=(const fixed_list<T, 0>& obj)
+template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>& fixed_list<T,N,Alloc>::operator=(const fixed_list<T,0,Alloc>& obj)
 {
-  fixed_list_base<T,flex::allocator<fixed_list_node<T> > >::assign(obj.begin(),obj.end());
+  fixed_list_base<T,Alloc >::assign(obj.begin(),obj.end());
   return *this;
 }
 
-template<class T, size_t N> fixed_list<T, N>::operator const fixed_list<T, 0>&() const
+template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>::operator const fixed_list<T,0,Alloc>&() const
 {
-  return *((fixed_list<T, 0>*) this);
+  return *((fixed_list<T,0,Alloc>*) this);
 }
 
-template<class T, size_t N> fixed_list<T, N>::operator fixed_list<T, 0>&()
+template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>::operator fixed_list<T,0,Alloc>&()
 {
-  return *((fixed_list<T, 0>*) this);
+  return *((fixed_list<T,0,Alloc>*) this);
 }
 
-template<class T> class fixed_list<T, 0> : public fixed_list_base<T,flex::allocator<fixed_list_node<T> > >
+template<class T, class Alloc > class fixed_list<T,0,Alloc> : public fixed_list_base<T,Alloc>
 {
 public:
   fixed_list();
   fixed_list(size_t size, const T& val = T());
   fixed_list(const T* first, const T* last);
-  fixed_list(const fixed_list<T, 0> & obj);
+  fixed_list(const fixed_list<T,0,Alloc> & obj);
   ~fixed_list();
-  fixed_list<T, 0>& operator=(const fixed_list<T, 0>& obj);
+  fixed_list<T,0,Alloc>& operator=(const fixed_list<T,0,Alloc>& obj);
 
 private:
   //void allocate();
 };
 
-template<class T> fixed_list<T, 0>::fixed_list() :
-    fixed_list_base<T,flex::allocator<fixed_list_node<T> > >()
+template<class T, class Alloc> fixed_list<T,0,Alloc>::fixed_list() :
+    fixed_list_base<T,Alloc>()
 {
   //allocate();
 }
 
-template<class T> fixed_list<T, 0>::fixed_list(size_t size, const T& val) :
-    fixed_list_base<T,flex::allocator<fixed_list_node<T> > >()
+template<class T, class Alloc> fixed_list<T,0,Alloc>::fixed_list(size_t size, const T& val) :
+    fixed_list_base<T,Alloc>()
 {
   //allocate();
-  fixed_list_base<T,flex::allocator<fixed_list_node<T> > >::assign(size,val);
+  fixed_list_base<T,Alloc>::assign(size,val);
 }
 
-template<class T> fixed_list<T, 0>::fixed_list(const T* first, const T* last) :
-    fixed_list_base<T,flex::allocator<fixed_list_node<T> > >()
+template<class T, class Alloc> fixed_list<T,0,Alloc>::fixed_list(const T* first, const T* last) :
+    fixed_list_base<T,Alloc>()
 {
   //allocate();
-  fixed_list_base<T,flex::allocator<fixed_list_node<T> > >::assign(first,last);
+  fixed_list_base<T,Alloc >::assign(first,last);
 }
 
-template<class T> fixed_list<T, 0>::fixed_list(const fixed_list<T, 0> & obj) :
-    fixed_list_base<T,flex::allocator<fixed_list_node<T> > >()
+template<class T, class Alloc> fixed_list<T,0,Alloc>::fixed_list(const fixed_list<T,0,Alloc> & obj) :
+    fixed_list_base<T,Alloc>()
 {
   //allocate();
-  fixed_list_base<T,flex::allocator<fixed_list_node<T> > >::assign(obj.cbegin(),obj.cend());
+  fixed_list_base<T,Alloc >::assign(obj.cbegin(),obj.cend());
 }
 
-template<class T> fixed_list<T, 0>::~fixed_list()
+template<class T, class Alloc> fixed_list<T,0,Alloc>::~fixed_list()
 {
    //TODO:
   //delete[] this->mAryPtr;
 }
 
-template<class T> fixed_list<T, 0>& fixed_list<T, 0>::operator=(const fixed_list<T, 0>& obj)
+template<class T, class Alloc> fixed_list<T,0,Alloc>& fixed_list<T,0,Alloc>::operator=(const fixed_list<T,0,Alloc>& obj)
 {
-  fixed_list_base<T,flex::allocator<fixed_list_node<T> > >::assign(obj.cbegin(),obj.cend());
+  fixed_list_base<T,Alloc>::assign(obj.cbegin(),obj.cend());
   return *this;
 }
 
 /*
-template<class T> void fixed_list<T, 0>::allocate()
+template<class T, class Alloc> void fixed_list<T,0,Alloc>::allocate()
 {
   if (allocation_guard::is_enabled())
   {
