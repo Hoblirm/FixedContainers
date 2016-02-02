@@ -5,7 +5,7 @@
 #include <fixed_list_iterator.h>
 #include <allocator.h>
 
-template<class T, class Alloc = flex::allocator<fixed_list_node<T> > > class fixed_list_base : public allocation_guard
+template<class T, class Alloc = flex::allocator<fixed_list_node<T> > > class fixed_list_base : public fixed_pool_base<fixed_list_node<T> >
 {
 public:
    typedef T value_type;
@@ -72,20 +72,21 @@ public:
 
 protected:
    fixed_list_base();
-   fixed_list_base(fixed_pool_base<fixed_list_node<T> >* pool_ptr);
+   fixed_list_base(size_t capacity, fixed_list_node<T>* contentPtr, fixed_list_node<T>** ptrPtr);
 
    node* mHead;
    node* mTail;
-   size_t mSize; //TODO we could inherit (or pull in...) the fixed pool which would remove the need for this extra variable.  Size of mPool is used for fixed lists, while this variable is only use for expandable lists.
-   fixed_pool_base<fixed_list_node<T> >* mPool;
 
 private:
    void push_back_no_throw(const_reference val);
 };
 
+#include <stdio.h>
 template<class T, class Alloc> void fixed_list_base<T, Alloc>::assign(size_t rsize,
 fixed_list_base<T, Alloc>::const_reference val)
 {
+	printf("The max_size is %u\n",max_size());
+	printf("The size is %u\n",size());
    if (rsize > max_size())
    {
       throw std::runtime_error("fixed_list: assign() fill range exceeds capacity");
@@ -99,6 +100,7 @@ fixed_list_base<T, Alloc>::const_reference val)
       }
       while (size() < rsize)
       {
+    	  printf("Pushing\n");
          //Capacity check done above. Safe to do the faster no_throw method.
          push_back_no_throw(val);
       }
@@ -238,15 +240,15 @@ typename fixed_list_base<T, Alloc>::iterator position)
       mTail = lhs; //tail is being erased; must update
    }
 
-   if (NULL != mPool)
+   if (fixed())
    {
-      mPool->deallocate(position.mNodePtr);
+	   fixed_pool_base<fixed_list_node<T> >::deallocate(position.mNodePtr);
    }
    else
    {
       Alloc alloc;
       alloc.deallocate(position.mNodePtr,1);
-      --mSize;
+      --this->mIndex;
    }
 
    return iterator(rhs);
@@ -278,15 +280,15 @@ typename fixed_list_base<T, Alloc>::iterator first, typename fixed_list_base<T, 
 
    for (iterator it = first; it != last; ++it)
    {
-      if (NULL != mPool)
+      if (fixed())
       {
-         mPool->deallocate(it.mNodePtr);
+    	  fixed_pool_base<fixed_list_node<T> >::deallocate(it.mNodePtr);
       }
       else
       {
          Alloc alloc;
          alloc.deallocate(it.mNodePtr,1);
-         --mSize;
+         --this->mIndex;
       }
    }
 
@@ -295,7 +297,7 @@ typename fixed_list_base<T, Alloc>::iterator first, typename fixed_list_base<T, 
 
 template<class T, class Alloc> bool fixed_list_base<T, Alloc>::fixed() const
 {
-   return (NULL != mPool);
+   return (NULL != this->mContentList);
 }
 
 template<class T, class Alloc> typename fixed_list_base<T, Alloc>::allocator_type fixed_list_base<T, Alloc>::get_allocator() const
@@ -331,15 +333,15 @@ typename fixed_list_base<T, Alloc>::iterator position, typename fixed_list_base<
    {
       node* lhs = position.mNodePtr->prev;
       node* nd;
-      if (NULL != mPool)
+      if (fixed())
       {
-         nd = mPool->allocate_no_throw();
+         nd = fixed_pool_base<fixed_list_node<T> >::allocate_no_throw();
       }
       else
       {
          Alloc alloc;
          nd = alloc.allocate(1);
-         ++mSize;
+         ++this->mIndex;
       }
 
       nd->val = val;
@@ -386,15 +388,15 @@ size_t n, fixed_list_base<T, Alloc>::const_reference val)
       node* nd = NULL;
       for (size_t i = 0; i < n; ++i)
       {
-         if (NULL != mPool)
+         if (fixed())
          {
-            nd = mPool->allocate_no_throw();
+            nd = fixed_pool_base<fixed_list_node<T> >::allocate_no_throw();
          }
          else
          {
             Alloc alloc;
             nd = alloc.allocate(1);
-            ++mSize;
+            ++this->mIndex;
          }
          nd->val = val;
          nd->next = position.mNodePtr;
@@ -435,15 +437,15 @@ fixed_list_base<T, Alloc>::const_iterator first, fixed_list_base<T, Alloc>::cons
 
       if (NULL == lhs)
       {
-         if (NULL != mPool)
+         if (fixed())
          {
-            nd = mPool->allocate();
+            nd = fixed_pool_base<fixed_list_node<T> >::allocate();
          }
          else
          {
             Alloc alloc;
             nd = alloc.allocate(1);
-            ++mSize;
+            ++this->mIndex;
          }
          nd->val = *it;
          nd->prev = NULL;
@@ -453,15 +455,15 @@ fixed_list_base<T, Alloc>::const_iterator first, fixed_list_base<T, Alloc>::cons
 
       while (it != last)
       {
-         if (NULL != mPool)
+         if (fixed())
          {
-            nd = mPool->allocate();
+            nd = fixed_pool_base<fixed_list_node<T> >::allocate();
          }
          else
          {
             Alloc alloc;
             nd = alloc.allocate(1);
-            ++mSize;
+            ++this->mIndex;
          }
          nd->val = *it;
          nd->prev = lhs;
@@ -494,15 +496,15 @@ const T* first, const T* last)
 
       if (NULL == lhs)
       {
-         if (NULL != mPool)
+         if (fixed())
          {
-            nd = mPool->allocate();
+            nd = fixed_pool_base<fixed_list_node<T> >::allocate();
          }
          else
          {
             Alloc alloc;
             nd = alloc.allocate(1);
-            ++mSize;
+            ++this->mIndex;
          }
          nd->val = *it;
          nd->prev = NULL;
@@ -512,15 +514,15 @@ const T* first, const T* last)
 
       while (it != last)
       {
-         if (NULL != mPool)
+         if (fixed())
          {
-            nd = mPool->allocate();
+            nd = fixed_pool_base<fixed_list_node<T> >::allocate();
          }
          else
          {
             Alloc alloc;
             nd = alloc.allocate(1);
-            ++mSize;
+            ++this->mIndex;
          }
          nd->val = *it;
          nd->prev = lhs;
@@ -536,15 +538,7 @@ const T* first, const T* last)
 
 template<class T, class Alloc> size_t fixed_list_base<T, Alloc>::max_size() const
 {
-   if (NULL == mPool)
-   {
-      Alloc alloc;
-      return alloc.max_size();
-   }
-   else
-   {
-      return mPool->max_size();
-   }
+	return this->mCapacity;
 }
 
 template<class T, class Alloc> fixed_list_base<T, Alloc>& fixed_list_base<T, Alloc>::operator=(
@@ -565,15 +559,15 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::pop_back()
    {
       mHead = NULL;
    }
-   if (NULL != mPool)
+   if (fixed())
    {
-      mPool->deallocate(mTail);
+	   fixed_pool_base<fixed_list_node<T> >::deallocate(mTail);
    }
    else
    {
       Alloc alloc;
       alloc.deallocate(mTail, 1);
-      --mSize;
+      --this->mIndex;
    }
    mTail = prev;
 }
@@ -589,15 +583,15 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::pop_front()
    {
       mTail = NULL;
    }
-   if (NULL != mPool)
+   if (fixed())
    {
-      mPool->deallocate(mHead);
+	   fixed_pool_base<fixed_list_node<T> >::deallocate(mHead);
    }
    else
    {
       Alloc alloc;
       alloc.deallocate(mHead, 1);
-      --mSize;
+      --this->mIndex;
    }
    mHead = next;
 }
@@ -615,18 +609,23 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::push_back(const T
 template<class T, class Alloc> void fixed_list_base<T, Alloc>::push_back_no_throw(const T& val)
 {
    node* nd;
-   if (NULL != mPool)
+   if (fixed())
    {
-      nd = mPool->allocate_no_throw();
+	   printf("Allocateing from pool\n");
+      nd = fixed_pool_base<fixed_list_node<T> >::allocate_no_throw();
+      printf("Done\n");
    }
    else
    {
       Alloc alloc;
       nd = alloc.allocate(1);
-      ++mSize;
+      ++this->mIndex;
    }
+   printf("There\n");
    nd->prev = mTail;
+   printf("Where\n");
    nd->val = val;
+   printf("Here\n");
    nd->next = NULL;
    if (NULL != mTail)
    {
@@ -647,15 +646,15 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::push_front(const 
    }
 
    node* nd;
-   if (NULL != mPool)
+   if (fixed())
    {
-      nd = mPool->allocate_no_throw();
+      nd = fixed_pool_base<fixed_list_node<T> >::allocate_no_throw();
    }
    else
    {
       Alloc alloc;
       nd = alloc.allocate(1);
-      ++mSize;
+      ++this->mIndex;
    }
    nd->next = mHead;
    nd->val = val;
@@ -693,14 +692,7 @@ template<class T, class Alloc> typename fixed_list_base<T, Alloc>::const_reverse
 
 template<class T, class Alloc> size_t fixed_list_base<T, Alloc>::size() const
 {
-   if (mPool)
-   {
-      return mPool->outstanding();
-   }
-   else
-   {
-      return mSize;
-   }
+   return this->mIndex;
 }
 
 template<class T, class Alloc> void fixed_list_base<T, Alloc>::swap(fixed_list_base<T, Alloc>& obj)
@@ -733,9 +725,9 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::swap(fixed_list_b
          push_back_no_throw(*(rrit++));
          obj.pop_back();
       }
-      /*while (mPool->outstanding < rsize)
+      /*while (mIndex < rsize)
        {
-       mPool->push_back(*(rit++));
+       push_back(*(rit++));
        }
        while (obj.size() > lsize)
        {
@@ -776,14 +768,23 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::swap(fixed_list_b
 }
 
 template<class T, class Alloc> fixed_list_base<T, Alloc>::fixed_list_base() :
-mHead(NULL), mTail(NULL), mSize(0), mPool(NULL)
+		fixed_pool_base<fixed_list_node<T> >(0), mHead(NULL), mTail(NULL)
 {
+	Alloc a;
+	this->mCapacity = a.max_size();
+	this->mContentList = NULL;
+	this->mPtrList = NULL;
 }
 
-template<class T, class Alloc> fixed_list_base<T, Alloc>::fixed_list_base(fixed_pool_base<fixed_list_node<T> > *pool_ptr) :
-mHead(NULL), mTail(NULL), mSize(0), mPool(pool_ptr)
+template<class T, class Alloc> fixed_list_base<T, Alloc>::fixed_list_base(size_t capacity, fixed_list_node<T>* contentPtr, fixed_list_node<T>** ptrPtr) :
+		fixed_pool_base<fixed_list_node<T> >(capacity, contentPtr, ptrPtr), mHead(NULL), mTail(NULL)
 {
+	for (size_t i = 0; i < this->mCapacity; i++)
+		  {
+		    this->mPtrList[i] = &this->mContentList[i];
+		  }
 }
+
 
 template<class T, class Alloc>
 bool operator==(const fixed_list_base<T, Alloc>& lhs, const fixed_list_base<T, Alloc>& rhs)

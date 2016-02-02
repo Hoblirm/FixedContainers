@@ -15,28 +15,29 @@ public:
   operator const fixed_list<T,0,Alloc>&() const;
   operator fixed_list<T,0,Alloc>&();
 private:
-  fixed_pool<fixed_list_node<T>,N> mPool;
+  fixed_list_node<T> mContentAry[N];
+  fixed_list_node<T>* mPtrAry[N];
 };
 
 template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>::fixed_list() :
-    fixed_list_base<T,Alloc >(&mPool)
+    fixed_list_base<T,Alloc >(N,mContentAry,mPtrAry)
 {
 }
 
 template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>::fixed_list(size_t size, const T& val) :
-    fixed_list_base<T,Alloc >(&mPool)
+		fixed_list_base<T,Alloc >(N,mContentAry,mPtrAry)
 {
   fixed_list_base<T,Alloc >::assign(size,val);
 }
 
 template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>::fixed_list(const T* first, const T* last) :
-    fixed_list_base<T,Alloc >(&mPool)
+		fixed_list_base<T,Alloc >(N,mContentAry,mPtrAry)
 {
   fixed_list_base<T,Alloc >::assign(first,last);
 }
 
 template<class T, size_t N, class Alloc> fixed_list<T,N,Alloc>::fixed_list(const fixed_list<T,0,Alloc> & obj) :
-    fixed_list_base<T,Alloc >(&mPool)
+		fixed_list_base<T,Alloc >(N,mContentAry,mPtrAry)
 {
   *this = obj;
 }

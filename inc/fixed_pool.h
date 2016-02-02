@@ -44,8 +44,10 @@ template<class T> T* fixed_pool_base<T>::allocate()
   return mPtrList[mIndex++];
 }
 
+#include <stdio.h>
 template<class T> T* fixed_pool_base<T>::allocate_no_throw()
 {
+	printf("The index is %u\n",mIndex);
   return mPtrList[mIndex++];
 }
 
