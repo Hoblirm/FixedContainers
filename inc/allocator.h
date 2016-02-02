@@ -2,12 +2,11 @@
 #define FLEX_ALLOCATOR_H
 
 #include <limits>
-#include <iostream>
 #include <allocation_guard.h>
 //TODO... maybe see if you could just inherit from std::allocator.
-namespace flex
+namespace flex 
 {
-  template<class T> class allocator
+  template<class T> class allocator : public allocation_guard
   {
   public:
     // type definitions
@@ -65,11 +64,11 @@ namespace flex
     // allocate but don't initialize num elements of type T
     pointer allocate(size_type num, typename std::allocator<void>::const_pointer = 0)
     {
-      // print message and allocate memory with global new
-      std::cerr << "allocate " << num << " element(s)" << " of size " << sizeof(T) << std::endl;
-      pointer ret = reinterpret_cast<pointer>(::operator new(num * sizeof(T)));
-      std::cerr << " allocated at: " << (void*) ret << std::endl;
-      return ret;
+       if (allocation_guard::is_enabled())
+       {
+          throw std::runtime_error("allocation_guard: allocator performed runtime allocation");
+       }
+      return reinterpret_cast<pointer>(::operator new(num * sizeof(T)));
     }
 
     // initialize elements of allocated storage p with value value
@@ -89,9 +88,6 @@ namespace flex
     // deallocate storage p of deleted elements
     void deallocate(pointer p, size_type num)
     {
-      // print message and deallocate memory with global delete
-      std::cerr << "deallocate " << num << " element(s)" << " of size " << sizeof(T) << " at: " << (void*) p
-          << std::endl;
       ::operator delete((void*) p);
     }
   };

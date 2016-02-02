@@ -3,8 +3,9 @@
 
 #include <fixed_pool.h>
 #include <fixed_list_iterator.h>
+#include <allocator.h>
 
-template<class T, class Alloc = std::allocator<fixed_list_node<T> > > class fixed_list_base: public allocation_guard
+template<class T, class Alloc = flex::allocator<fixed_list_node<T> > > class fixed_list_base: public allocation_guard
 {
 public:
   typedef T value_type;
@@ -15,7 +16,8 @@ public:
   typedef fixed_list_const_iterator<T> const_iterator;
   typedef fixed_list_reverse_iterator<T> reverse_iterator;
   typedef fixed_list_const_reverse_iterator<T> const_reverse_iterator;
-
+  typedef Alloc allocator_type;
+  
   void assign(size_t size, const_reference val);
   //TODO: Get a template working with fixed_list assign() to use multiple iterators.
   void assign(const_iterator first, const_iterator last);
@@ -42,6 +44,7 @@ public:
   bool fixed() const;
 
   reference front();
+  allocator_type get_allocator() const;
   const_reference front() const;
 
   iterator insert(iterator position, const_reference val);
@@ -275,6 +278,12 @@ template<class T, class Alloc> typename fixed_list_base<T, Alloc>::iterator fixe
 template<class T, class Alloc> bool fixed_list_base<T, Alloc>::fixed() const
 {
   return (NULL != mPool);
+}
+
+template<class T, class Alloc> typename fixed_list_base<T, Alloc>::allocator_type fixed_list_base<T, Alloc>::get_allocator() const
+{
+   Alloc a;
+   return a;
 }
 
 template<class T, class Alloc> typename fixed_list_base<T, Alloc>::reference fixed_list_base<T, Alloc>::front()

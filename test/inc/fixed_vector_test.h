@@ -453,7 +453,7 @@ public:
   void test_cast_operator(void)
   {
     allocation_guard::enable();
-    fixed_vector<int, 8> a;
+    fixed_vector<int, 8> a(8,0);
     assignment_method(a);
     read_method(a);
     TS_ASSERT_THROWS(copy_method(a), std::runtime_error);

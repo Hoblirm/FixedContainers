@@ -213,8 +213,8 @@ public:
 
   void test_insert(void)
   {
-    fixed_list<int> emptylist;
-    TS_ASSERT_THROWS(emptylist.insert(emptylist.begin(), 1), std::runtime_error);
+    fixed_list<int,1> emptylist;
+    TS_ASSERT_THROWS(emptylist.insert(emptylist.begin(), 2, 0), std::runtime_error);
 
     fixed_list<int, 16> mylist(3, 100);
     fixed_list<int, 16>::iterator it;
@@ -280,7 +280,7 @@ public:
   {
     unsigned size = 3;
     fixed_list<int> a;
-    TS_ASSERT_EQUALS(a.max_size(), size);
+    TS_ASSERT_EQUALS(a.max_size(), a.get_allocator().max_size());
     fixed_list<int, 3> b;
     TS_ASSERT_EQUALS(b.max_size(), size);
   }
@@ -339,7 +339,7 @@ public:
 
     foo.assign(foo_ints, foo_ints + 3);
 
-    fixed_list<int> bar2(5, 2);
+    fixed_list<int,8> bar2(5, 2);
     TS_ASSERT_THROWS(bar2 = larger, std::runtime_error);
 
     bar2 = foo;
@@ -464,7 +464,7 @@ public:
   void test_swap(void)
   {
     fixed_list<int,16> foo(3, 100);   // three ints with a value of 100
-    fixed_list<int> bar(5, 200);   // five ints with a value of 200
+    fixed_list<int,8> bar(5, 200);   // five ints with a value of 200
 
     foo.swap(bar);
     TS_ASSERT_EQUALS(foo.size(), 5);
@@ -532,7 +532,7 @@ public:
     int i = 0;
     for (fixed_list<int>::iterator it = x.begin(); it != x.end(); ++it)
     {
-      *it = i++;
+      *it = ++i;
     }
   }
 
@@ -541,7 +541,7 @@ public:
     int i = 0;
     for (fixed_list<int>::const_iterator it = x.begin(); it != x.end(); ++it)
     {
-      TS_ASSERT_EQUALS(*it, i);
+      TS_ASSERT_EQUALS(*it, ++i);
     }
   }
 
@@ -550,18 +550,17 @@ public:
     int i = 0;
     for (fixed_list<int>::iterator it = x.begin(); it != x.end(); ++it)
     {
-      TS_ASSERT_EQUALS(*it, i);
+      TS_ASSERT_EQUALS(*it, ++i);
     }
   }
 
   void test_cast_operator(void)
   {
     allocation_guard::enable();
-    fixed_list<int, 8> a;
+    fixed_list<int, 8> a(8,0);
     assignment_method(a);
     read_method(a);
     TS_ASSERT_THROWS(copy_method(a), std::runtime_error);
-
     allocation_guard::disable();
     copy_method(a);
   }
@@ -573,7 +572,7 @@ public:
 
     allocation_guard::disable();
     fixed_list<int> a3(3);
-    TS_ASSERT_EQUALS(a3.max_size(), 3);
+    TS_ASSERT_EQUALS(a3.size(), 3);
   }
 
   void test_specialized_copy_constructor(void)
