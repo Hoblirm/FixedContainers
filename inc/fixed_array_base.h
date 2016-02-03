@@ -44,7 +44,7 @@ public:
 
   size_t max_size() const;
 
-  fixed_array_base<T,Alloc>& operator=(const fixed_array_base<T,Alloc>& obj);
+  fixed_array_base<T, Alloc>& operator=(const fixed_array_base<T, Alloc>& obj);
   reference operator[](size_t n);
   const_reference operator[](size_t n) const;
 
@@ -54,7 +54,7 @@ public:
   const_reverse_iterator rend() const;
 
   size_t size() const;
-  void swap(fixed_array_base<T,Alloc>& obj);
+  void swap(fixed_array_base<T, Alloc>& obj);
 
 protected:
   fixed_array_base(size_t size);
@@ -64,7 +64,7 @@ protected:
   T* mAryPtr;
 };
 
-template<class T, class Alloc> T& fixed_array_base<T,Alloc>::at(size_t n)
+template<class T, class Alloc> T& fixed_array_base<T, Alloc>::at(size_t n)
 {
   if (n < mSize)
   {
@@ -76,7 +76,7 @@ template<class T, class Alloc> T& fixed_array_base<T,Alloc>::at(size_t n)
   }
 }
 
-template<class T, class Alloc> const T& fixed_array_base<T,Alloc>::at(size_t n) const
+template<class T, class Alloc> const T& fixed_array_base<T, Alloc>::at(size_t n) const
 {
   if (n < mSize)
   {
@@ -88,72 +88,72 @@ template<class T, class Alloc> const T& fixed_array_base<T,Alloc>::at(size_t n) 
   }
 }
 
-template<class T, class Alloc> T& fixed_array_base<T,Alloc>::back()
+template<class T, class Alloc> T& fixed_array_base<T, Alloc>::back()
 {
   return mAryPtr[mSize - 1];
 }
 
-template<class T, class Alloc> const T& fixed_array_base<T,Alloc>::back() const
+template<class T, class Alloc> const T& fixed_array_base<T, Alloc>::back() const
 {
   return mAryPtr[mSize - 1];
 }
 
-template<class T, class Alloc> T* fixed_array_base<T,Alloc>::begin()
+template<class T, class Alloc> T* fixed_array_base<T, Alloc>::begin()
 {
   return mAryPtr;
 }
 
-template<class T, class Alloc> const T* fixed_array_base<T,Alloc>::begin() const
+template<class T, class Alloc> const T* fixed_array_base<T, Alloc>::begin() const
 {
   return mAryPtr;
 }
 
-template<class T, class Alloc> const T* fixed_array_base<T,Alloc>::cbegin() const
+template<class T, class Alloc> const T* fixed_array_base<T, Alloc>::cbegin() const
 {
   return mAryPtr;
 }
 
-template<class T, class Alloc> const T* fixed_array_base<T,Alloc>::cend() const
+template<class T, class Alloc> const T* fixed_array_base<T, Alloc>::cend() const
 {
   return &mAryPtr[mSize];
 }
 
-template<class T, class Alloc> fixed_array_const_reverse_iterator<T> fixed_array_base<T,Alloc>::crbegin() const
+template<class T, class Alloc> fixed_array_const_reverse_iterator<T> fixed_array_base<T, Alloc>::crbegin() const
 {
   return fixed_array_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
 }
 
-template<class T, class Alloc> fixed_array_const_reverse_iterator<T> fixed_array_base<T,Alloc>::crend() const
+template<class T, class Alloc> fixed_array_const_reverse_iterator<T> fixed_array_base<T, Alloc>::crend() const
 {
   return fixed_array_const_reverse_iterator<T>(&mAryPtr[-1]);
 }
 
-template<class T, class Alloc> T* fixed_array_base<T,Alloc>::data()
+template<class T, class Alloc> T* fixed_array_base<T, Alloc>::data()
 {
   return mAryPtr;
 }
 
-template<class T, class Alloc> const T* fixed_array_base<T,Alloc>::data() const
+template<class T, class Alloc> const T* fixed_array_base<T, Alloc>::data() const
 {
   return mAryPtr;
 }
 
-template<class T, class Alloc> bool fixed_array_base<T,Alloc>::empty() const
+template<class T, class Alloc> bool fixed_array_base<T, Alloc>::empty() const
 {
   return (0 == mSize);
 }
 
-template<class T, class Alloc> T* fixed_array_base<T,Alloc>::end()
+template<class T, class Alloc> T* fixed_array_base<T, Alloc>::end()
 {
   return &mAryPtr[mSize];
 }
 
-template<class T, class Alloc> const T* fixed_array_base<T,Alloc>::end() const
+template<class T, class Alloc> const T* fixed_array_base<T, Alloc>::end() const
 {
   return &mAryPtr[mSize];
 }
 
-template<class T, class Alloc> void fixed_array_base<T,Alloc>::fill(const T& v)
+template<class T, class Alloc> void fixed_array_base<T, Alloc>::fill(const T& v)
 {
   for (iterator it = begin(); it < end(); ++it)
   {
@@ -161,22 +161,23 @@ template<class T, class Alloc> void fixed_array_base<T,Alloc>::fill(const T& v)
   }
 }
 
-template<class T, class Alloc> T& fixed_array_base<T,Alloc>::front()
+template<class T, class Alloc> T& fixed_array_base<T, Alloc>::front()
 {
   return mAryPtr[0];
 }
 
-template<class T, class Alloc> const T& fixed_array_base<T,Alloc>::front() const
+template<class T, class Alloc> const T& fixed_array_base<T, Alloc>::front() const
 {
   return mAryPtr[0];
 }
 
-template<class T, class Alloc> size_t fixed_array_base<T,Alloc>::max_size() const
+template<class T, class Alloc> size_t fixed_array_base<T, Alloc>::max_size() const
 {
   return mSize;
 }
 
-template<class T, class Alloc> fixed_array_base<T,Alloc>& fixed_array_base<T,Alloc>::operator=(const fixed_array_base<T,Alloc>& obj)
+template<class T, class Alloc> fixed_array_base<T, Alloc>& fixed_array_base<T, Alloc>::operator=(
+    const fixed_array_base<T, Alloc>& obj)
 {
   if (obj.size() != mSize)
   {
@@ -191,42 +192,42 @@ template<class T, class Alloc> fixed_array_base<T,Alloc>& fixed_array_base<T,All
   return *this;
 }
 
-template<class T, class Alloc> T& fixed_array_base<T,Alloc>::operator[](size_t n)
+template<class T, class Alloc> T& fixed_array_base<T, Alloc>::operator[](size_t n)
 {
   return mAryPtr[n];
 }
 
-template<class T, class Alloc> const T& fixed_array_base<T,Alloc>::operator[](size_t n) const
+template<class T, class Alloc> const T& fixed_array_base<T, Alloc>::operator[](size_t n) const
 {
   return mAryPtr[n];
 }
 
-template<class T, class Alloc> fixed_array_reverse_iterator<T> fixed_array_base<T,Alloc>::rbegin()
+template<class T, class Alloc> fixed_array_reverse_iterator<T> fixed_array_base<T, Alloc>::rbegin()
 {
   return fixed_array_reverse_iterator<T>(&mAryPtr[mSize - 1]);
 }
 
-template<class T, class Alloc> fixed_array_const_reverse_iterator<T> fixed_array_base<T,Alloc>::rbegin() const
+template<class T, class Alloc> fixed_array_const_reverse_iterator<T> fixed_array_base<T, Alloc>::rbegin() const
 {
   return fixed_array_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
 }
 
-template<class T, class Alloc> fixed_array_reverse_iterator<T> fixed_array_base<T,Alloc>::rend()
+template<class T, class Alloc> fixed_array_reverse_iterator<T> fixed_array_base<T, Alloc>::rend()
 {
   return fixed_array_reverse_iterator<T>(&mAryPtr[-1]);
 }
 
-template<class T, class Alloc> fixed_array_const_reverse_iterator<T> fixed_array_base<T,Alloc>::rend() const
+template<class T, class Alloc> fixed_array_const_reverse_iterator<T> fixed_array_base<T, Alloc>::rend() const
 {
   return fixed_array_const_reverse_iterator<T>(&mAryPtr[-1]);
 }
 
-template<class T, class Alloc> size_t fixed_array_base<T,Alloc>::size() const
+template<class T, class Alloc> size_t fixed_array_base<T, Alloc>::size() const
 {
   return mSize;
 }
 
-template<class T, class Alloc> void fixed_array_base<T,Alloc>::swap(fixed_array_base<T,Alloc>& obj)
+template<class T, class Alloc> void fixed_array_base<T, Alloc>::swap(fixed_array_base<T, Alloc>& obj)
 {
   if (mSize == obj.size())
   {
@@ -240,18 +241,18 @@ template<class T, class Alloc> void fixed_array_base<T,Alloc>::swap(fixed_array_
   }
 }
 
-template<class T, class Alloc> fixed_array_base<T,Alloc>::fixed_array_base(size_t size) :
+template<class T, class Alloc> fixed_array_base<T, Alloc>::fixed_array_base(size_t size) :
     mSize(size)
 {
 }
 
-template<class T, class Alloc> fixed_array_base<T,Alloc>::fixed_array_base(size_t size, T* ptr) :
+template<class T, class Alloc> fixed_array_base<T, Alloc>::fixed_array_base(size_t size, T* ptr) :
     mSize(size), mAryPtr(ptr)
 {
 }
 
 template<class T, class Alloc>
-bool operator==(const fixed_array_base<T,Alloc>& lhs, const fixed_array_base<T,Alloc>& rhs)
+bool operator==(const fixed_array_base<T, Alloc>& lhs, const fixed_array_base<T, Alloc>& rhs)
 {
   if (lhs.size() != rhs.size())
   {
@@ -271,7 +272,7 @@ bool operator==(const fixed_array_base<T,Alloc>& lhs, const fixed_array_base<T,A
 }
 
 template<class T, class Alloc>
-bool operator<(const fixed_array_base<T,Alloc>& lhs, const fixed_array_base<T,Alloc>& rhs)
+bool operator<(const fixed_array_base<T, Alloc>& lhs, const fixed_array_base<T, Alloc>& rhs)
 {
   if (lhs.size() < rhs.size())
   {
@@ -306,25 +307,25 @@ bool operator<(const fixed_array_base<T,Alloc>& lhs, const fixed_array_base<T,Al
 }
 
 template<class T, class Alloc>
-bool operator!=(const fixed_array_base<T,Alloc>& lhs, const fixed_array_base<T,Alloc>& rhs)
+bool operator!=(const fixed_array_base<T, Alloc>& lhs, const fixed_array_base<T, Alloc>& rhs)
 {
   return !(lhs == rhs);
 }
 
 template<class T, class Alloc>
-bool operator>(const fixed_array_base<T,Alloc>& lhs, const fixed_array_base<T,Alloc>& rhs)
+bool operator>(const fixed_array_base<T, Alloc>& lhs, const fixed_array_base<T, Alloc>& rhs)
 {
   return rhs < lhs;
 }
 
 template<class T, class Alloc>
-bool operator<=(const fixed_array_base<T,Alloc>& lhs, const fixed_array_base<T,Alloc>& rhs)
+bool operator<=(const fixed_array_base<T, Alloc>& lhs, const fixed_array_base<T, Alloc>& rhs)
 {
   return !(rhs < lhs);
 }
 
 template<class T, class Alloc>
-bool operator>=(const fixed_array_base<T,Alloc>& lhs, const fixed_array_base<T,Alloc>& rhs)
+bool operator>=(const fixed_array_base<T, Alloc>& lhs, const fixed_array_base<T, Alloc>& rhs)
 {
   return !(lhs < rhs);
 }

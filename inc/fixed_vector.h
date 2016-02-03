@@ -3,7 +3,7 @@
 
 #include <fixed_vector_base.h>
 
-template<class T, size_t N = 0, class Alloc = flex::allocator<T> > class fixed_vector: public fixed_vector_base<T,Alloc>
+template<class T, size_t N = 0, class Alloc = flex::allocator<T> > class fixed_vector: public fixed_vector_base<T, Alloc>
 {
 public:
   fixed_vector();
@@ -19,18 +19,18 @@ private:
 };
 
 template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector() :
-    fixed_vector_base<T,Alloc>(N, mAry)
+    fixed_vector_base<T, Alloc>(N, mAry)
 {
 }
 
 template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector(size_t size, const T& val) :
-    fixed_vector_base<T,Alloc>(N, size, mAry)
+    fixed_vector_base<T, Alloc>(N, size, mAry)
 {
   fixed_array_base<T>::fill(val);
 }
 
 template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector(const T* first, const T* last) :
-    fixed_vector_base<T,Alloc>(N, mAry)
+    fixed_vector_base<T, Alloc>(N, mAry)
 {
   this->mSize = 0;
   for (const T* it = first; it != last; ++it)
@@ -41,12 +41,13 @@ template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector
 }
 
 template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector(const fixed_vector<T, 0, Alloc> & obj) :
-    fixed_vector_base<T,Alloc>(N, mAry)
+    fixed_vector_base<T, Alloc>(N, mAry)
 {
   *this = obj;
 }
 
-template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(const fixed_vector<T, N, Alloc>& obj)
+template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(
+    const fixed_vector<T, N, Alloc>& obj)
 {
   this->mSize = obj.size();
   for (int i = 0; i < obj.size(); i++)
@@ -56,9 +57,10 @@ template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>& fixed_vector
   return *this;
 }
 
-template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(const fixed_vector<T, 0, Alloc>& obj)
+template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(
+    const fixed_vector<T, 0, Alloc>& obj)
 {
-  fixed_vector_base<T,Alloc>::operator=(obj);
+  fixed_vector_base<T, Alloc>::operator=(obj);
   return *this;
 }
 
@@ -72,7 +74,7 @@ template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::operator fix
   return *((fixed_vector<T, 0, Alloc>*) this);
 }
 
-template<class T, class Alloc> class fixed_vector<T, 0, Alloc> : public fixed_vector_base<T,Alloc>
+template<class T, class Alloc> class fixed_vector<T, 0, Alloc> : public fixed_vector_base<T, Alloc>
 {
 public:
   fixed_vector(size_t capacity);
@@ -87,20 +89,20 @@ private:
 };
 
 template<class T, class Alloc> fixed_vector<T, 0, Alloc>::fixed_vector(size_t capacity) :
-    fixed_vector_base<T,Alloc>(capacity)
+    fixed_vector_base<T, Alloc>(capacity)
 {
   allocate();
 }
 
 template<class T, class Alloc> fixed_vector<T, 0, Alloc>::fixed_vector(size_t capacity, size_t size, const T& val) :
-    fixed_vector_base<T,Alloc>(capacity, size)
+    fixed_vector_base<T, Alloc>(capacity, size)
 {
   allocate();
   fixed_array_base<T>::fill(val);
 }
 
 template<class T, class Alloc> fixed_vector<T, 0, Alloc>::fixed_vector(size_t capacity, const T* first, const T* last) :
-    fixed_vector_base<T,Alloc>(capacity)
+    fixed_vector_base<T, Alloc>(capacity)
 {
   allocate();
   this->mSize = 0;
@@ -112,7 +114,7 @@ template<class T, class Alloc> fixed_vector<T, 0, Alloc>::fixed_vector(size_t ca
 }
 
 template<class T, class Alloc> fixed_vector<T, 0, Alloc>::fixed_vector(const fixed_vector<T, 0, Alloc> & obj) :
-    fixed_vector_base<T,Alloc>(obj.capacity())
+    fixed_vector_base<T, Alloc>(obj.capacity())
 {
   allocate();
   *this = obj;
@@ -120,25 +122,21 @@ template<class T, class Alloc> fixed_vector<T, 0, Alloc>::fixed_vector(const fix
 
 template<class T, class Alloc> fixed_vector<T, 0, Alloc>::~fixed_vector()
 {
-  delete[] this->mAryPtr;
+  Alloc alloc;
+  alloc.deallocate(this->mAryPtr, this->mCapacity);
 }
 
-template<class T, class Alloc> fixed_vector<T, 0, Alloc>& fixed_vector<T, 0, Alloc>::operator=(const fixed_vector<T, 0, Alloc>& obj)
+template<class T, class Alloc> fixed_vector<T, 0, Alloc>& fixed_vector<T, 0, Alloc>::operator=(
+    const fixed_vector<T, 0, Alloc>& obj)
 {
-  fixed_vector_base<T,Alloc>::operator=(obj);
+  fixed_vector_base<T, Alloc>::operator=(obj);
   return *this;
 }
 
 template<class T, class Alloc> void fixed_vector<T, 0, Alloc>::allocate()
 {
-  if (allocation_guard::is_enabled())
-  {
-    throw std::runtime_error("allocation_guard: fixed_vector performed allocation.");
-  }
-  else
-  {
-    this->mAryPtr = new T[this->mCapacity];
-  }
+  Alloc alloc;
+  this->mAryPtr = alloc.allocate(this->mCapacity);
 }
 
 #endif /* FIXED_VECTOR_H */

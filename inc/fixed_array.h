@@ -3,7 +3,7 @@
 
 #include <fixed_array_base.h>
 
-template<class T, size_t N = 0, class Alloc = flex::allocator<T> > class fixed_array: public fixed_array_base<T,Alloc>
+template<class T, size_t N = 0, class Alloc = flex::allocator<T> > class fixed_array: public fixed_array_base<T, Alloc>
 {
 public:
   fixed_array();
@@ -12,6 +12,7 @@ public:
   fixed_array<T, N, Alloc>& operator=(const fixed_array<T, 0, Alloc>& obj);
   operator const fixed_array<T,0>&() const;
   operator fixed_array<T,0>&();
+  size_t size() const;
 private:
   T mAry[N];
 };
@@ -30,7 +31,8 @@ template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>::fixed_array(c
   }
 }
 
-template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>& fixed_array<T, N, Alloc>::operator=(const fixed_array<T, N, Alloc> & obj)
+template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>& fixed_array<T, N, Alloc>::operator=(
+    const fixed_array<T, N, Alloc> & obj)
 {
   for (int i = 0; i < obj.size(); i++)
   {
@@ -39,7 +41,8 @@ template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>& fixed_array<T
   return *this;
 }
 
-template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>& fixed_array<T, N, Alloc>::operator=(const fixed_array<T, 0, Alloc> & obj)
+template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>& fixed_array<T, N, Alloc>::operator=(
+    const fixed_array<T, 0, Alloc> & obj)
 {
   fixed_array_base<T>::operator=(obj);
   return *this;
@@ -55,6 +58,10 @@ template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>::operator fixe
   return *((fixed_array<T, 0, Alloc>*) this);
 }
 
+template<class T, size_t N, class Alloc> size_t fixed_array<T, N, Alloc>::size() const
+{
+  return N;
+}
 
 template<class T, class Alloc> class fixed_array<T, 0, Alloc> : public fixed_array_base<T, Alloc>
 {
@@ -85,10 +92,12 @@ template<class T, class Alloc> fixed_array<T, 0, Alloc>::fixed_array(const fixed
 
 template<class T, class Alloc> fixed_array<T, 0, Alloc>::~fixed_array()
 {
-  delete[] this->mAryPtr;
+  Alloc a;
+  a.deallocate(this->mAryPtr, this->mSize);
 }
 
-template<class T, class Alloc> fixed_array<T, 0, Alloc>& fixed_array<T, 0, Alloc>::operator=(const fixed_array<T, 0, Alloc> & obj)
+template<class T, class Alloc> fixed_array<T, 0, Alloc>& fixed_array<T, 0, Alloc>::operator=(
+    const fixed_array<T, 0, Alloc> & obj)
 {
   fixed_array_base<T>::operator=(obj);
   return *this;
@@ -96,14 +105,8 @@ template<class T, class Alloc> fixed_array<T, 0, Alloc>& fixed_array<T, 0, Alloc
 
 template<class T, class Alloc> void fixed_array<T, 0, Alloc>::allocate()
 {
-  if (allocation_guard::is_enabled())
-  {
-    throw std::runtime_error("allocation_guard: fixed_array performed allocation.");
-  }
-  else
-  {
-    this->mAryPtr = new T[this->mSize];
-  }
+  Alloc a;
+  this->mAryPtr = a.allocate(this->mSize);
 }
 
 #endif /* FIXED_ARRAY_H */

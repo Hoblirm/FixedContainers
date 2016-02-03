@@ -4,9 +4,9 @@
 #include <limits>
 #include <allocation_guard.h>
 
-namespace flex 
+namespace flex
 {
-  template<class T> class allocator : public allocation_guard
+  template<class T> class allocator: public allocation_guard
   {
   public:
     // type definitions
@@ -64,10 +64,10 @@ namespace flex
     // allocate but don't initialize num elements of type T
     pointer allocate(size_type num, typename std::allocator<void>::const_pointer = 0)
     {
-       if (allocation_guard::is_enabled())
-       {
-          throw std::runtime_error("allocation_guard: allocator performed runtime allocation");
-       }
+      if (allocation_guard::is_enabled())
+      {
+        throw std::runtime_error("allocation_guard: allocator performed runtime allocation");
+      }
       return reinterpret_cast<pointer>(::operator new(num * sizeof(T)));
     }
 
