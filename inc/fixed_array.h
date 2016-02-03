@@ -63,6 +63,7 @@ template<class T, size_t N, class Alloc> size_t fixed_array<T, N, Alloc>::size()
   return N;
 }
 
+//TODO:  Decide what to do with the specialized Array class, as we probably don't want it to be expandable.  Remove it?
 template<class T, class Alloc> class fixed_array<T, 0, Alloc> : public fixed_array_base<T, Alloc>
 {
 public:

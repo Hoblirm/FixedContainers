@@ -30,19 +30,15 @@ public:
 
 protected:
   size_t mCapacity;
+  bool mFixed;
 
   fixed_vector_base(size_t capacity) :
-      fixed_array_base<T, Alloc>(0), mCapacity(capacity)
-  {
-  }
-
-  fixed_vector_base(size_t capacity, T* ptr) :
-      fixed_array_base<T, Alloc>(0, ptr), mCapacity(capacity)
+      fixed_array_base<T, Alloc>(0), mCapacity(capacity), mFixed(false)
   {
   }
 
   fixed_vector_base(size_t capacity, size_t size) :
-      fixed_array_base<T, Alloc>(size), mCapacity(capacity)
+      fixed_array_base<T, Alloc>(size), mCapacity(capacity), mFixed(false)
   {
     if (size > capacity)
     {
@@ -50,8 +46,13 @@ protected:
     }
   }
 
+   fixed_vector_base(size_t capacity, T* ptr) :
+      fixed_array_base<T, Alloc>(0, ptr), mCapacity(capacity), mFixed(true)
+  {
+  }
+   
   fixed_vector_base(size_t capacity, size_t size, T* ptr) :
-      fixed_array_base<T, Alloc>(size, ptr), mCapacity(capacity)
+      fixed_array_base<T, Alloc>(size, ptr), mCapacity(capacity), mFixed(true)
   {
     if (size > capacity)
     {
@@ -61,13 +62,21 @@ protected:
 
 private:
   void set_size(size_t size);
+  void reallocate(size_t size);
 };
 
 template<class T, class Alloc> void fixed_vector_base<T, Alloc>::assign(size_t size, const T& val)
 {
   if (size > mCapacity)
   {
-    throw std::runtime_error("fixed_vector: assign() fill range exceeds capacity");
+     if (mFixed)
+     {
+        throw std::runtime_error("flex::vector - assign() fill range exceeds capacity");
+     }
+     else
+     {
+        reallocate(size);
+     }
   }
   this->mSize = size;
   fixed_array_base<T, Alloc>::fill(val);
@@ -80,7 +89,14 @@ template<class T, class Alloc> void fixed_vector_base<T, Alloc>::assign(const T*
   {
     if (this->mSize >= mCapacity)
     {
-      throw std::runtime_error("fixed_vector: assign() iterator range exceeds capacity");
+      if (mFixed)
+     {
+        throw std::runtime_error("flex::vector - assign() iterator range exceeds capacity");
+     }
+     else
+     {
+        reallocate(this->mSize);
+     }
     }
     this->mAryPtr[this->mSize] = *it;
     ++this->mSize;
@@ -128,7 +144,14 @@ template<class T, class Alloc> T* fixed_vector_base<T, Alloc>::insert(T* positio
 {
   if (this->mSize >= mCapacity)
   {
-    throw std::runtime_error("fixed_vector: insert() called when size was at capacity");
+    if (mFixed)
+     {
+        throw std::runtime_error("flex::vector - insert() called when size was at capacity");
+     }
+     else
+     {
+        reallocate(this->mSize);
+     }
   }
 
   for (T* it = fixed_array_base<T, Alloc>::end(); it != position; --it)
@@ -146,7 +169,14 @@ template<class T, class Alloc> void fixed_vector_base<T, Alloc>::insert(T* posit
 {
   if ((this->mSize + n) > mCapacity)
   {
-    throw std::runtime_error("fixed_vector: insert() fill range exceeds capacity");
+    if (mFixed)
+     {
+        throw std::runtime_error("flex::vector -: insert() fill range exceeds capacity");
+     }
+     else
+     {
+        reallocate(this->mSize + n);
+     }
   }
 
   //Slide everything to the right 'n' spaces to make room for the new elements.
@@ -169,7 +199,14 @@ template<class T, class Alloc> void fixed_vector_base<T, Alloc>::insert(T* posit
   size_t n = last - first;
   if ((this->mSize + n) > mCapacity)
   {
-    throw std::runtime_error("fixed_vector: insert() fill range exceeds capacity");
+    if (mFixed)
+     {
+        throw std::runtime_error("flex::vector - insert() fill range exceeds capacity");
+     }
+     else
+     {
+        reallocate(this->mSize + n);
+     }
   }
 
   //Slide everything to the right 'n' spaces to make room for the new elements.
@@ -197,7 +234,14 @@ template<class T, class Alloc> fixed_vector_base<T, Alloc>& fixed_vector_base<T,
 {
   if (obj.size() > mCapacity)
   {
-    throw std::runtime_error("fixed_vector: assignment operator's parameter size exceeds capacity");
+    if (mFixed)
+     {
+        throw std::runtime_error("flex::vector - assignment operator's parameter size exceeds capacity");
+     }
+     else
+     {
+        reallocate(obj.size());
+     }
   }
 
   this->mSize = obj.size();
@@ -218,7 +262,14 @@ template<class T, class Alloc> void fixed_vector_base<T, Alloc>::push_back(const
 {
   if (this->mSize >= mCapacity)
   {
-    throw std::runtime_error("fixed_vector: push_back() caused size to exceed capacity");
+     if (mFixed)
+     {
+        throw std::runtime_error("flex::vector - push_back() caused size to exceed capacity");
+     }
+     else
+     {
+        reallocate(this->mSize);
+     }
   }
   this->mAryPtr[this->mSize] = val;
   ++this->mSize;
@@ -240,7 +291,14 @@ template<class T, class Alloc> void fixed_vector_base<T, Alloc>::swap(fixed_vect
 {
   if ((obj.size() > mCapacity) || (this->mSize > obj.capacity()))
   {
-    throw std::runtime_error("fixed_vector: swap() parameters' size exceed capacity");
+    if (mFixed)
+     {
+        throw std::runtime_error("flex::vector - swap() parameters' size exceed capacity");
+     }
+     else
+     {
+        reallocate(obj.size());
+     }
   }
 
   if (this->mSize < obj.size())
@@ -284,4 +342,27 @@ template<class T, class Alloc> void fixed_vector_base<T, Alloc>::set_size(size_t
   this->mSize = size;
 }
 
+template<class T, class Alloc> void fixed_vector_base<T, Alloc>::reallocate(size_t size)
+{
+   iterator old = this->mAryPtr
+   
+   //Check the passed in size to ensure we don't overflow the size by doubling its value.
+   //Without this check, the next loop could be infinite.
+   if (size >= (std::numeric_limits<std::size_t>::max()/2))
+   {
+      this->mSize = size;
+   }
+   else
+   {
+      //Keep doubling the size.  The allocator will handle the exception if mSize is too big.
+      while (size > this->mSize)
+      {
+         this->mSize *= 2;
+      }
+   }
+   
+   Alloc alloc;
+   alloc.
+  this->mSize = size;
+}
 #endif /* FIXED_VECTOR_BASE_H */
