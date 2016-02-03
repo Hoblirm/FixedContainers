@@ -3,25 +3,25 @@
 
 #include <fixed_array_base.h>
 
-template<class T, size_t N = 0> class fixed_array: public fixed_array_base<T>
+template<class T, size_t N = 0, class Alloc = flex::allocator<T> > class fixed_array: public fixed_array_base<T,Alloc>
 {
 public:
   fixed_array();
-  fixed_array(const fixed_array<T, N> & obj);
-  fixed_array<T, N>& operator=(const fixed_array<T, N>& obj);
-  fixed_array<T, N>& operator=(const fixed_array<T, 0>& obj);
+  fixed_array(const fixed_array<T, N, Alloc> & obj);
+  fixed_array<T, N, Alloc>& operator=(const fixed_array<T, N, Alloc>& obj);
+  fixed_array<T, N, Alloc>& operator=(const fixed_array<T, 0, Alloc>& obj);
   operator const fixed_array<T,0>&() const;
   operator fixed_array<T,0>&();
 private:
   T mAry[N];
 };
 
-template<class T, size_t N> fixed_array<T, N>::fixed_array() :
+template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>::fixed_array() :
     fixed_array_base<T>(N, mAry)
 {
 }
 
-template<class T, size_t N> fixed_array<T, N>::fixed_array(const fixed_array<T, N> & obj) :
+template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>::fixed_array(const fixed_array<T, N, Alloc> & obj) :
     fixed_array_base<T>(obj.size(), mAry)
 {
   for (int i = 0; i < this->mSize; i++)
@@ -30,7 +30,7 @@ template<class T, size_t N> fixed_array<T, N>::fixed_array(const fixed_array<T, 
   }
 }
 
-template<class T, size_t N> fixed_array<T, N>& fixed_array<T, N>::operator=(const fixed_array<T, N> & obj)
+template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>& fixed_array<T, N, Alloc>::operator=(const fixed_array<T, N, Alloc> & obj)
 {
   for (int i = 0; i < obj.size(); i++)
   {
@@ -39,41 +39,41 @@ template<class T, size_t N> fixed_array<T, N>& fixed_array<T, N>::operator=(cons
   return *this;
 }
 
-template<class T, size_t N> fixed_array<T, N>& fixed_array<T, N>::operator=(const fixed_array<T, 0> & obj)
+template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>& fixed_array<T, N, Alloc>::operator=(const fixed_array<T, 0, Alloc> & obj)
 {
   fixed_array_base<T>::operator=(obj);
   return *this;
 }
 
-template<class T, size_t N> fixed_array<T, N>::operator const fixed_array<T,0>&() const
+template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>::operator const fixed_array<T,0>&() const
 {
-  return *((fixed_array<T, 0>*) this);
+  return *((fixed_array<T, 0, Alloc>*) this);
 }
 
-template<class T, size_t N> fixed_array<T, N>::operator fixed_array<T,0>&()
+template<class T, size_t N, class Alloc> fixed_array<T, N, Alloc>::operator fixed_array<T,0>&()
 {
-  return *((fixed_array<T, 0>*) this);
+  return *((fixed_array<T, 0, Alloc>*) this);
 }
 
 
-template<class T> class fixed_array<T, 0> : public fixed_array_base<T>
+template<class T, class Alloc> class fixed_array<T, 0, Alloc> : public fixed_array_base<T, Alloc>
 {
 public:
   fixed_array(size_t size);
   fixed_array(const fixed_array<T> & obj);
   ~fixed_array();
-  fixed_array<T, 0>& operator=(const fixed_array<T, 0> & obj);
+  fixed_array<T, 0, Alloc>& operator=(const fixed_array<T, 0, Alloc> & obj);
 private:
   void allocate();
 };
 
-template<class T> fixed_array<T, 0>::fixed_array(size_t size) :
+template<class T, class Alloc> fixed_array<T, 0, Alloc>::fixed_array(size_t size) :
     fixed_array_base<T>(size)
 {
   allocate();
 }
 
-template<class T> fixed_array<T, 0>::fixed_array(const fixed_array<T> & obj) :
+template<class T, class Alloc> fixed_array<T, 0, Alloc>::fixed_array(const fixed_array<T> & obj) :
     fixed_array_base<T>(obj.size())
 {
   allocate();
@@ -83,18 +83,18 @@ template<class T> fixed_array<T, 0>::fixed_array(const fixed_array<T> & obj) :
   }
 }
 
-template<class T> fixed_array<T, 0>::~fixed_array()
+template<class T, class Alloc> fixed_array<T, 0, Alloc>::~fixed_array()
 {
   delete[] this->mAryPtr;
 }
 
-template<class T> fixed_array<T, 0>& fixed_array<T, 0>::operator=(const fixed_array<T, 0> & obj)
+template<class T, class Alloc> fixed_array<T, 0, Alloc>& fixed_array<T, 0, Alloc>::operator=(const fixed_array<T, 0, Alloc> & obj)
 {
   fixed_array_base<T>::operator=(obj);
   return *this;
 }
 
-template<class T> void fixed_array<T, 0>::allocate()
+template<class T, class Alloc> void fixed_array<T, 0, Alloc>::allocate()
 {
   if (allocation_guard::is_enabled())
   {

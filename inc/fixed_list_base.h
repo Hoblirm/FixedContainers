@@ -81,12 +81,9 @@ private:
    void push_back_no_throw(const_reference val);
 };
 
-#include <stdio.h>
 template<class T, class Alloc> void fixed_list_base<T, Alloc>::assign(size_t rsize,
 fixed_list_base<T, Alloc>::const_reference val)
 {
-	printf("The max_size is %u\n",max_size());
-	printf("The size is %u\n",size());
    if (rsize > max_size())
    {
       throw std::runtime_error("fixed_list: assign() fill range exceeds capacity");
@@ -100,7 +97,6 @@ fixed_list_base<T, Alloc>::const_reference val)
       }
       while (size() < rsize)
       {
-    	  printf("Pushing\n");
          //Capacity check done above. Safe to do the faster no_throw method.
          push_back_no_throw(val);
       }
@@ -611,9 +607,7 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::push_back_no_thro
    node* nd;
    if (fixed())
    {
-	   printf("Allocateing from pool\n");
       nd = fixed_pool_base<fixed_list_node<T> >::allocate_no_throw();
-      printf("Done\n");
    }
    else
    {
@@ -621,11 +615,8 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::push_back_no_thro
       nd = alloc.allocate(1);
       ++this->mIndex;
    }
-   printf("There\n");
    nd->prev = mTail;
-   printf("Where\n");
    nd->val = val;
-   printf("Here\n");
    nd->next = NULL;
    if (NULL != mTail)
    {

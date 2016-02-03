@@ -13,9 +13,7 @@ public:
       fixed_list<int> third;
 
       TS_ASSERT_THROWS(first.assign(8, 100), std::runtime_error);
-      printf("START\n");
       first.assign(7, 100); // 7 ints with a value of 100
-      printf("END\n");
 
       fixed_list<int, 7 > ::iterator it = first.begin();
       TS_ASSERT_THROWS(second.assign(it, first.end()), std::runtime_error);
