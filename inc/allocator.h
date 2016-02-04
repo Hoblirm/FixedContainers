@@ -71,6 +71,7 @@ namespace flex
       return reinterpret_cast<pointer>(::operator new(num * sizeof(T)));
     }
 
+    //TODO: construct and destroy MUST BE USED~!
     // initialize elements of allocated storage p with value value
     void construct(pointer p, const T& value)
     {

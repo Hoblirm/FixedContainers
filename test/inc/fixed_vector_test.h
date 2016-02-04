@@ -10,7 +10,7 @@ public:
   {
     fixed_vector<int, 7> first;
     fixed_vector<int, 5> second;
-    fixed_vector<int> third(3);
+    fixed_vector<int> third;
 
     TS_ASSERT_THROWS(first.assign(8, 100), std::runtime_error);
     first.assign(7, 100);             // 7 ints with a value of 100
@@ -50,8 +50,8 @@ public:
   {
     fixed_vector<int, 17> a;
     TS_ASSERT_EQUALS(a.capacity(), 17);
-    fixed_vector<int> b(19);
-    TS_ASSERT_EQUALS(b.capacity(), 19);
+    fixed_vector<int> b;
+    TS_ASSERT_EQUALS(b.capacity(), 0);
   }
 
   void test_clear(void)
@@ -119,9 +119,10 @@ public:
 
   void test_insert(void)
   {
-    fixed_vector<int> emptyvec(0);
+    fixed_vector<int> emptyvec;
+    printf("Start\n");
     TS_ASSERT_THROWS(emptyvec.insert(emptyvec.begin(), 1), std::runtime_error);
-
+    printf("End\n");
     fixed_vector<int, 16> myvector(3, 100);
     fixed_vector<int, 16>::iterator it;
 
@@ -178,8 +179,8 @@ public:
   {
     fixed_vector<int, 17> a;
     TS_ASSERT_EQUALS(a.max_size(), 17);
-    fixed_vector<int> b(19);
-    TS_ASSERT_EQUALS(b.max_size(), 19);
+    fixed_vector<int> b;
+    TS_ASSERT_EQUALS(b.max_size(), 0);
   }
 
   void test_assignment_operator(void)
@@ -230,7 +231,7 @@ public:
     foo[1] = 5;
     foo[2] = 17;
 
-    fixed_vector<int> bar2(8, 5, 2);
+    fixed_vector<int> bar2(5, 2);
     TS_ASSERT_THROWS(bar2 = larger, std::runtime_error);
 
     bar2 = foo;
@@ -316,7 +317,7 @@ public:
   void test_swap(void)
   {
     fixed_vector<int, 16> foo(3, 100);   // three ints with a value of 100
-    fixed_vector<int> bar(8, 5, 200);   // five ints with a value of 200
+    fixed_vector<int> bar(5, 200);   // five ints with a value of 200
 
     foo.swap(bar);
     TS_ASSERT_EQUALS(foo.size(), 5);
@@ -465,10 +466,10 @@ public:
   void test_specialized_default_constructor(void)
   {
     allocation_guard::enable();
-    TS_ASSERT_THROWS(fixed_vector<int> a(3), std::runtime_error);
+    TS_ASSERT_THROWS(fixed_vector<int> a, std::runtime_error);
 
     allocation_guard::disable();
-    fixed_vector<int> a(3);
+    fixed_vector<int> a;
     TS_ASSERT_EQUALS(a.size(), 0);
     TS_ASSERT_EQUALS(a.capacity(), 3);
   }
@@ -476,25 +477,25 @@ public:
   void test_specialized_default_fill_constructor(void)
   {
     allocation_guard::enable();
-    TS_ASSERT_THROWS(fixed_vector<int> a(3, 2), std::runtime_error);
+    TS_ASSERT_THROWS(fixed_vector<int> a(2), std::runtime_error);
 
     allocation_guard::disable();
-    fixed_vector<int> a(3, 2);
+    fixed_vector<int> a(2);
     TS_ASSERT_EQUALS(a.size(), 2);
     TS_ASSERT_EQUALS(a.capacity(), 3);
     TS_ASSERT_EQUALS(a[0], 0);
     TS_ASSERT_EQUALS(a[1], 0);
 
-    TS_ASSERT_THROWS(fixed_vector<int> b(3,4), std::runtime_error);
+    TS_ASSERT_THROWS(fixed_vector<int> b(4), std::runtime_error);
   }
 
   void test_specialized_fill_constructor(void)
   {
     allocation_guard::enable();
-    TS_ASSERT_THROWS(fixed_vector<int> a(3, 2, 7), std::runtime_error);
+    TS_ASSERT_THROWS(fixed_vector<int> a(2, 7), std::runtime_error);
 
     allocation_guard::disable();
-    fixed_vector<int> a(3, 2, 7);
+    fixed_vector<int> a(2, 7);
     TS_ASSERT_EQUALS(a.size(), 2);
     TS_ASSERT_EQUALS(a.capacity(), 3);
     TS_ASSERT_EQUALS(a[0], 7);
@@ -503,8 +504,8 @@ public:
 
   void test_specialized_range_constructor(void)
   {
-    fixed_vector<int> first(4, 4, 100);
-    fixed_vector<int> second(4, first.begin(), first.end());  // iterating through first
+    fixed_vector<int> first(4, 100);
+    fixed_vector<int> second(first.begin(), first.end());  // iterating through first
     TS_ASSERT_EQUALS(second.size(), 4);
     for (fixed_vector<int>::iterator it = second.begin(); it != second.end(); ++it)
     {
@@ -513,7 +514,7 @@ public:
 
     // the iterator constructor can also be used to construct from arrays:
     int myints[] = { 16, 2, 77, 29 };
-    fixed_vector<int> third(4, myints, myints + sizeof(myints) / sizeof(int));
+    fixed_vector<int> third(myints, myints + sizeof(myints) / sizeof(int));
     TS_ASSERT_EQUALS(third.size(), 4);
     TS_ASSERT_EQUALS(third[0], 16);
     TS_ASSERT_EQUALS(third[1], 2);
@@ -523,17 +524,17 @@ public:
 
   void test_specialized_copy_constructor(void)
   {
-    fixed_vector<int> a(3, 3, 0);
+    fixed_vector<int> a(3, 0);
     for (int i = 0; i < a.size(); i++)
     {
       a.data()[i] = i;
     }
 
     allocation_guard::enable();
-    TS_ASSERT_THROWS(fixed_vector<int> b(a), std::runtime_error);
+    TS_ASSERT_THROWS(fixed_vector<int> b, std::runtime_error);
 
     allocation_guard::disable();
-    fixed_vector<int> b(a);
+    fixed_vector<int> b;
     for (int i = 0; i < b.size(); i++)
     {
       TS_ASSERT_EQUALS(b.data()[i], a.data()[i]);

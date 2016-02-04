@@ -35,6 +35,7 @@ protected:
   fixed_vector_base(size_t capacity) :
       fixed_array_base<T, Alloc>(0), mCapacity(capacity), mFixed(false)
   {
+    this->mAryPtr = NULL;
   }
 
   fixed_vector_base(size_t capacity, size_t size) :
@@ -95,7 +96,7 @@ template<class T, class Alloc> void fixed_vector_base<T, Alloc>::assign(const T*
      }
      else
      {
-        reallocate(this->mSize);
+        reallocate(this->mSize+1);
      }
     }
     this->mAryPtr[this->mSize] = *it;
@@ -140,6 +141,7 @@ template<class T, class Alloc> T* fixed_vector_base<T, Alloc>::erase(T* first, T
   return first;
 }
 
+#include <stdio.h>
 template<class T, class Alloc> T* fixed_vector_base<T, Alloc>::insert(T* position, const T& val)
 {
   if (this->mSize >= mCapacity)
@@ -150,7 +152,8 @@ template<class T, class Alloc> T* fixed_vector_base<T, Alloc>::insert(T* positio
      }
      else
      {
-        reallocate(this->mSize);
+       printf("Attempting realloc~!\n");
+        reallocate(this->mSize+1);
      }
   }
 
@@ -268,7 +271,7 @@ template<class T, class Alloc> void fixed_vector_base<T, Alloc>::push_back(const
      }
      else
      {
-        reallocate(this->mSize);
+        reallocate(this->mSize+1);
      }
   }
   this->mAryPtr[this->mSize] = val;
@@ -344,25 +347,24 @@ template<class T, class Alloc> void fixed_vector_base<T, Alloc>::set_size(size_t
 
 template<class T, class Alloc> void fixed_vector_base<T, Alloc>::reallocate(size_t size)
 {
-   iterator old = this->mAryPtr
-   
-   //Check the passed in size to ensure we don't overflow the size by doubling its value.
-   //Without this check, the next loop could be infinite.
-   if (size >= (std::numeric_limits<std::size_t>::max()/2))
-   {
-      this->mSize = size;
-   }
-   else
-   {
-      //Keep doubling the size.  The allocator will handle the exception if mSize is too big.
-      while (size > this->mSize)
-      {
-         this->mSize *= 2;
-      }
-   }
+  printf("The size is %lu\n",size);
+   // This needs to return a value of at least currentCapacity and at least 1.
+   size_t new_capacity = (mCapacity > 0) ? (2 * mCapacity) : 1;
+
+   // If we are still less than the size, just set to the size.
+   if (new_capacity < size)
+     new_capacity = size;
    
    Alloc alloc;
-   alloc.
-  this->mSize = size;
+   T* old = this->mAryPtr;
+   this->mAryPtr = alloc.allocate(new_capacity);
+   if (NULL != old)
+   {
+     printf("Attempting delete.\n");
+     assign(old,old+this->mSize);
+     alloc.deallocate(old,mCapacity);
+   }
+   printf("New capacity is %lu\n",new_capacity);
+   mCapacity = new_capacity;
 }
 #endif /* FIXED_VECTOR_BASE_H */
