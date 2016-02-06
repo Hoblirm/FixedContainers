@@ -3,6 +3,7 @@
 
 #include <allocator.h>
 #include <fixed_array_iterator.h>
+#include <algorithm>
 
 template<class T, class Alloc = flex::allocator<T> > class fixed_array_base: public allocation_guard
 {

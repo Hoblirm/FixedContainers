@@ -120,9 +120,7 @@ public:
   void test_insert(void)
   {
     fixed_vector<int> emptyvec;
-    printf("Start\n");
     TS_ASSERT_THROWS(emptyvec.insert(emptyvec.begin(), 1), std::runtime_error);
-    printf("End\n");
     fixed_vector<int, 16> myvector(3, 100);
     fixed_vector<int, 16>::iterator it;
 
