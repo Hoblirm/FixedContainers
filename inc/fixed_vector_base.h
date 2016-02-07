@@ -69,7 +69,6 @@ protected:
   }
 
 private:
-  void set_size(size_t size);
   size_t GetNewCapacity(size_t min);
   T* DoAllocateAndConstruct(size_t size);
   void DoDestroyAndDeallocate();
@@ -460,13 +459,8 @@ template<class T, class Alloc> void fixed_vector_base<T, Alloc>::swap(fixed_vect
 
     size_t tmp_size = this->mSize;
     this->mSize = obj.size();
-    obj.set_size(tmp_size);
+    obj.mSize = tmp_size;
   }
-}
-
-template<class T, class Alloc> void fixed_vector_base<T, Alloc>::set_size(size_t size)
-{
-  this->mSize = size;
 }
 
 template<class T, class Alloc> size_t fixed_vector_base<T, Alloc>::GetNewCapacity(size_t min_size)

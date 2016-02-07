@@ -119,8 +119,8 @@ public:
 
   void test_insert(void)
   {
-    fixed_vector<int> emptyvec;
-    TS_ASSERT_THROWS(emptyvec.insert(emptyvec.begin(), 1), std::runtime_error);
+    fixed_vector<int,1> emptyvec;
+    TS_ASSERT_THROWS(emptyvec.insert(emptyvec.begin(), 2, 2), std::runtime_error);
     fixed_vector<int, 16> myvector(3, 100);
     fixed_vector<int, 16>::iterator it;
 
@@ -230,8 +230,6 @@ public:
     foo[2] = 17;
 
     fixed_vector<int> bar2(5, 2);
-    TS_ASSERT_THROWS(bar2 = larger, std::runtime_error);
-
     bar2 = foo;
     TS_ASSERT_EQUALS(bar2.size(), 3);
     TS_ASSERT_EQUALS(bar2[0], 1);
@@ -346,6 +344,8 @@ public:
       TS_ASSERT_EQUALS(bar[i], 200);
     }
 
+    foo.push_back(100);
+    foo.push_back(100);
     foo.push_back(100);
     foo.push_back(100);
     foo.push_back(100);
@@ -464,12 +464,12 @@ public:
   void test_specialized_default_constructor(void)
   {
     allocation_guard::enable();
-    TS_ASSERT_THROWS(fixed_vector<int> a, std::runtime_error);
+    TS_ASSERT_THROWS(fixed_vector<int> a(1), std::runtime_error);
 
     allocation_guard::disable();
     fixed_vector<int> a;
     TS_ASSERT_EQUALS(a.size(), 0);
-    TS_ASSERT_EQUALS(a.capacity(), 3);
+    TS_ASSERT_EQUALS(a.capacity(), 0);
   }
 
   void test_specialized_default_fill_constructor(void)
@@ -480,11 +480,9 @@ public:
     allocation_guard::disable();
     fixed_vector<int> a(2);
     TS_ASSERT_EQUALS(a.size(), 2);
-    TS_ASSERT_EQUALS(a.capacity(), 3);
+    TS_ASSERT_EQUALS(a.capacity(), 2);
     TS_ASSERT_EQUALS(a[0], 0);
     TS_ASSERT_EQUALS(a[1], 0);
-
-    TS_ASSERT_THROWS(fixed_vector<int> b(4), std::runtime_error);
   }
 
   void test_specialized_fill_constructor(void)
@@ -495,7 +493,7 @@ public:
     allocation_guard::disable();
     fixed_vector<int> a(2, 7);
     TS_ASSERT_EQUALS(a.size(), 2);
-    TS_ASSERT_EQUALS(a.capacity(), 3);
+    TS_ASSERT_EQUALS(a.capacity(), 2);
     TS_ASSERT_EQUALS(a[0], 7);
     TS_ASSERT_EQUALS(a[1], 7);
   }
@@ -529,10 +527,10 @@ public:
     }
 
     allocation_guard::enable();
-    TS_ASSERT_THROWS(fixed_vector<int> b, std::runtime_error);
+    TS_ASSERT_THROWS(fixed_vector<int> b(a), std::runtime_error);
 
     allocation_guard::disable();
-    fixed_vector<int> b;
+    fixed_vector<int> b(a);
     for (int i = 0; i < b.size(); i++)
     {
       TS_ASSERT_EQUALS(b.data()[i], a.data()[i]);

@@ -77,9 +77,12 @@ protected:
 
   node* mHead;
   node* mTail;
+  Alloc mAllocator;
 
 private:
   void push_back_no_throw(const_reference val);
+  node* DoAllocateAndConstruct();
+  void DoDestroyAndDeallocate(node* ptr);
 };
 
 template<class T, class Alloc> void fixed_list_base<T, Alloc>::assign(size_t rsize,
@@ -243,8 +246,7 @@ template<class T, class Alloc> typename fixed_list_base<T, Alloc>::iterator fixe
   }
   else
   {
-    Alloc alloc;
-    alloc.deallocate(position.mNodePtr, 1);
+    DoDestroyAndDeallocate(position.mNodePtr);
     --this->mIndex;
   }
 
@@ -275,16 +277,18 @@ template<class T, class Alloc> typename fixed_list_base<T, Alloc>::iterator fixe
     mTail = lhs; //tail is being erased; must update
   }
 
-  for (iterator it = first; it != last; ++it)
+  if (fixed())
   {
-    if (fixed())
+    for (iterator it = first; it != last; ++it)
     {
       fixed_pool_base<fixed_list_node<T> >::deallocate(it.mNodePtr);
     }
-    else
+  }
+  else
+  {
+    for (iterator it = first; it != last; ++it)
     {
-      Alloc alloc;
-      alloc.deallocate(it.mNodePtr, 1);
+      DoDestroyAndDeallocate(it.mNodePtr);
       --this->mIndex;
     }
   }
@@ -299,8 +303,7 @@ template<class T, class Alloc> bool fixed_list_base<T, Alloc>::fixed() const
 
 template<class T, class Alloc> typename fixed_list_base<T, Alloc>::allocator_type fixed_list_base<T, Alloc>::get_allocator() const
 {
-  Alloc a;
-  return a;
+  return mAllocator;
 }
 
 template<class T, class Alloc> typename fixed_list_base<T, Alloc>::reference fixed_list_base<T, Alloc>::front()
@@ -336,8 +339,7 @@ template<class T, class Alloc> typename fixed_list_base<T, Alloc>::iterator fixe
     }
     else
     {
-      Alloc alloc;
-      nd = alloc.allocate(1);
+      nd = DoAllocateAndConstruct();
       ++this->mIndex;
     }
 
@@ -391,8 +393,7 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::insert(fixed_list
       }
       else
       {
-        Alloc alloc;
-        nd = alloc.allocate(1);
+        nd = DoAllocateAndConstruct();
         ++this->mIndex;
       }
       nd->val = val;
@@ -440,8 +441,7 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::insert(fixed_list
       }
       else
       {
-        Alloc alloc;
-        nd = alloc.allocate(1);
+        nd = DoAllocateAndConstruct();
         ++this->mIndex;
       }
       nd->val = *it;
@@ -458,8 +458,7 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::insert(fixed_list
       }
       else
       {
-        Alloc alloc;
-        nd = alloc.allocate(1);
+        nd = DoAllocateAndConstruct();
         ++this->mIndex;
       }
       nd->val = *it;
@@ -499,8 +498,7 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::insert(fixed_list
       }
       else
       {
-        Alloc alloc;
-        nd = alloc.allocate(1);
+        nd = DoAllocateAndConstruct();
         ++this->mIndex;
       }
       nd->val = *it;
@@ -517,8 +515,7 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::insert(fixed_list
       }
       else
       {
-        Alloc alloc;
-        nd = alloc.allocate(1);
+        nd = DoAllocateAndConstruct();
         ++this->mIndex;
       }
       nd->val = *it;
@@ -562,8 +559,7 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::pop_back()
   }
   else
   {
-    Alloc alloc;
-    alloc.deallocate(mTail, 1);
+    DoDestroyAndDeallocate(mTail);
     --this->mIndex;
   }
   mTail = prev;
@@ -586,8 +582,7 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::pop_front()
   }
   else
   {
-    Alloc alloc;
-    alloc.deallocate(mHead, 1);
+    DoDestroyAndDeallocate(mHead);
     --this->mIndex;
   }
   mHead = next;
@@ -612,8 +607,7 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::push_back_no_thro
   }
   else
   {
-    Alloc alloc;
-    nd = alloc.allocate(1);
+    nd = DoAllocateAndConstruct();
     ++this->mIndex;
   }
   nd->prev = mTail;
@@ -644,8 +638,7 @@ template<class T, class Alloc> void fixed_list_base<T, Alloc>::push_front(const 
   }
   else
   {
-    Alloc alloc;
-    nd = alloc.allocate(1);
+    nd = DoAllocateAndConstruct();
     ++this->mIndex;
   }
   nd->next = mHead;
@@ -776,6 +769,19 @@ template<class T, class Alloc> fixed_list_base<T, Alloc>::fixed_list_base(size_t
   {
     this->mPtrList[i] = &this->mContentList[i];
   }
+}
+
+template<class T, class Alloc> fixed_list_node<T>* fixed_list_base<T, Alloc>::DoAllocateAndConstruct()
+{
+  fixed_list_node<T>* ptr = mAllocator.allocate(1);
+  mAllocator.construct(ptr, fixed_list_node<T>());
+  return ptr;
+}
+
+template<class T, class Alloc> void fixed_list_base<T, Alloc>::DoDestroyAndDeallocate(fixed_list_node<T>* ptr)
+{
+  mAllocator.destroy(ptr);
+  mAllocator.deallocate(ptr, 1);
 }
 
 template<class T, class Alloc>
