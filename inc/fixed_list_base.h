@@ -3,7 +3,7 @@
 
 #include <fixed_pool.h>
 #include <fixed_list_iterator.h>
-#include <allocator.h>
+#include <flex/allocator.h>
 
 template<class T, class Alloc = flex::allocator<fixed_list_node<T> > > class fixed_list_base: public fixed_pool_base<
     fixed_list_node<T> >

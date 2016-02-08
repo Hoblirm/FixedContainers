@@ -2,7 +2,8 @@
 #define FLEX_ALLOCATOR_H
 
 #include <limits>
-#include <allocation_guard.h>
+
+#include <flex/allocation_guard.h>
 
 namespace flex
 {

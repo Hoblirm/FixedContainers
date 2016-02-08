@@ -1,16 +1,12 @@
 #include <cxxtest/TestSuite.h>
 
-#include <fixed_array.h>
+#include <flex/array.h>
 
-template<class T>
-class fixed_array_mock: public fixed_array<T>
+using namespace flex;
+template<class T, size_t N = 0>
+class array_mock: public array<T, N>
 {
 public:
-
-  fixed_array_mock(size_t Size) :
-      fixed_array<T>(Size)
-  {
-  }
 
   size_t Size()
   {
@@ -24,14 +20,14 @@ public:
 
 };
 
-class fixed_array_test: public CxxTest::TestSuite
+class array_test: public CxxTest::TestSuite
 {
 public:
 
   void test_at(void)
   {
     unsigned size = 3;
-    fixed_array_mock<int> a(size);
+    array_mock<int, 3> a;
     TS_ASSERT_THROWS(a.at(-1), std::out_of_range);
     for (int i = 0; i < size; i++)
     {
@@ -44,7 +40,7 @@ public:
   void test_at_const(void)
   {
     unsigned size = 3;
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     TS_ASSERT_THROWS(const int& v = a.at(-1), std::out_of_range);
     for (int i = 0; i < size; i++)
     {
@@ -58,7 +54,7 @@ public:
   void test_back(void)
   {
     unsigned size = 3;
-    fixed_array_mock<int> a(size);
+    array_mock<int, 3> a;
     a.Array()[size - 1] = size - 1;
     TS_ASSERT_EQUALS(a.back(), size - 1);
   }
@@ -66,7 +62,7 @@ public:
   void test_back_const(void)
   {
     unsigned size = 3;
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     a.Array()[size - 1] = size - 1;
     TS_ASSERT_EQUALS(a.back(), size - 1);
   }
@@ -75,14 +71,14 @@ public:
   {
     unsigned size = 3;
 
-    fixed_array_mock<int> a(size);
+    array_mock<int, 3> a;
     for (int i = 0; i < size; i++)
     {
       a.Array()[i] = i;
     }
 
     int i = 0;
-    for (fixed_array_mock<int>::iterator it = a.begin(); it < a.end(); ++it)
+    for (array_mock<int, 3>::iterator it = a.begin(); it < a.end(); ++it)
     {
       TS_ASSERT_EQUALS(*it, i);
       *it = 0; //Ensure it is not const.
@@ -95,14 +91,14 @@ public:
   {
     unsigned size = 3;
 
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     for (int i = 0; i < size; i++)
     {
       a.Array()[i] = i;
     }
 
     int i = 0;
-    for (fixed_array_mock<int>::const_iterator it = a.begin(); it != a.end(); ++it)
+    for (array_mock<int, 3>::const_iterator it = a.begin(); it != a.end(); ++it)
     {
       TS_ASSERT_EQUALS(*it, i);
       ++i;
@@ -114,14 +110,14 @@ public:
   {
     unsigned size = 3;
 
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     for (int i = 0; i < size; i++)
     {
       a.Array()[i] = i;
     }
 
     int i = 0;
-    for (fixed_array_mock<int>::const_iterator it = a.cbegin(); it < a.cend(); ++it)
+    for (array_mock<int, 3>::const_iterator it = a.cbegin(); it < a.cend(); ++it)
     {
       TS_ASSERT_EQUALS(*it, i);
       ++i;
@@ -133,14 +129,14 @@ public:
   {
     unsigned size = 3;
 
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     for (int i = 0; i < size; i++)
     {
       a.Array()[i] = i;
     }
 
     int i = size - 1;
-    for (fixed_array_mock<int>::const_reverse_iterator it = a.crbegin(); it < a.crend(); ++it)
+    for (array_mock<int, 3>::const_reverse_iterator it = a.crbegin(); it < a.crend(); ++it)
     {
       TS_ASSERT_EQUALS(*it, i);
       --i;
@@ -151,30 +147,30 @@ public:
   void test_data(void)
   {
     unsigned size = 3;
-    fixed_array_mock<int> a(size);
+    array_mock<int, 3> a;
     TS_ASSERT_EQUALS(a.data(), a.Array());
   }
 
   void test_data_const(void)
   {
     unsigned size = 3;
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     TS_ASSERT_EQUALS(a.data(), a.Array());
   }
 
   void test_empty(void)
   {
     unsigned size = 3;
-    fixed_array_mock<int> a(size);
+    array_mock<int,3> a;
     TS_ASSERT_EQUALS(a.empty(), false);
-    fixed_array_mock<int> b(0);
+    array_mock<int,0> b;
     TS_ASSERT_EQUALS(b.empty(), true);
   }
 
   void test_fill(void)
   {
     unsigned size = 3;
-    fixed_array_mock<int> a(size);
+    array_mock<int, 3> a;
     a.fill(5);
     for (int i = 0; i < size; i++)
     {
@@ -185,7 +181,7 @@ public:
   void test_front(void)
   {
     unsigned size = 3;
-    fixed_array_mock<int> a(size);
+    array_mock<int, 3> a;
     a.Array()[0] = size;
     TS_ASSERT_EQUALS(a.front(), size);
   }
@@ -193,7 +189,7 @@ public:
   void test_front_const(void)
   {
     unsigned size = 3;
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     a.Array()[0] = size;
     TS_ASSERT_EQUALS(a.front(), size);
   }
@@ -201,14 +197,14 @@ public:
   void test_max_size(void)
   {
     unsigned size = 3;
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     TS_ASSERT_EQUALS(a.max_size(), size);
   }
 
   void test_ary_operator(void)
   {
     unsigned size = 3;
-    fixed_array_mock<int> a(size);
+    array_mock<int, 3> a;
     for (int i = 0; i < size; i++)
     {
       a[i] = i;
@@ -219,7 +215,7 @@ public:
   void test_ary_operator_const(void)
   {
     unsigned size = 3;
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     for (int i = 0; i < size; i++)
     {
       a.Array()[i] = i;
@@ -232,14 +228,14 @@ public:
   {
     unsigned size = 3;
 
-    fixed_array_mock<int> a(size);
+    array_mock<int, 3> a;
     for (int i = 0; i < size; i++)
     {
       a.Array()[i] = i;
     }
 
     int i = size - 1;
-    for (fixed_array_mock<int>::reverse_iterator it = a.rbegin(); it < a.rend(); ++it)
+    for (array_mock<int, 3>::reverse_iterator it = a.rbegin(); it < a.rend(); ++it)
     {
       TS_ASSERT_EQUALS(*it, i);
       *it = 0; //Ensure it is not const.
@@ -252,14 +248,14 @@ public:
   {
     unsigned size = 3;
 
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     for (int i = 0; i < size; i++)
     {
       a.Array()[i] = i;
     }
 
     int i = size - 1;
-    for (fixed_array_mock<int>::const_reverse_iterator it = a.rbegin(); it < a.rend(); ++it)
+    for (array_mock<int, 3>::const_reverse_iterator it = a.rbegin(); it < a.rend(); ++it)
     {
       TS_ASSERT_EQUALS(*it, i);
       --i;
@@ -270,7 +266,7 @@ public:
   void test_size(void)
   {
     unsigned size = 3;
-    const fixed_array_mock<int> a(size);
+    const array_mock<int, 3> a;
     TS_ASSERT_EQUALS(a.size(), size);
   }
 
@@ -278,14 +274,14 @@ public:
   {
     unsigned size = 5;
 
-    fixed_array_mock<int> first(size);
+    array_mock<int, 5> first;
     first.Array()[0] = 10;
     first.Array()[1] = 20;
     first.Array()[2] = 30;
     first.Array()[3] = 40;
     first.Array()[4] = 50;
 
-    fixed_array_mock<int> second(size);
+    array_mock<int, 5> second;
     second.Array()[0] = 11;
     second.Array()[1] = 22;
     second.Array()[2] = 33;
@@ -310,20 +306,20 @@ public:
   void test_constructor(void)
   {
     allocation_guard::enable();
-    fixed_array<int, 3> a;
+    array<int, 3> a;
     TS_ASSERT_EQUALS(a.size(), 3);
     allocation_guard::disable();
   }
 
   void test_copy_constructor(void)
   {
-    fixed_array<int, 3> a;
+    array<int, 3> a;
     for (int i = 0; i < a.size(); i++)
     {
       a.data()[i] = i;
     }
 
-    fixed_array<int, 3> b(a);
+    array<int, 3> b(a);
     for (int i = 0; i < b.size(); i++)
     {
       TS_ASSERT_EQUALS(b.data()[i], a.data()[i]);
@@ -333,12 +329,12 @@ public:
   void test_assignment_operator(void)
   {
     //#1 Test default assignment.
-    fixed_array<int, 3> foo;
+    array<int, 3> foo;
     foo[0] = 1;
     foo[1] = 5;
     foo[2] = 17;
 
-    fixed_array<int, 3> bar;
+    array<int, 3> bar;
     bar.fill(2);
 
     bar = foo;
@@ -354,13 +350,10 @@ public:
     TS_ASSERT_EQUALS(foo[1], 5);
     TS_ASSERT_EQUALS(foo[2], 17);
 
-    fixed_array<int> bar2(3);
+    array<int, 3> bar2;
     bar2.fill(2);
 
     //#2 Test assignment with specialized parameter.
-    fixed_array<int> larger(4);
-    TS_ASSERT_THROWS(larger = foo, std::runtime_error);
-
     bar2 = foo;
     TS_ASSERT_EQUALS(bar2.size(), 3);
     TS_ASSERT_EQUALS(bar2[0], 1);
@@ -375,12 +368,10 @@ public:
     TS_ASSERT_EQUALS(foo[2], 17);
 
     //#3 Test specialized assignment.
-    fixed_array<int> foo2(3);
+    array<int, 3> foo2;
     foo2[0] = 1;
     foo2[1] = 5;
     foo2[2] = 17;
-
-    TS_ASSERT_THROWS(larger = foo2, std::runtime_error);
 
     bar2.fill(2);
 
@@ -398,81 +389,14 @@ public:
     TS_ASSERT_EQUALS(foo2[2], 17);
   }
 
-  void assignment_method(fixed_array<int>& x)
-  {
-    for (int i = 0; i < x.size(); i++)
-    {
-      x[i] = i;
-    }
-  }
-
-  void read_method(const fixed_array<int>& x)
-  {
-    for (int i = 0; i < x.size(); i++)
-    {
-      TS_ASSERT_EQUALS(x[i], i);
-    }
-  }
-
-  void copy_method(fixed_array<int> x)
-  {
-    for (int i = 0; i < x.size(); i++)
-    {
-      TS_ASSERT_EQUALS(x[i], i);
-    }
-  }
-
-  void test_cast_operator(void)
-  {
-    allocation_guard::enable();
-    fixed_array<int, 8> a;
-    assignment_method(a);
-    read_method(a);
-    TS_ASSERT_THROWS(copy_method(a), std::runtime_error);
-
-    allocation_guard::disable();
-    copy_method(a);
-  }
-
-  void test_specialized_constructor(void)
-  {
-    allocation_guard::enable();
-    TS_ASSERT_THROWS(fixed_array_mock<int> a3(3), std::runtime_error);
-
-    allocation_guard::disable();
-    fixed_array_mock<int> a3(3);
-    TS_ASSERT_EQUALS(a3.Size(), 3);
-  }
-
-  void test_specialized_copy_constructor(void)
-  {
-    unsigned size = 3;
-
-    fixed_array_mock<int> a(size);
-    for (int i = 0; i < size; i++)
-    {
-      a.Array()[i] = i;
-    }
-
-    allocation_guard::enable();
-    TS_ASSERT_THROWS(fixed_array_mock<int> b(a), std::runtime_error);
-
-    allocation_guard::disable();
-    fixed_array_mock<int> b(a);
-    for (int i = 0; i < size; i++)
-    {
-      TS_ASSERT_EQUALS(b.Array()[i], a.Array()[i]);
-    }
-  }
-
   void test_relational_operators(void)
   {
     int aAry[5] = { 10, 20, 30, 40, 50 };
     int bAry[5] = { 10, 20, 30, 40, 50 };
     int cAry[5] = { 50, 40, 30, 20, 10 };
-    fixed_array<int, 5> a;
-    fixed_array<int, 5> b;
-    fixed_array<int> c(5);
+    array<int, 5> a;
+    array<int, 5> b;
+    array<int, 5> c;
     for (int i = 0; i < 5; ++i)
     {
       a[i] = b[i] = (i * 10) + 10;

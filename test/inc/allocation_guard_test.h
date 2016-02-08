@@ -1,8 +1,9 @@
 #include <cxxtest/TestSuite.h>
 
-#include <allocation_guard.h>
+#include <flex/allocation_guard.h>
 #include <string>
 
+using namespace flex;
 struct guarded_class: public allocation_guard
 {
   char data[256];

@@ -1,9 +1,11 @@
 #ifndef FIXED_POOL_H
 #define FIXED_POOL_H
 
-#include <allocation_guard.h>
+#include <flex/allocation_guard.h>
 
-template<class T> class fixed_pool_base: allocation_guard
+using namespace flex;
+
+template<class T> class fixed_pool_base: flex::allocation_guard
 {
 public:
   T* allocate();

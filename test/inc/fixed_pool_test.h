@@ -3,7 +3,7 @@
 #include "fixed_pool.h"
 #include <string>
 
-using namespace std;
+using namespace flex;
 
 class Foo
 {
@@ -124,7 +124,7 @@ public:
       pool.allocate();
       pool.allocate();
     }
-    catch (exception& e)
+    catch (std::exception& e)
     {
       exception_caught = true;
     }

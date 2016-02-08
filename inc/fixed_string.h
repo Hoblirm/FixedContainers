@@ -1,18 +1,19 @@
 #ifndef FIXED_STRING_H
 #define FIXED_STRING_H
 
-#include <fixed_array.h>
+#include <flex/array.h>
 
-class fixed_string_base: public fixed_array_base<char>
+using namespace flex;
+class fixed_string_base: public flex::array_base<char>
 {
 protected:
   fixed_string_base(size_t size) :
-      fixed_array_base<char>(size)
+      array_base<char>(size)
   {
   }
 
   fixed_string_base(size_t size, char* ptr) :
-      fixed_array_base<char>(size, ptr)
+      array_base<char>(size, ptr)
   {
   }
 };
