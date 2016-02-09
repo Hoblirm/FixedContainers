@@ -1,6 +1,6 @@
 #include <cxxtest/TestSuite.h>
 
-#include "fixed_pool.h"
+#include "flex/fixed_pool.h"
 #include <string>
 
 using namespace flex;
@@ -34,14 +34,15 @@ public:
   // It should return the max_size of the pool
   void test_max_size(void)
   {
-    fixed_pool<Foo> pool(10);
+    allocation_guard::disable();
+    pool<Foo> pool(10);
     TS_ASSERT_EQUALS(pool.max_size(), 10);
   }
 
   // It should return the available objects in the pool.
   void test_available(void)
   {
-    fixed_pool<Foo> pool(10);
+    pool<Foo> pool(10);
     Foo* ptrList[10];
     for (int i = 10; i > 0; i--)
     {
@@ -59,7 +60,7 @@ public:
   // It should return the number of objects allocated by the pool.
    void test_outstanding(void)
    {
-     fixed_pool<Foo> pool(10);
+     pool<Foo> pool(10);
      Foo* ptrList[10];
      for (int i = 0; i < 10; i++)
      {
@@ -77,7 +78,7 @@ public:
   // It should be able to allocate objects in order.
   void test_allocate_ordered(void)
   {
-    fixed_pool<Foo> pool(3);
+    pool<Foo> pool(3);
 
     Foo* a = pool.allocate();
     Foo* b = pool.allocate();
@@ -132,7 +133,7 @@ public:
 
   }
 
-  void modify_method(fixed_pool<Foo>& x)
+  void modify_method(pool<Foo>& x)
   {
     for (int i = 0; i < x.max_size(); i++)
     {
@@ -140,7 +141,7 @@ public:
     }
   }
 
-  void read_method(const fixed_pool<Foo>& x)
+  void read_method(const pool<Foo>& x)
   {
     TS_ASSERT_EQUALS(x.available(), 0);
   }
@@ -155,12 +156,12 @@ public:
   void test_constructor(void)
   {
     allocation_guard::enable();
-    fixed_pool<Foo, 8> pool;
-    TS_ASSERT_EQUALS(pool.available(), 8);
-    TS_ASSERT_THROWS(fixed_pool<Foo> pool(8), std::runtime_error);
+    fixed_pool<Foo, 8> p;
+    TS_ASSERT_EQUALS(p.available(), 8);
+    TS_ASSERT_THROWS(pool<Foo> p2(8), std::runtime_error);
     allocation_guard::disable();
-    fixed_pool<Foo> pool2(8);
-    TS_ASSERT_EQUALS(pool2.available(), 8);
+    flex::pool<Foo> p2(8);
+    TS_ASSERT_EQUALS(p2.available(), 8);
   }
 
 };

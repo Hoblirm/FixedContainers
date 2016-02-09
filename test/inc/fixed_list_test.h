@@ -1,6 +1,8 @@
 #include <cxxtest/TestSuite.h>
 
-#include <fixed_list.h>
+#include <flex/fixed_list.h>
+
+using namespace flex;
 
 class fixed_list_test : public CxxTest::TestSuite
 {
@@ -10,7 +12,7 @@ public:
    {
       fixed_list<int, 7 > first;
       fixed_list<int, 5 > second;
-      fixed_list<int> third;
+      list<int> third;
 
       TS_ASSERT_THROWS(first.assign(8, 100), std::runtime_error);
       first.assign(7, 100); // 7 ints with a value of 100
@@ -54,7 +56,7 @@ public:
    {
       unsigned size = 3;
       int ary[] = {0, 1, 2};
-      fixed_list<int> a(ary, ary + 3);
+      list<int> a(ary, ary + 3);
       TS_ASSERT_EQUALS(a.back(), size - 1);
    }
 
@@ -62,7 +64,7 @@ public:
    {
       unsigned size = 3;
       int ary[3] = {0, 1, 2};
-      const fixed_list<int> a(ary, ary + 3);
+      const list<int> a(ary, ary + 3);
       TS_ASSERT_EQUALS(a.back(), size - 1);
    }
 
@@ -70,10 +72,10 @@ public:
    {
       unsigned size = 3;
       int ary[] = {0, 1, 2};
-      fixed_list<int> a(ary, ary + 3);
+      list<int> a(ary, ary + 3);
 
       int i = 0;
-      for (fixed_list<int>::iterator it = a.begin(); it != a.end(); ++it)
+      for (list<int>::iterator it = a.begin(); it != a.end(); ++it)
       {
          TS_ASSERT_EQUALS(*it, i);
          *it = 0; //Ensure it is not const.
@@ -87,10 +89,10 @@ public:
       unsigned size = 3;
 
       int ary[3] = {0, 1, 2};
-      const fixed_list<int> a(ary, ary + 3);
+      const list<int> a(ary, ary + 3);
 
       int i = 0;
-      for (fixed_list<int>::const_iterator it = a.begin(); it != a.end(); ++it)
+      for (list<int>::const_iterator it = a.begin(); it != a.end(); ++it)
       {
          TS_ASSERT_EQUALS(*it, i);
          ++i;
@@ -103,10 +105,10 @@ public:
       unsigned size = 3;
 
       int ary[3] = {0, 1, 2};
-      const fixed_list<int> a(ary, ary + 3);
+      const list<int> a(ary, ary + 3);
 
       int i = 0;
-      for (fixed_list<int>::const_iterator it = a.cbegin(); it != a.cend(); ++it)
+      for (list<int>::const_iterator it = a.cbegin(); it != a.cend(); ++it)
       {
          TS_ASSERT_EQUALS(*it, i);
          ++i;
@@ -119,10 +121,10 @@ public:
       unsigned size = 3;
 
       int ary[3] = {0, 1, 2};
-      const fixed_list<int> a(ary, ary + 3);
+      const list<int> a(ary, ary + 3);
 
       int i = size - 1;
-      for (fixed_list<int>::const_reverse_iterator it = a.crbegin(); it != a.crend(); ++it)
+      for (list<int>::const_reverse_iterator it = a.crbegin(); it != a.crend(); ++it)
       {
          TS_ASSERT_EQUALS(*it, i);
          --i;
@@ -150,12 +152,12 @@ public:
       TS_ASSERT_EQUALS(sum, 55);
    }
 
-   void erase_method(fixed_list<int>& mylist)
+   void erase_method(list<int>& mylist)
    {
       TS_ASSERT_EQUALS(mylist.size(), 10);
 
       // erase the 6th element
-      fixed_list<int>::iterator it = mylist.begin();
+      list<int>::iterator it = mylist.begin();
       for (int i = 0; i < 5; ++i)
       {
          ++it;
@@ -201,7 +203,7 @@ public:
       erase_method(fl);
 
       //Test the expandable version.
-      fixed_list<int> ex(ary, ary + 10);
+      list<int> ex(ary, ary + 10);
       erase_method(ex);
    }
 
@@ -209,7 +211,7 @@ public:
    {
       unsigned size = 3;
       int ary[] = {3, 2, 1};
-      fixed_list<int> a(ary, ary + 3);
+      list<int> a(ary, ary + 3);
       TS_ASSERT_EQUALS(a.front(), size);
    }
 
@@ -217,18 +219,18 @@ public:
    {
       unsigned size = 3;
       int ary[3] = {3, 2, 1};
-      const fixed_list<int> a(ary, ary + 3);
+      const list<int> a(ary, ary + 3);
       TS_ASSERT_EQUALS(a.front(), size);
    }
 
-   void insert_method(fixed_list<int>& mylist)
+   void insert_method(list<int>& mylist)
    {
-      fixed_list<int>::iterator it;
+      list<int>::iterator it;
 
       it = mylist.begin();
       it = mylist.insert(it, 200);
       TS_ASSERT_EQUALS(mylist.size(), 4);
-      fixed_list<int>::iterator i = mylist.begin();
+      list<int>::iterator i = mylist.begin();
       TS_ASSERT_EQUALS(*(i++), 200);
       TS_ASSERT_EQUALS(*(i++), 100);
       TS_ASSERT_EQUALS(*(i++), 100);
@@ -249,7 +251,7 @@ public:
       it = mylist.begin();
       ++it;
       ++it;
-      fixed_list<int> anotherlist(2, 400);
+      list<int> anotherlist(2, 400);
       mylist.insert(it, anotherlist.begin(), anotherlist.end());
       TS_ASSERT_EQUALS(mylist.size(), 8);
       i = mylist.begin();
@@ -291,14 +293,14 @@ public:
       TS_ASSERT_THROWS(fl.insert(fl.begin(), myarray, myarray + 9), std::runtime_error);
 
       //Test expandable version
-      fixed_list<int> ex(3, 100);
+      list<int> ex(3, 100);
       insert_method(ex);
    }
 
    void test_max_size(void)
    {
       unsigned size = 3;
-      fixed_list<int> a;
+      list<int> a;
       TS_ASSERT_EQUALS(a.max_size(), a.get_allocator().max_size());
       fixed_list<int, 3 > b;
       TS_ASSERT_EQUALS(b.max_size(), size);
@@ -332,12 +334,12 @@ public:
       //We are going to empty the list out.  Although the list is empty, the nodes still exist in a memory pool.
       //The nodes are going to be inspected to ensure that a member-wise copy didn't impact the nodes.  This test
       //is to ensure the default assignment operator is not removed.  As it will cause the undesired member-wise copy.
-      fixed_list_node<int>* pool_begin = (fixed_list_node<int>*) (&(*foo.begin()));
+      list_node<int>* pool_begin = (list_node<int>*) (&(*foo.begin()));
       fixed_list<int, 8 > ::iterator prev_it = foo.begin();
       fixed_list<int, 8 > tmp(1, 7);
       foo = tmp;
       TS_ASSERT_EQUALS(foo.size(), 1);
-      fixed_list_node<int>* node_it = pool_begin;
+      list_node<int>* node_it = pool_begin;
       TS_ASSERT_EQUALS((node_it++)->val, 7);
       TS_ASSERT_EQUALS((node_it++)->val, 5);
       TS_ASSERT_EQUALS((node_it++)->val, 17);
@@ -445,10 +447,10 @@ public:
       unsigned size = 3;
 
       int ary[3] = {0, 1, 2};
-      fixed_list<int> a(ary, ary + 3);
+      list<int> a(ary, ary + 3);
 
       int i = size - 1;
-      for (fixed_list<int>::reverse_iterator it = a.rbegin(); it != a.rend(); ++it)
+      for (list<int>::reverse_iterator it = a.rbegin(); it != a.rend(); ++it)
       {
          TS_ASSERT_EQUALS(*it, i);
          *it = 0; //Ensure it is not const.
@@ -462,10 +464,10 @@ public:
       unsigned size = 3;
 
       int ary[3] = {0, 1, 2};
-      const fixed_list<int> a(ary, ary + 3);
+      const list<int> a(ary, ary + 3);
 
       int i = size - 1;
-      for (fixed_list<int>::const_reverse_iterator it = a.rbegin(); it != a.rend(); ++it)
+      for (list<int>::const_reverse_iterator it = a.rbegin(); it != a.rend(); ++it)
       {
          TS_ASSERT_EQUALS(*it, i);
          --i;
@@ -476,7 +478,7 @@ public:
    void test_size(void)
    {
       unsigned size = 3;
-      const fixed_list<int> a(3, 0);
+      const list<int> a(3, 0);
       TS_ASSERT_EQUALS(a.size(), size);
    }
 
@@ -488,13 +490,13 @@ public:
       foo.swap(bar);
       TS_ASSERT_EQUALS(foo.size(), 5);
 
-      for (fixed_list<int>::iterator it = foo.begin(); it != foo.end(); ++it)
+      for (list<int>::iterator it = foo.begin(); it != foo.end(); ++it)
       {
          TS_ASSERT_EQUALS(*it, 200);
       }
 
       TS_ASSERT_EQUALS(bar.size(), 3);
-      for (fixed_list<int>::iterator it = bar.begin(); it != bar.end(); ++it)
+      for (list<int>::iterator it = bar.begin(); it != bar.end(); ++it)
       {
          TS_ASSERT_EQUALS(*it, 100);
       }
@@ -504,13 +506,13 @@ public:
       bar.push_back(100);
       bar.swap(foo);
       TS_ASSERT_EQUALS(foo.size(), 6);
-      for (fixed_list<int>::iterator it = foo.begin(); it != foo.end(); ++it)
+      for (list<int>::iterator it = foo.begin(); it != foo.end(); ++it)
       {
          TS_ASSERT_EQUALS(*it, 100);
       }
 
       TS_ASSERT_EQUALS(bar.size(), 5);
-      for (fixed_list<int>::iterator it = bar.begin(); it != bar.end(); ++it)
+      for (list<int>::iterator it = bar.begin(); it != bar.end(); ++it)
       {
          TS_ASSERT_EQUALS(*it, 200);
       }
@@ -533,41 +535,41 @@ public:
    {
       fixed_list<int, 3 > a;
       int i = 0;
-      for (fixed_list<int>::iterator it = a.begin(); it != a.end(); ++it)
+      for (list<int>::iterator it = a.begin(); it != a.end(); ++it)
       {
          *it = i++;
       }
 
       fixed_list<int, 3 > b(a);
-      fixed_list<int>::iterator bit = b.begin();
-      for (fixed_list<int>::iterator it = a.begin(); it != a.end(); ++it)
+      list<int>::iterator bit = b.begin();
+      for (list<int>::iterator it = a.begin(); it != a.end(); ++it)
       {
          TS_ASSERT_EQUALS(*bit, *it);
       }
    }
 
-   void assignment_method(fixed_list<int>& x)
+   void assignment_method(list<int>& x)
    {
       int i = 0;
-      for (fixed_list<int>::iterator it = x.begin(); it != x.end(); ++it)
+      for (list<int>::iterator it = x.begin(); it != x.end(); ++it)
       {
          *it = ++i;
       }
    }
 
-   void read_method(const fixed_list<int>& x)
+   void read_method(const list<int>& x)
    {
       int i = 0;
-      for (fixed_list<int>::const_iterator it = x.begin(); it != x.end(); ++it)
+      for (list<int>::const_iterator it = x.begin(); it != x.end(); ++it)
       {
          TS_ASSERT_EQUALS(*it, ++i);
       }
    }
 
-   void copy_method(fixed_list<int> x)
+   void copy_method(list<int> x)
    {
       int i = 0;
-      for (fixed_list<int>::iterator it = x.begin(); it != x.end(); ++it)
+      for (list<int>::iterator it = x.begin(); it != x.end(); ++it)
       {
          TS_ASSERT_EQUALS(*it, ++i);
       }
@@ -587,10 +589,10 @@ public:
    void test_specialized_constructor(void)
    {
       allocation_guard::enable();
-      TS_ASSERT_THROWS(fixed_list<int> a3(3), std::runtime_error);
+      TS_ASSERT_THROWS(list<int> a3(3), std::runtime_error);
 
       allocation_guard::disable();
-      fixed_list<int> a3(3);
+      list<int> a3(3);
       TS_ASSERT_EQUALS(a3.size(), 3);
    }
 
@@ -599,15 +601,15 @@ public:
       unsigned size = 3;
 
       int ary[3] = {0, 1, 2};
-      fixed_list<int> a(ary, ary + 3);
+      list<int> a(ary, ary + 3);
 
       allocation_guard::enable();
-      TS_ASSERT_THROWS(fixed_list<int> b(a), std::runtime_error);
+      TS_ASSERT_THROWS(list<int> b(a), std::runtime_error);
 
       allocation_guard::disable();
-      fixed_list<int> b(a);
-      fixed_list<int>::iterator bit = b.begin();
-      for (fixed_list<int>::iterator it = a.begin(); it != a.end(); ++it)
+      list<int> b(a);
+      list<int>::iterator bit = b.begin();
+      for (list<int>::iterator it = a.begin(); it != a.end(); ++it)
       {
          TS_ASSERT_EQUALS(*bit, *it);
          ++bit;
@@ -620,7 +622,7 @@ public:
       int bAry[5] = {10, 20, 30, 40, 50};
       int cAry[5] = {50, 40, 30, 20, 10};
       fixed_list<int, 5 > a(aAry, aAry + 5);
-      fixed_list<int> b(bAry, bAry + 5);
+      list<int> b(bAry, bAry + 5);
       fixed_list<int, 5 > c(cAry, cAry + 5);
 
       TS_ASSERT((a == b));
