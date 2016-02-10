@@ -12,9 +12,10 @@ namespace flex
 
     using array_base<T>::mAryPtr;
     using array_base<T>::mSize;
+    using typename array_base<T>::iterator;
 
     vector();
-    vector(size_t size, const T& val = T());
+    explicit vector(size_t size, const T& val = T());
     vector(const T* first, const T* last);
     vector(const vector<T, Alloc> & obj);
     ~vector();
@@ -461,7 +462,7 @@ namespace flex
   {
     typename array_base<T>::iterator new_begin = mAllocator.allocate(size);
     typename array_base<T>::iterator first = new_begin;
-    typename array_base<T>::iterator last = first + size;
+    iterator last = first + size;
     for (; first != last; ++first)
     {
       mAllocator.construct(first, typename array_base<T>::value_type());

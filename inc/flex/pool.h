@@ -9,7 +9,7 @@ namespace flex
   template<class T> class pool: allocation_guard
   {
   public:
-    pool(size_t capacity);
+    explicit pool(size_t capacity);
     ~pool();
     T* allocate();
     void deallocate(T* ptr);

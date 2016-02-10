@@ -533,7 +533,7 @@ public:
 
    void test_copy_constructor(void)
    {
-      fixed_list<int, 3 > a;
+      fixed_list<int, 3> a(3,0);
       int i = 0;
       for (list<int>::iterator it = a.begin(); it != a.end(); ++it)
       {
@@ -545,6 +545,7 @@ public:
       for (list<int>::iterator it = a.begin(); it != a.end(); ++it)
       {
          TS_ASSERT_EQUALS(*bit, *it);
+         ++bit;
       }
    }
 

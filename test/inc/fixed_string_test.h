@@ -1,7 +1,8 @@
 #include <cxxtest/TestSuite.h>
 
-#include <fixed_string.h>
+#include <flex/fixed_string.h>
 
+using namespace flex;
 class fixed_string_test: public CxxTest::TestSuite
 {
 public:
@@ -10,7 +11,8 @@ public:
     {
       allocation_guard::enable();
       fixed_string<3> a;
-      TS_ASSERT_EQUALS(a.size(), 3);
+      TS_ASSERT_EQUALS(a.size(), 0);
+      TS_ASSERT_EQUALS(a.capacity(), 3);
       allocation_guard::disable();
     }
 
@@ -29,7 +31,7 @@ public:
       }
     }
 
-    void assignment_method(fixed_string<>& x)
+    void assignment_method(string& x)
     {
       for (int i = 0; i < x.size(); i++)
       {
@@ -37,7 +39,7 @@ public:
       }
     }
 
-    void read_method(const fixed_string<>& x)
+    void read_method(const string& x)
     {
       for (int i = 0; i < x.size(); i++)
       {
@@ -45,7 +47,7 @@ public:
       }
     }
 
-    void copy_method(fixed_string<> x)
+    void copy_method(string x)
     {
       for (int i = 0; i < x.size(); i++)
       {
@@ -68,10 +70,10 @@ public:
     void test_specialized_constructor(void)
     {
       allocation_guard::enable();
-      TS_ASSERT_THROWS(fixed_string<> a3(3), std::runtime_error);
+      TS_ASSERT_THROWS(string a3(3), std::runtime_error);
 
       allocation_guard::disable();
-      fixed_string<> a3(3);
+      string a3(3);
       TS_ASSERT_EQUALS(a3.size(), 3);
     }
 
@@ -79,17 +81,17 @@ public:
     {
       unsigned size = 3;
 
-      fixed_string<> a(size);
+      string a(size);
       for (int i = 0; i < size; i++)
       {
         a.data()[i] = i;
       }
 
       allocation_guard::enable();
-      TS_ASSERT_THROWS(fixed_string<> b(a), std::runtime_error);
+      TS_ASSERT_THROWS(string b(a), std::runtime_error);
 
       allocation_guard::disable();
-      fixed_string<> b(a);
+      string b(a);
       for (int i = 0; i < size; i++)
       {
         TS_ASSERT_EQUALS(b.data()[i], a.data()[i]);

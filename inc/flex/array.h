@@ -59,7 +59,7 @@ namespace flex
     size_t size() const;
 
   protected:
-    array_base(size_t size);
+    explicit array_base(size_t size);
     array_base(size_t size, T* ptr);
 
     size_t mSize;

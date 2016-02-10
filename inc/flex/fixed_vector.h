@@ -6,7 +6,7 @@
 namespace flex
 {
 
-  template<class T, size_t N = 0, class Alloc = allocator<T> > class fixed_vector: public vector<T, Alloc>
+  template<class T, size_t N, class Alloc = allocator<T> > class fixed_vector: public vector<T, Alloc>
   {
   public:
     using vector<T, Alloc>::mAryPtr;
@@ -14,7 +14,7 @@ namespace flex
     using vector<T, Alloc>::mCapacity;
 
     fixed_vector();
-    fixed_vector(size_t size, const T& val = T());
+    explicit fixed_vector(size_t size, const T& val = T());
     fixed_vector(const T* first, const T* last);
     fixed_vector(const fixed_vector<T, N, Alloc> & obj);
     fixed_vector(const vector<T, Alloc> & obj);

@@ -22,7 +22,7 @@ namespace flex
     typedef Alloc allocator_type;
 
     list();
-    list(size_t size, const T& val = T());
+    explicit list(size_t size, const T& val = T());
     list(const T* first, const T* last);
     list(const list<T, Alloc> & obj);
     ~list();
