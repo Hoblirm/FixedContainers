@@ -34,3 +34,6 @@ main.cpp
 run
 
 /test/src/test.cpp
+
+test.gcno
+test.gcda
