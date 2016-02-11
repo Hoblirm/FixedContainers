@@ -125,9 +125,10 @@ namespace flex
 
   template<class T, class Alloc> list<T, Alloc>::~list()
   {
-
-    //TODO:
-    //delete[] this->mAryPtr;
+    if (!fixed())
+    {
+      erase(begin(), end());
+    }
   }
 
   template<class T, class Alloc> void list<T, Alloc>::assign(size_t rsize, list<T, Alloc>::const_reference val)
@@ -263,6 +264,13 @@ namespace flex
   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::erase(
       typename list<T, Alloc>::iterator position)
   {
+    //TODO: This check could be removed once an anchor node is implemented.... as begin() returns
+    //NULL we need to check for this case.
+    if (position == NULL)
+    {
+      return NULL;
+    }
+
     node* lhs = position.mNodePtr->prev;
     node* rhs = position.mNodePtr->next;
 
@@ -300,6 +308,13 @@ namespace flex
   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::erase(
       typename list<T, Alloc>::iterator first, typename list<T, Alloc>::iterator last)
   {
+    //TODO: This check could be removed once an anchor node is implemented... as begin() returns
+    //NULL we need to check for this case.
+    if (first == NULL)
+    {
+      return NULL;
+    }
+
     node* lhs = first.mNodePtr->prev;
     node* rhs = last.mNodePtr;
 
@@ -330,9 +345,13 @@ namespace flex
     }
     else
     {
-      for (iterator it = first; it != last; ++it)
+      for (iterator it = first; it != last; )
       {
-        DoDestroyAndDeallocate(it.mNodePtr);
+        //Since the iterator become invalidated after the destroy, we want to
+        //increment it first and destroy the previous value.
+        node* ptr = it.mNodePtr;
+        ++it;
+        DoDestroyAndDeallocate(ptr);
         --this->mIndex;
       }
     }

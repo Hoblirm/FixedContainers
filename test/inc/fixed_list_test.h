@@ -198,6 +198,10 @@ public:
    {
       int ary[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
+      //Test erase on empty list
+      list<int> empty;
+      empty.erase(empty.begin(), empty.end());
+
       //Test the fixed-length version.
       fixed_list<int, 16 > fl(ary, ary + 10);
       erase_method(fl);
