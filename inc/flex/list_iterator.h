@@ -25,7 +25,7 @@ namespace flex
   {
     Node* mNodePtr;
 
-    fixed_forward_list_iterator_base<T, Node>(Node* p) :
+    fixed_forward_list_iterator_base(Node* p) :
         mNodePtr(p)
     {
     }
@@ -56,12 +56,12 @@ namespace flex
       T, Node>
   {
 
-    fixed_forward_list_const_iterator<T, Node>() :
+    fixed_forward_list_const_iterator() :
         fixed_forward_list_iterator_base<T, Node>(NULL)
     {
     }
 
-    fixed_forward_list_const_iterator<T, Node>(Node* p) :
+    fixed_forward_list_const_iterator(Node* p) :
         fixed_forward_list_iterator_base<T, Node>(p)
     {
     }
@@ -85,12 +85,12 @@ namespace flex
       T, Node>
   {
 
-    fixed_forward_list_iterator<T, Node>() :
+    fixed_forward_list_iterator() :
         fixed_forward_list_iterator_base<T, Node>(NULL)
     {
     }
 
-    fixed_forward_list_iterator<T, Node>(Node* p) :
+    fixed_forward_list_iterator(Node* p) :
         fixed_forward_list_iterator_base<T, Node>(p)
     {
     }
@@ -127,12 +127,12 @@ namespace flex
   template<class T> struct list_const_iterator: public fixed_forward_list_const_iterator<T, list_node<T> >
   {
 
-    list_const_iterator<T>() :
+    list_const_iterator() :
         fixed_forward_list_const_iterator<T, list_node<T> >(NULL)
     {
     }
 
-    list_const_iterator<T>(list_node<T>* p) :
+    list_const_iterator(list_node<T>* p) :
         fixed_forward_list_const_iterator<T, list_node<T> >(p)
     {
     }
@@ -168,12 +168,12 @@ namespace flex
   template<class T> struct list_iterator: public fixed_forward_list_iterator<T, list_node<T> >
   {
 
-    list_iterator<T>() :
+    list_iterator() :
         fixed_forward_list_iterator<T, list_node<T> >(NULL)
     {
     }
 
-    list_iterator<T>(list_node<T>* p) :
+    list_iterator(list_node<T>* p) :
         fixed_forward_list_iterator<T, list_node<T> >(p)
     {
     }
@@ -210,16 +210,15 @@ namespace flex
     }
   };
 
-  template<class T> struct list_const_reverse_iterator: public fixed_forward_list_const_iterator<T,
-      list_node<T> >
+  template<class T> struct list_const_reverse_iterator: public fixed_forward_list_const_iterator<T, list_node<T> >
   {
 
-    list_const_reverse_iterator<T>() :
+    list_const_reverse_iterator() :
         fixed_forward_list_const_iterator<T, list_node<T> >(NULL)
     {
     }
 
-    list_const_reverse_iterator<T>(list_node<T>* p) :
+    list_const_reverse_iterator(list_node<T>* p) :
         fixed_forward_list_const_iterator<T, list_node<T> >(p)
     {
     }
@@ -254,12 +253,12 @@ namespace flex
 
   template<class T> struct list_reverse_iterator: public fixed_forward_list_iterator<T, list_node<T> >
   {
-    list_reverse_iterator<T>() :
+    list_reverse_iterator() :
         fixed_forward_list_iterator<T, list_node<T> >(NULL)
     {
     }
 
-    list_reverse_iterator<T>(list_node<T>* p) :
+    list_reverse_iterator(list_node<T>* p) :
         fixed_forward_list_iterator<T, list_node<T> >(p)
     {
     }

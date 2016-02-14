@@ -51,7 +51,7 @@ namespace flex
 
   private:
     size_t GetNewCapacity(size_t min);
-    T* DoAllocateAndConstruct(size_t size);
+    T* DoAllocateAndConstruct(size_t capacity);
     void DoDestroyAndDeallocate();
   };
 
@@ -322,6 +322,7 @@ namespace flex
 
   template<class T, class Alloc> vector<T, Alloc>& vector<T, Alloc>::operator=(const vector<T, Alloc>& obj)
   {
+    //TODO: Consider making method a call to assign().
     if (obj.size() > mCapacity)
     {
       if (mFixed)
@@ -458,21 +459,19 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> T* vector<T, Alloc>::DoAllocateAndConstruct(size_t size)
+  template<class T, class Alloc> T* vector<T, Alloc>::DoAllocateAndConstruct(size_t capacity)
   {
-    typename array_base<T>::iterator new_begin = mAllocator.allocate(size);
-    typename array_base<T>::iterator first = new_begin;
-    iterator last = first + size;
-    for (; first != last; ++first)
+    typename array_base<T>::iterator new_begin = mAllocator.allocate(capacity);
+    for (T* it = new_begin; it != (new_begin + capacity); ++it)
     {
-      mAllocator.construct(first, typename array_base<T>::value_type());
+      mAllocator.construct(it, typename array_base<T>::value_type());
     }
     return new_begin;
   }
 
   template<class T, class Alloc> void vector<T, Alloc>::DoDestroyAndDeallocate()
   {
-    for (T* it = mAryPtr; it != (mAryPtr + mSize); ++it)
+    for (T* it = mAryPtr; it != (mAryPtr + mCapacity); ++it)
     {
       mAllocator.destroy(it);
     }
