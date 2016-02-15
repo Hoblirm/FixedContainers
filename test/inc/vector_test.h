@@ -1,23 +1,37 @@
 #include <cxxtest/TestSuite.h>
 
 #include <flex/vector.h>
+#include <flex/allocator_debug.h>
 
-using namespace flex;
+typedef flex::vector<int, flex::allocator_debug<int> > vec;
 
 class vector_test: public CxxTest::TestSuite
 {
 public:
 
+  void setUp()
+  {
+    flex::allocator_debug<int>::clear();
+  }
+
+  void tearDown()
+  {
+    //This ensures that all objects constructed by the container have their destructors called.
+    TS_ASSERT(flex::allocator_debug<int>::mConstructedPointers.empty());
+
+    //This ensures that all memory allocated by the container is properly freed.
+    TS_ASSERT(flex::allocator_debug<int>::mAllocatedPointers.empty());
+  }
+
   void test_assign(void)
   {
-    vector<int> first;
-    vector<int> second;
-    vector<int> third;
+    vec first;
+    vec second;
+    vec third;
 
     //TS_ASSERT_THROWS(first.assign(8, 100), std::runtime_error);
     first.assign(7, 100);             // 7 ints with a value of 100
-
-    vector<int>::iterator it;
+    vec::iterator it;
     it = first.begin() + 1;
 
     //TS_ASSERT_THROWS(second.assign(it, first.end()), std::runtime_error);
@@ -50,13 +64,13 @@ public:
 
   void test_capacity(void)
   {
-    vector<int> a;
+    vec a;
     TS_ASSERT_EQUALS(a.capacity(), 0);
   }
 
   void test_clear(void)
   {
-    vector<int> myvector;
+    vec myvector;
     myvector.push_back(100);
     myvector.push_back(200);
     myvector.push_back(300);
@@ -72,7 +86,7 @@ public:
 
   void test_empty(void)
   {
-    vector<int> myvector;
+    vec myvector;
     int sum(0);
 
     TS_ASSERT_EQUALS(myvector.empty(), true);
@@ -92,7 +106,7 @@ public:
 
   void test_erase()
   {
-    vector<int> myvector;
+    vec myvector;
 
     // set some values (from 1 to 10)
     for (int i = 1; i <= 10; i++)
@@ -100,7 +114,7 @@ public:
     TS_ASSERT_EQUALS(myvector.size(), 10);
 
     // erase the 6th element
-    vector<int>::iterator it = myvector.erase(myvector.begin() + 5);
+    vec::iterator it = myvector.erase(myvector.begin() + 5);
     TS_ASSERT_EQUALS(*it, 7);
     TS_ASSERT_EQUALS(myvector.size(), 9);
 
@@ -119,8 +133,8 @@ public:
 
   void test_insert(void)
   {
-    vector<int> myvector(3, 100);
-    vector<int>::iterator it;
+    vec myvector(3, 100);
+    vec::iterator it;
 
     it = myvector.begin();
     it = myvector.insert(it, 200);
@@ -141,7 +155,7 @@ public:
 
     // "it" no longer valid, get a new one:
     it = myvector.begin();
-    vector<int> anothervector(2, 400);
+    vec anothervector(2, 400);
     myvector.insert(it + 2, anothervector.begin(), anothervector.end());
     TS_ASSERT_EQUALS(myvector.size(), 8);
     TS_ASSERT_EQUALS(myvector[0], 300);
@@ -171,18 +185,18 @@ public:
 
   void test_max_size(void)
   {
-    vector<int> a;
+    vec a;
     TS_ASSERT_EQUALS(a.max_size(), 0);
   }
 
   void test_assignment_operator(void)
   {
-    vector<int> foo(3);
+    vec foo(3);
     foo[0] = 1;
     foo[1] = 5;
     foo[2] = 17;
 
-    vector<int> bar(5, 2);
+    vec bar(5, 2);
 
     bar = foo;
     TS_ASSERT_EQUALS(bar.size(), 3);
@@ -201,7 +215,7 @@ public:
     //it doesn't matter what the contents are since the size is zero.  However, we want to ensure that the
     //assignment operator doesn't perform extra work by resetting these values.  This happens if no assignment
     //operator is defined and a default one is used.
-    foo = vector<int>();
+    foo = vec();
     TS_ASSERT_EQUALS(foo.size(), 0);
     TS_ASSERT_EQUALS(foo[0], 1);
     TS_ASSERT_EQUALS(foo[1], 5);
@@ -209,7 +223,7 @@ public:
 
     //Same thing as above, but we want to ensure that the cast operator allows assignment of vectors
     //with different capacities.
-    foo = vector<int>(1, 19);
+    foo = vec(1, 19);
     TS_ASSERT_EQUALS(foo.size(), 1);
     TS_ASSERT_EQUALS(foo[0], 19);
     TS_ASSERT_EQUALS(foo[1], 5);
@@ -220,7 +234,7 @@ public:
     foo[1] = 5;
     foo[2] = 17;
 
-    vector<int> bar2(5, 2);
+    vec bar2(5, 2);
     bar2 = foo;
     TS_ASSERT_EQUALS(bar2.size(), 3);
     TS_ASSERT_EQUALS(bar2[0], 1);
@@ -237,7 +251,7 @@ public:
 
   void test_push_back_and_pop_back(void)
   {
-    vector<int> myvector;
+    vec myvector;
     int size = 0;
     TS_ASSERT_EQUALS(myvector.size(), size);
 
@@ -264,7 +278,7 @@ public:
 
   void test_resize(void)
   {
-    vector<int> myvector;
+    vec myvector;
 
     for (int i = 1; i < 10; i++)
       myvector.push_back(i);
@@ -303,8 +317,8 @@ public:
 
   void test_swap(void)
   {
-    vector<int> foo(3, 100);   // three ints with a value of 100
-    vector<int> bar(5, 200);   // five ints with a value of 200
+    vec foo(3, 100);   // three ints with a value of 100
+    vec bar(5, 200);   // five ints with a value of 200
 
     foo.swap(bar);
     TS_ASSERT_EQUALS(foo.size(), 5);
@@ -342,25 +356,24 @@ public:
     foo.push_back(100);
   }
 
-
   void test_default_constructor(void)
   {
-    allocation_guard::enable();
-    TS_ASSERT_THROWS(vector<int> a(1), std::runtime_error);
+    flex::allocation_guard::enable();
+    TS_ASSERT_THROWS(vec a(1), std::runtime_error);
 
-    allocation_guard::disable();
-    vector<int> a;
+    flex::allocation_guard::disable();
+    vec a;
     TS_ASSERT_EQUALS(a.size(), 0);
     TS_ASSERT_EQUALS(a.capacity(), 0);
   }
 
   void test_default_fill_constructor(void)
   {
-    allocation_guard::enable();
-    TS_ASSERT_THROWS(vector<int> a(2), std::runtime_error);
+    flex::allocation_guard::enable();
+    TS_ASSERT_THROWS(vec a(2), std::runtime_error);
 
-    allocation_guard::disable();
-    vector<int> a(2);
+    flex::allocation_guard::disable();
+    vec a(2);
     TS_ASSERT_EQUALS(a.size(), 2);
     TS_ASSERT_EQUALS(a.capacity(), 2);
     TS_ASSERT_EQUALS(a[0], 0);
@@ -369,11 +382,11 @@ public:
 
   void test_fill_constructor(void)
   {
-    allocation_guard::enable();
-    TS_ASSERT_THROWS(vector<int> a(2, 7), std::runtime_error);
+    flex::allocation_guard::enable();
+    TS_ASSERT_THROWS(vec a(2, 7), std::runtime_error);
 
-    allocation_guard::disable();
-    vector<int> a(2, 7);
+    flex::allocation_guard::disable();
+    vec a(2, 7);
     TS_ASSERT_EQUALS(a.size(), 2);
     TS_ASSERT_EQUALS(a.capacity(), 2);
     TS_ASSERT_EQUALS(a[0], 7);
@@ -382,17 +395,17 @@ public:
 
   void test_range_constructor(void)
   {
-    vector<int> first(4, 100);
-    vector<int> second(first.begin(), first.end());  // iterating through first
+    vec first(4, 100);
+    vec second(first.begin(), first.end());  // iterating through first
     TS_ASSERT_EQUALS(second.size(), 4);
-    for (vector<int>::iterator it = second.begin(); it != second.end(); ++it)
+    for (vec::iterator it = second.begin(); it != second.end(); ++it)
     {
       TS_ASSERT_EQUALS(*it, 100);
     }
 
     // the iterator constructor can also be used to construct from arrays:
     int myints[] = { 16, 2, 77, 29 };
-    vector<int> third(myints, myints + sizeof(myints) / sizeof(int));
+    vec third(myints, myints + sizeof(myints) / sizeof(int));
     TS_ASSERT_EQUALS(third.size(), 4);
     TS_ASSERT_EQUALS(third[0], 16);
     TS_ASSERT_EQUALS(third[1], 2);
@@ -402,17 +415,17 @@ public:
 
   void test_copy_constructor(void)
   {
-    vector<int> a(3, 0);
+    vec a(3, 0);
     for (int i = 0; i < a.size(); i++)
     {
       a.data()[i] = i;
     }
 
-    allocation_guard::enable();
-    TS_ASSERT_THROWS(vector<int> b(a), std::runtime_error);
+    flex::allocation_guard::enable();
+    TS_ASSERT_THROWS(vec b(a), std::runtime_error);
 
-    allocation_guard::disable();
-    vector<int> b(a);
+    flex::allocation_guard::disable();
+    vec b(a);
     for (int i = 0; i < b.size(); i++)
     {
       TS_ASSERT_EQUALS(b.data()[i], a.data()[i]);
@@ -421,8 +434,8 @@ public:
 
   void test_relational_operators(void)
   {
-    vector<int> foo(3, 100);   // three ints with a value of 100
-    vector<int> bar(2, 200);   // two ints with a value of 200
+    vec foo(3, 100);   // three ints with a value of 100
+    vec bar(2, 200);   // two ints with a value of 200
 
     TS_ASSERT(!(foo == bar));
     TS_ASSERT(foo != bar);

@@ -17,7 +17,7 @@ namespace flex
     typedef T& reference;
     typedef const T& const_reference;
     typedef ring_iterator<T> iterator;
-    typedef const ring_const_iterator<T> const_iterator;
+    typedef ring_const_iterator<T> const_iterator;
     typedef ring_reverse_iterator<T> reverse_iterator;
     typedef ring_const_reverse_iterator<T> const_reverse_iterator;
     typedef size_t size_type;
@@ -25,7 +25,8 @@ namespace flex
     typedef Alloc allocator_type;
 
     ring();
-//    explicit ring(size_type size, const value_type& val = value_type());
+    explicit ring(size_type size, const value_type& val = value_type());
+    ~ring();
 
     reference at(size_t n);
     const_reference at(size_t n) const;
@@ -73,11 +74,15 @@ namespace flex
     ring(size_t size, T* ptr);
 
     allocator_type mAllocator;
-//    T* mLeftBound;
-//    T* mRightBound;
+
+    //Since a ring iterator contains a left and right-bound pointer, these values are duplicated between mBegin and mEnd.
+    //These two iterators could be replaced by four unique pointers, but it would make the code a bit more messy and would
+    //require additional iterator construction within the runtime methods.
     iterator mBegin;
     iterator mEnd;
+
     bool mFixed;
+
   private:
     size_t GetNewCapacity(size_type min);
     pointer DoAllocateAndConstruct(size_type capacity);
@@ -88,6 +93,31 @@ namespace flex
   inline ring<T, Alloc>::ring() :
       mBegin(NULL, NULL, NULL), mEnd(NULL, NULL, NULL), mFixed(false)
   {
+  }
+
+  template<class T, class Alloc>
+  inline ring<T, Alloc>::ring(size_type capacity, const value_type& val) :
+      mFixed(false)
+  {
+    mBegin.mPtr = DoAllocateAndConstruct(capacity);
+    mBegin.mLeftBound = mBegin.mPtr;
+    mBegin.mRightBound = mBegin.mPtr + capacity;
+
+    mEnd.mPtr = mBegin.mRightBound;
+    mEnd.mLeftBound = mBegin.mLeftBound;
+    mEnd.mRightBound = mBegin.mRightBound;
+
+    //Using the raw mPtr is a bit more efficient, as we know the circular iterator logic is not needed.
+    std::fill(mBegin.mPtr, mEnd.mPtr, val);
+  }
+
+  template<class T, class Alloc>
+  inline ring<T, Alloc>::~ring()
+  {
+    if (!mFixed && (NULL != mBegin.mPtr))
+    {
+      DoDestroyAndDeallocate();
+    }
   }
 
   template<class T, class Alloc>
@@ -129,13 +159,13 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::iterator ring<T, Alloc>::begin()
+  inline typename ring<T, Alloc>::iterator ring<T, Alloc>::begin()
   {
     return mBegin;
   }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::const_iterator ring<T, Alloc>::begin() const
+  inline typename ring<T, Alloc>::const_iterator ring<T, Alloc>::begin() const
   {
     return mBegin;
   }
@@ -161,7 +191,7 @@ namespace flex
 //  }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::size_type ring<T, Alloc>::capacity() const
+  inline typename ring<T, Alloc>::size_type ring<T, Alloc>::capacity() const
   {
     return (mBegin.mRightBound - mBegin.mLeftBound);
   }
@@ -173,27 +203,27 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::iterator ring<T, Alloc>::end()
+  inline typename ring<T, Alloc>::iterator ring<T, Alloc>::end()
   {
     return mEnd;
   }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::const_iterator ring<T, Alloc>::end() const
+  inline typename ring<T, Alloc>::const_iterator ring<T, Alloc>::end() const
   {
     return mEnd;
   }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::reference ring<T, Alloc>::front()
+  inline typename ring<T, Alloc>::reference ring<T, Alloc>::front()
   {
     return *mBegin;
   }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::const_reference ring<T, Alloc>::front() const
+  inline typename ring<T, Alloc>::const_reference ring<T, Alloc>::front() const
   {
-    return *mBegin;
+    return *((const_iterator) mBegin);
   }
 
   template<class T, class Alloc>
@@ -238,15 +268,15 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::reference ring<T, Alloc>::operator[](size_t n)
+  inline typename ring<T, Alloc>::reference ring<T, Alloc>::operator[](size_t n)
   {
     return mBegin[n];
   }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::const_reference ring<T, Alloc>::operator[](size_t n) const
+  inline typename ring<T, Alloc>::const_reference ring<T, Alloc>::operator[](size_t n) const
   {
-    return mBegin[n];
+    return ((const_iterator) mBegin)[n];
   }
 
   template<class T, class Alloc>
@@ -355,12 +385,11 @@ namespace flex
   template<class T, class Alloc>
   inline size_t ring<T, Alloc>::size() const
   {
-    //TODO: I would expect the iterator needs to be updated to support subtraction of other iterators.
     return (mEnd - mBegin);
   }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::size_type ring<T, Alloc>::GetNewCapacity(size_t min_size)
+  inline typename ring<T, Alloc>::size_type ring<T, Alloc>::GetNewCapacity(size_t min_size)
   {
     // This needs to return a value of at least currentCapacity and at least 1.
     size_t new_capacity = (capacity() > 0) ? (2 * capacity()) : 1;
@@ -377,7 +406,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline ring<T, Alloc>::pointer ring<T, Alloc>::DoAllocateAndConstruct(size_t capacity)
+  inline typename ring<T, Alloc>::pointer ring<T, Alloc>::DoAllocateAndConstruct(size_t capacity)
   {
     pointer new_begin;
     //The size allocated is 1 more than the capacity.  This is do to the fact that we don't want begin() to equal end().
@@ -411,8 +440,8 @@ namespace flex
     }
     else
     {
-      ring<T, Alloc>::iterator lit = lhs.begin();
-      ring<T, Alloc>::iterator rit = rhs.begin();
+      typename ring<T, Alloc>::const_iterator lit = lhs.begin();
+      typename ring<T, Alloc>::const_iterator rit = rhs.begin();
       while (lit != lhs.end())
       {
         if (*lit != *rit)
@@ -431,8 +460,8 @@ namespace flex
   {
     if (lhs.size() < rhs.size())
     {
-      ring<T, Alloc>::iterator lit = lhs.begin();
-      ring<T, Alloc>::iterator rit = rhs.begin();
+      typename ring<T, Alloc>::const_iterator lit = lhs.begin();
+      typename ring<T, Alloc>::const_iterator rit = rhs.begin();
       while (lit != lhs.end())
       {
         if (*lit < *rit)
@@ -450,8 +479,8 @@ namespace flex
     }
     else
     {
-      ring<T, Alloc>::iterator lit = lhs.begin();
-      ring<T, Alloc>::iterator rit = rhs.begin();
+      typename ring<T, Alloc>::const_iterator lit = lhs.begin();
+      typename ring<T, Alloc>::const_iterator rit = rhs.begin();
       while (rit != rhs.end())
       {
         if (*lit < *rit)
