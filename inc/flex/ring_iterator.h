@@ -1,18 +1,21 @@
 #ifndef FLEX_RING_ITERATOR_H
 #define FLEX_RING_ITERATOR_H
 
-#include <cstdlib>
-//TODO: Need to add +, -, +=, -=, [],
+#include <iterator>
+
 namespace flex
 {
 
-  template<class T> struct ring_iterator_base
+  template<class T> struct ring_iterator_base: public std::iterator<std::bidirectional_iterator_tag, T>
   {
-    typedef T* pointer;
+    typedef std::iterator<std::bidirectional_iterator_tag, T> base_type;
+    typedef typename base_type::value_type value_type;
+    typedef typename base_type::difference_type difference_type;
+    typedef typename base_type::pointer pointer;
     typedef const T* const_pointer;
-    typedef T& reference;
+    typedef typename base_type::reference reference;
     typedef const T& const_reference;
-    typedef std::ptrdiff_t difference_type;
+    typedef typename base_type::iterator_category iterator_category;
 
     pointer mPtr;
     pointer mLeftBound;
@@ -23,19 +26,18 @@ namespace flex
 
     bool operator==(ring_iterator_base<T> obj) const;
     bool operator!=(ring_iterator_base<T> obj) const;
-    const_reference operator*() const;
-    const_pointer operator->() const;
-    const_reference operator[](difference_type n) const;
   };
 
   template<class T> struct ring_const_iterator: public ring_iterator_base<T>
   {
     typedef ring_iterator_base<T> base_type;
+    typedef typename base_type::value_type value_type;
+    typedef typename base_type::difference_type difference_type;
     typedef typename base_type::pointer pointer;
     typedef typename base_type::const_pointer const_pointer;
     typedef typename base_type::reference reference;
     typedef typename base_type::const_reference const_reference;
-    typedef typename base_type::difference_type difference_type;
+    typedef typename base_type::iterator_category iterator_category;
 
     using base_type::mPtr;
     using base_type::mLeftBound;
@@ -53,16 +55,22 @@ namespace flex
     difference_type operator-(const ring_const_iterator<T>& begin) const;
     ring_const_iterator<T>& operator+=(difference_type n);
     ring_const_iterator<T>& operator-=(difference_type n);
+
+    const_reference operator*() const;
+    const_pointer operator->() const;
+    const_reference operator[](difference_type n) const;
   };
 
   template<class T> struct ring_iterator: public ring_iterator_base<T>
   {
     typedef ring_iterator_base<T> base_type;
+    typedef typename base_type::value_type value_type;
+    typedef typename base_type::difference_type difference_type;
     typedef typename base_type::pointer pointer;
     typedef typename base_type::const_pointer const_pointer;
     typedef typename base_type::reference reference;
     typedef typename base_type::const_reference const_reference;
-    typedef typename base_type::difference_type difference_type;
+    typedef typename base_type::iterator_category iterator_category;
 
     using base_type::mPtr;
     using base_type::mLeftBound;
@@ -80,6 +88,10 @@ namespace flex
     ring_iterator<T>& operator+=(difference_type n);
     ring_iterator<T>& operator-=(difference_type n);
     reference operator[](difference_type n);
+
+    const_reference operator*() const;
+    const_pointer operator->() const;
+    const_reference operator[](difference_type n) const;
     T& operator*();
     T* operator->();
     operator ring_const_iterator<T>&() const;
@@ -88,11 +100,13 @@ namespace flex
   template<class T> struct ring_const_reverse_iterator: public ring_const_iterator<T>
   {
     typedef ring_const_iterator<T> base_type;
+    typedef typename base_type::value_type value_type;
+    typedef typename base_type::difference_type difference_type;
     typedef typename base_type::pointer pointer;
     typedef typename base_type::const_pointer const_pointer;
     typedef typename base_type::reference reference;
     typedef typename base_type::const_reference const_reference;
-    typedef typename base_type::difference_type difference_type;
+    typedef typename base_type::iterator_category iterator_category;
 
     using base_type::mPtr;
     using base_type::mLeftBound;
@@ -114,11 +128,13 @@ namespace flex
   template<class T> struct ring_reverse_iterator: public ring_iterator<T>
   {
     typedef ring_iterator<T> base_type;
+    typedef typename base_type::value_type value_type;
+    typedef typename base_type::difference_type difference_type;
     typedef typename base_type::pointer pointer;
     typedef typename base_type::const_pointer const_pointer;
     typedef typename base_type::reference reference;
     typedef typename base_type::const_reference const_reference;
-    typedef typename base_type::difference_type difference_type;
+    typedef typename base_type::iterator_category iterator_category;
 
     using base_type::mPtr;
     using base_type::mLeftBound;
@@ -163,30 +179,6 @@ namespace flex
   inline bool ring_iterator_base<T>::operator!=(ring_iterator_base<T> obj) const
   {
     return (mPtr != obj.mPtr);
-  }
-
-  template<class T>
-  inline const T& ring_iterator_base<T>::operator*() const
-  {
-    return *mPtr;
-  }
-
-  template<class T>
-  inline const T* ring_iterator_base<T>::operator->() const
-  {
-    return mPtr;
-  }
-
-  template<class T>
-  inline typename ring_iterator_base<T>::const_reference ring_iterator_base<T>::operator[](difference_type n) const
-  {
-    pointer tmp = (mPtr + n);
-    //If the iterators extends out the right bound, we subtract the size aka (right-left+1) to wrap back around.
-    if (tmp > mRightBound)
-    {
-      tmp -= (mRightBound - mLeftBound + 1);
-    }
-    return *tmp;
   }
 
   /*
@@ -302,6 +294,30 @@ namespace flex
       mPtr += (mRightBound - mLeftBound + 1);
     }
     return *this;
+  }
+
+  template<class T>
+  inline typename ring_const_iterator<T>::const_reference ring_const_iterator<T>::operator*() const
+  {
+    return *mPtr;
+  }
+
+  template<class T>
+  inline typename ring_const_iterator<T>::const_pointer ring_const_iterator<T>::operator->() const
+  {
+    return mPtr;
+  }
+
+  template<class T>
+  inline typename ring_const_iterator<T>::const_reference ring_const_iterator<T>::operator[](difference_type n) const
+  {
+    pointer tmp = (mPtr + n);
+    //If the iterators extends out the right bound, we subtract the size aka (right-left+1) to wrap back around.
+    if (tmp > mRightBound)
+    {
+      tmp -= (mRightBound - mLeftBound + 1);
+    }
+    return *tmp;
   }
 
   /*
@@ -439,6 +455,30 @@ namespace flex
 
   template<class T>
   inline typename ring_iterator<T>::reference ring_iterator<T>::operator[](difference_type n)
+  {
+    pointer tmp = (mPtr + n);
+    //If the iterators extends out the right bound, we subtract the size aka (right-left+1) to wrap back around.
+    if (tmp > mRightBound)
+    {
+      tmp -= (mRightBound - mLeftBound + 1);
+    }
+    return *tmp;
+  }
+
+  template<class T>
+  inline typename ring_iterator<T>::const_reference ring_iterator<T>::operator*() const
+  {
+    return *mPtr;
+  }
+
+  template<class T>
+  inline typename ring_iterator<T>::const_pointer ring_iterator<T>::operator->() const
+  {
+    return mPtr;
+  }
+
+  template<class T>
+  inline typename ring_iterator<T>::const_reference ring_iterator<T>::operator[](difference_type n) const
   {
     pointer tmp = (mPtr + n);
     //If the iterators extends out the right bound, we subtract the size aka (right-left+1) to wrap back around.

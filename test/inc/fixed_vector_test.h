@@ -179,8 +179,6 @@ public:
   {
     fixed_vector<int, 17> a;
     TS_ASSERT_EQUALS(a.max_size(), 17);
-    vector<int> b;
-    TS_ASSERT_EQUALS(b.max_size(), 0);
   }
 
   void test_assignment_operator(void)

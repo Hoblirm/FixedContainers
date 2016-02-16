@@ -10,9 +10,12 @@ namespace flex
   {
   public:
 
+    typedef array_base<T> base_type;
+    typedef typename base_type::iterator iterator;
+    typedef Alloc allocator_type;
+
     using array_base<T>::mAryPtr;
     using array_base<T>::mSize;
-    using typename array_base<T>::iterator;
 
     vector();
     explicit vector(size_t size, const T& val = T());
@@ -29,7 +32,8 @@ namespace flex
     bool empty();
     T* erase(T* position);
     T* erase(T* first, T* last);
-    bool fixed();
+    bool fixed() const;
+    allocator_type get_allocator() const;
     T* insert(T* position, const T& val);
     void insert(T* position, size_t n, const T& val);
     //TODO: Get template to work with vector insert() to use multiple iterators.
@@ -183,9 +187,14 @@ namespace flex
     return first;
   }
 
-  template<class T, class Alloc> bool vector<T, Alloc>::fixed()
+  template<class T, class Alloc> bool vector<T, Alloc>::fixed() const
   {
     return mFixed;
+  }
+
+  template<class T, class Alloc> typename vector<T, Alloc>::allocator_type vector<T, Alloc>::get_allocator() const
+  {
+    return mAllocator;
   }
 
   template<class T, class Alloc> T* vector<T, Alloc>::insert(T* position, const T& val)
@@ -317,7 +326,7 @@ namespace flex
 
   template<class T, class Alloc> size_t vector<T, Alloc>::max_size() const
   {
-    return mCapacity;
+    return mAllocator.max_size();
   }
 
   template<class T, class Alloc> vector<T, Alloc>& vector<T, Alloc>::operator=(const vector<T, Alloc>& obj)

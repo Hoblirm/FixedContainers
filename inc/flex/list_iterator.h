@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 
+//TODO: Need to inherit from std::iterator
 namespace flex
 {
 

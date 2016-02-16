@@ -5,7 +5,7 @@
 
 namespace flex
 {
-//TODO: Need to add +, -, +=, -=, [], posfix++.--, and casting() to const
+//TODO: Need to add +, -, +=, -=, [], posfix++.--, and casting() to const, also need to inherit from std::iterator
   template<class T> struct array_reverse_iterator_base
   {
     T* mPtr;
@@ -45,6 +45,63 @@ namespace flex
       return (mPtr <= obj.mPtr);
     }
 
+  };
+
+  template<class T> struct array_const_reverse_iterator: public array_reverse_iterator_base<T>
+  {
+    typedef array_reverse_iterator_base<T> base_type;
+    using base_type::mPtr;
+
+    array_const_reverse_iterator(T * p) :
+        array_reverse_iterator_base<T>(p)
+    {
+    }
+
+    array_const_reverse_iterator<T>& operator++()
+    {
+      --mPtr;
+      return *this;
+    }
+
+    array_const_reverse_iterator<T>& operator--()
+    {
+      ++mPtr;
+      return *this;
+    }
+
+    const T& operator*() const
+    {
+      return *mPtr;
+    }
+
+    const T* operator->() const
+    {
+      return mPtr;
+    }
+  };
+
+  template<class T> struct array_reverse_iterator: public array_reverse_iterator_base<T>
+  {
+    typedef array_reverse_iterator_base<T> base_type;
+    using base_type::mPtr;
+
+    array_reverse_iterator(T * p) :
+        array_reverse_iterator_base<T>(p)
+    {
+    }
+
+    array_reverse_iterator<T>& operator++()
+    {
+      --mPtr;
+      return *this;
+    }
+
+    array_reverse_iterator<T>& operator--()
+    {
+      ++mPtr;
+      return *this;
+    }
+
     const T& operator*() const
     {
       return *mPtr;
@@ -55,58 +112,14 @@ namespace flex
       return mPtr;
     }
 
-  };
-
-  template<class T> struct array_const_reverse_iterator: public array_reverse_iterator_base<T>
-  {
-
-    array_const_reverse_iterator(T * p) :
-        array_reverse_iterator_base<T>(p)
-    {
-    }
-
-    array_const_reverse_iterator<T>& operator++()
-    {
-      --(this->mPtr);
-      return *this;
-    }
-
-    array_const_reverse_iterator<T>& operator--()
-    {
-      ++(this->mPtr);
-      return *this;
-    }
-
-  };
-
-  template<class T> struct array_reverse_iterator: public array_reverse_iterator_base<T>
-  {
-
-    array_reverse_iterator(T * p) :
-        array_reverse_iterator_base<T>(p)
-    {
-    }
-
-    array_reverse_iterator<T>& operator++()
-    {
-      --(this->mPtr);
-      return *this;
-    }
-
-    array_reverse_iterator<T>& operator--()
-    {
-      ++(this->mPtr);
-      return *this;
-    }
-
     T& operator*()
     {
-      return *(this->mPtr);
+      return *mPtr;
     }
 
     T* operator->()
     {
-      return this->mPtr;
+      return mPtr;
     }
   };
 

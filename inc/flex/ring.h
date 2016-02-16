@@ -26,7 +26,16 @@ namespace flex
 
     ring();
     explicit ring(size_type size, const value_type& val = value_type());
+    //TODO: Get template to work with range constructor to use multiple iterator types
+    ring(const_iterator first, const_iterator last);
+    ring(const_pointer first, const_pointer last);
+    ring(const ring<T, Alloc> & obj);
     ~ring();
+
+    void assign(size_t size, const value_type& val);
+    //TODO: Get template to work with ring assign() to use multiple iterators.
+    void assign(const_iterator first, const_iterator last);
+    void assign(const_pointer first, const_pointer last);
 
     reference at(size_t n);
     const_reference at(size_t n) const;
@@ -36,21 +45,30 @@ namespace flex
 
     iterator begin();
     const_iterator begin() const;
-//    const_iterator cbegin() const;
-//    const_iterator cend() const;
-//    const_reverse_iterator crbegin() const;
-//    const_reverse_iterator crend() const;
-//
+    const_iterator cbegin() const;
+    const_iterator cend() const;
+    const_reverse_iterator crbegin() const;
+    const_reverse_iterator crend() const;
 
     size_type capacity() const;
 
     bool empty() const;
+    iterator erase(iterator position);
+    iterator erase(iterator first, iterator last);
 
     iterator end();
     const_iterator end() const;
 
+    bool fixed() const;
     reference front();
     const_reference front() const;
+    allocator_type get_allocator() const;
+
+    iterator insert(iterator position, const value_type& val);
+    void insert(iterator position, size_t n, const value_type& val);
+    //TODO: Get template to work with ring insert() to use multiple iterators.
+    void insert(iterator position, const_iterator first, const_iterator last);
+    void insert(iterator position, const_pointer first, const_pointer last);
 
     size_t max_size() const;
 
@@ -63,11 +81,12 @@ namespace flex
     void push_back(const value_type& val);
     void push_front(const value_type& val);
 
-//    reverse_iterator rbegin();
-//    const_reverse_iterator rbegin() const;
-//    reverse_iterator rend();
-//    const_reverse_iterator rend() const;
+    reverse_iterator rbegin();
+    const_reverse_iterator rbegin() const;
+    reverse_iterator rend();
+    const_reverse_iterator rend() const;
 
+    void reserve(size_type n);
     size_t size() const;
 
   protected:
@@ -107,8 +126,59 @@ namespace flex
     mEnd.mLeftBound = mBegin.mLeftBound;
     mEnd.mRightBound = mBegin.mRightBound;
 
-    //Using the raw mPtr is a bit more efficient, as we know the circular iterator logic is not needed.
+    //Using mPtr is a bit more efficient, as we know the the newly allocated data doesn't wrap.
     std::fill(mBegin.mPtr, mEnd.mPtr, val);
+  }
+
+  template<class T, class Alloc>
+  inline ring<T, Alloc>::ring(const_iterator first, const_iterator last) :
+      mFixed(false)
+  {
+    size_type new_size = last - first;
+    mBegin.mPtr = DoAllocateAndConstruct(new_size);
+    mBegin.mLeftBound = mBegin.mPtr;
+    mBegin.mRightBound = mBegin.mPtr + new_size;
+
+    mEnd.mPtr = mBegin.mRightBound;
+    mEnd.mLeftBound = mBegin.mLeftBound;
+    mEnd.mRightBound = mBegin.mRightBound;
+
+    //Using the mBegin.mPtr is a bit more efficient, as we know the newly allocated data doesn't wrap.
+    std::copy(first, last, mBegin.mPtr);
+  }
+
+  template<class T, class Alloc>
+  inline ring<T, Alloc>::ring(const_pointer first, const_pointer last) :
+      mFixed(false)
+  {
+    size_type new_size = last - first;
+    mBegin.mPtr = DoAllocateAndConstruct(new_size);
+    mBegin.mLeftBound = mBegin.mPtr;
+    mBegin.mRightBound = mBegin.mPtr + new_size;
+
+    mEnd.mPtr = mBegin.mRightBound;
+    mEnd.mLeftBound = mBegin.mLeftBound;
+    mEnd.mRightBound = mBegin.mRightBound;
+
+    //Using the mBegin.mPtr is a bit more efficient, as we know the newly allocated data doesn't wrap.
+    std::copy(first, last, mBegin.mPtr);
+  }
+
+  template<class T, class Alloc>
+  inline ring<T, Alloc>::ring(const ring<T, Alloc> & obj) :
+      mFixed(false)
+  {
+    size_type new_size = obj.size();
+    mBegin.mPtr = DoAllocateAndConstruct(new_size);
+    mBegin.mLeftBound = mBegin.mPtr;
+    mBegin.mRightBound = mBegin.mPtr + new_size;
+
+    mEnd.mPtr = mBegin.mRightBound;
+    mEnd.mLeftBound = mBegin.mLeftBound;
+    mEnd.mRightBound = mBegin.mRightBound;
+
+    //Using the mBegin.mPtr is a bit more efficient, as we know the newly allocated data doesn't wrap.
+    std::copy(obj.begin(), obj.end(), mBegin.mPtr);
   }
 
   template<class T, class Alloc>
@@ -117,6 +187,104 @@ namespace flex
     if (!mFixed && (NULL != mBegin.mPtr))
     {
       DoDestroyAndDeallocate();
+    }
+  }
+
+  template<class T, class Alloc>
+  inline void ring<T, Alloc>::assign(size_type size, const value_type& val)
+  {
+    if (size > capacity())
+    {
+      if (mFixed)
+      {
+        throw std::runtime_error("flex::ring.assign() - fill range exceeds capacity");
+      }
+      else
+      {
+        //Allocate memory with sufficient capacity.
+        size_type new_capacity = GetNewCapacity(size);
+        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+
+        //Copy all values.
+        std::fill_n(new_begin, size, val);
+
+        DoDestroyAndDeallocate();
+        mBegin.mPtr = new_begin;
+        mBegin.mLeftBound = new_begin;
+        mBegin.mRightBound = new_begin + new_capacity;
+        mEnd = mBegin + size;
+      }
+    }
+    else
+    {
+      std::fill_n(mBegin, size, val);
+      mEnd.mPtr = (mBegin + size).mPtr;    //Slightly more efficient than "mEnd = mBegin + size";
+    }
+  }
+
+  template<class T, class Alloc>
+  inline void ring<T, Alloc>::assign(const_iterator first, const_iterator last)
+  {
+    size_type size = last - first;
+    if (size > capacity())
+    {
+      if (mFixed)
+      {
+        throw std::runtime_error("flex::ring.assign() - iterator range exceeds capacity");
+      }
+      else
+      {
+        //Allocate memory with sufficient capacity.
+        size_type new_capacity = GetNewCapacity(size);
+        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+
+        //Copy all values.
+        std::copy(first, last, new_begin);
+
+        DoDestroyAndDeallocate();
+        mBegin.mPtr = new_begin;
+        mBegin.mLeftBound = new_begin;
+        mBegin.mRightBound = new_begin + new_capacity;
+        mEnd = mBegin + size;
+      }
+    }
+    else
+    {
+      std::copy(first, last, mBegin);
+      mEnd.mPtr = (mBegin + size).mPtr;    //Slightly more efficient than "mEnd = mBegin + size";
+    }
+  }
+
+  template<class T, class Alloc>
+  inline void ring<T, Alloc>::assign(const_pointer first, const_pointer last)
+  {
+    size_type size = last - first;
+    if (size > capacity())
+    {
+      if (mFixed)
+      {
+        throw std::runtime_error("flex::ring.assign() - pointer range exceeds capacity");
+      }
+      else
+      {
+        //Allocate memory with sufficient capacity.
+        size_type new_capacity = GetNewCapacity(size);
+        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+
+        //Copy all values.
+        std::copy(first, last, new_begin);
+
+        DoDestroyAndDeallocate();
+        mBegin.mPtr = new_begin;
+        mBegin.mLeftBound = new_begin;
+        mBegin.mRightBound = new_begin + new_capacity;
+        mEnd = mBegin + size;
+      }
+    }
+    else
+    {
+      std::copy(first, last, mBegin);
+      mEnd.mPtr = (mBegin + size).mPtr;    //Slightly more efficient than "mEnd = mBegin + size";
     }
   }
 
@@ -170,25 +338,25 @@ namespace flex
     return mBegin;
   }
 
-//  template<class T, class Alloc> const T* ring<T, Alloc>::cbegin() const
-//  {
-//    return mAryPtr;
-//  }
-//
-//  template<class T, class Alloc> const T* ring<T, Alloc>::cend() const
-//  {
-//    return &mAryPtr[mSize];
-//  }
+  template<class T, class Alloc> typename ring<T, Alloc>::const_iterator ring<T, Alloc>::cbegin() const
+  {
+    return mBegin;
+  }
 
-//  template<class T, class Alloc> array_const_reverse_iterator<T, Alloc> ring<T, Alloc>::crbegin() const
-//  {
-//    return array_const_reverse_iterator<T, Alloc>(&mAryPtr[mSize - 1]);
-//  }
-//
-//  template<class T, class Alloc> array_const_reverse_iterator<T, Alloc> ring<T, Alloc>::crend() const
-//  {
-//    return array_const_reverse_iterator<T, Alloc>(&mAryPtr[-1]);
-//  }
+  template<class T, class Alloc> typename ring<T, Alloc>::const_iterator ring<T, Alloc>::cend() const
+  {
+    return mEnd;
+  }
+
+  template<class T, class Alloc> typename ring<T, Alloc>::const_reverse_iterator ring<T, Alloc>::crbegin() const
+  {
+    return const_reverse_iterator((mEnd - 1).mPtr, mEnd.mLeftBound, mEnd.mRightBound);
+  }
+
+  template<class T, class Alloc> typename ring<T, Alloc>::const_reverse_iterator ring<T, Alloc>::crend() const
+  {
+    return const_reverse_iterator((mBegin - 1).mPtr, mBegin.mLeftBound, mBegin.mRightBound);
+  }
 
   template<class T, class Alloc>
   inline typename ring<T, Alloc>::size_type ring<T, Alloc>::capacity() const
@@ -200,6 +368,26 @@ namespace flex
   inline bool ring<T, Alloc>::empty() const
   {
     return (0 == size());
+  }
+
+  template<class T, class Alloc>
+  inline typename ring<T, Alloc>::iterator ring<T, Alloc>::erase(iterator position)
+  {
+    //This copy will simply shift everything after position over to the left by one.
+    //This will effectively overwrite position, erasing it from the container.
+    std::copy(position + 1, mEnd, position);
+    --mEnd;
+    return position;
+  }
+
+  template<class T, class Alloc>
+  inline typename ring<T, Alloc>::iterator ring<T, Alloc>::erase(iterator first, iterator last)
+  {
+    //Move all the elements after the erased range to the front of the range.  This
+    //will overwrite the erased elements, and the size will be set accordingly.
+    std::copy(last, mEnd, first);
+    mEnd -= (last - first);
+    return first;
   }
 
   template<class T, class Alloc>
@@ -223,7 +411,202 @@ namespace flex
   template<class T, class Alloc>
   inline typename ring<T, Alloc>::const_reference ring<T, Alloc>::front() const
   {
-    return *((const_iterator) mBegin);
+    return *mBegin;
+  }
+
+  template<class T, class Alloc> bool ring<T, Alloc>::fixed() const
+  {
+    return mFixed;
+  }
+
+  template<class T, class Alloc> typename ring<T, Alloc>::allocator_type ring<T, Alloc>::get_allocator() const
+  {
+    return mAllocator;
+  }
+
+  template<class T, class Alloc> typename ring<T, Alloc>::iterator ring<T, Alloc>::insert(iterator position,
+      const value_type& val)
+  {
+    if (size() == capacity())
+    {
+      if (mFixed)
+      {
+        throw std::runtime_error("flex::ring.insert() - capacity exceeded");
+      }
+      else
+      {
+        //Allocate memory with sufficient capacity.
+        size_type new_size = size() + 1;
+        size_t new_capacity = GetNewCapacity(new_size);
+        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+
+        //Copy all values to the left of position.
+        pointer new_end = std::copy(mBegin, position, new_begin);
+
+        //Copy the inserted parameter val.
+        iterator new_position;
+        new_position.mPtr = new_end;
+        new_position.mLeftBound = new_begin;
+        new_position.mRightBound = new_begin + new_capacity;
+        *new_end = val;
+
+        //Copy all values that come after position.
+        new_end = std::copy(position, mEnd, ++new_end);
+
+        DoDestroyAndDeallocate();
+        mBegin.mPtr = new_begin;
+        mBegin.mLeftBound = new_begin;
+        mBegin.mRightBound = new_position.mRightBound;
+        mEnd = mBegin + new_size;
+        return new_position;
+      }
+    }
+    else
+    {
+      //This copy backwards will shift all the elements after position to the right
+      //by one space.  This is valid since the capacity check above ensures we have
+      //at least one spot available after the end.
+      std::copy_backward(position, mEnd, mEnd + 1);
+
+      *position = val;
+      ++mEnd;
+
+      return position;
+    }
+  }
+
+  template<class T, class Alloc> void ring<T, Alloc>::insert(iterator position, size_type n, const value_type& val)
+  {
+    if ((size() + n) > capacity())
+    {
+      if (mFixed)
+      {
+        throw std::runtime_error("flex::ring.insert() - fill range exceeds capacity");
+      }
+      else
+      {
+        //Allocate memory with sufficient capacity.
+        size_type new_size = size() + n;
+        size_type new_capacity = GetNewCapacity(new_size);
+        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+
+        //Copy all values to the left of position.
+        pointer new_end = std::copy(mBegin, position, new_begin);
+
+        //Fill the parameter val.
+        std::fill_n(new_end, n, val);
+
+        //Copy all values that come after position.
+        new_end = std::copy(position, mEnd, new_end + n);
+
+        DoDestroyAndDeallocate();
+        mBegin.mPtr = new_begin;
+        mBegin.mLeftBound = new_begin;
+        mBegin.mRightBound = new_begin + new_capacity;
+        mEnd = mBegin + new_size;
+      }
+    }
+    else
+    {
+      //Slide everything to the right 'n' spaces to make room for the new elements.
+      std::copy_backward(position, mEnd, mEnd + n);
+
+      //Insert the new elements into the available space.
+      std::fill_n(position, n, val);
+
+      mEnd += n;
+    }
+  }
+
+  template<class T, class Alloc> void ring<T, Alloc>::insert(iterator position, const_iterator first,
+      const_iterator last)
+  {
+    size_type n = (last - first);
+    if ((size() + n) > capacity())
+    {
+      if (mFixed)
+      {
+        throw std::runtime_error("flex::ring.insert() - fill range exceeds capacity");
+      }
+      else
+      {
+        //Allocate memory with sufficient capacity.
+        size_type new_size = size() + n;
+        size_type new_capacity = GetNewCapacity(new_size);
+        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+
+        //Copy all values to the left of position.
+        pointer new_end = std::copy(mBegin, position, new_begin);
+
+        //Copy the inserted range.
+        new_end = std::copy(first, last, new_end);
+
+        //Copy all values that come after position.
+        new_end = std::copy(position, mEnd, new_end);
+
+        //Deallocate and reassign
+        DoDestroyAndDeallocate();
+        mBegin.mPtr = new_begin;
+        mBegin.mLeftBound = new_begin;
+        mBegin.mRightBound = new_begin + new_capacity;
+        mEnd = mBegin + new_size;
+      }
+    }
+    else
+    {
+      //Slide everything to the right 'n' spaces to make room for the new elements.
+      std::copy_backward(position, mEnd, mEnd + n);
+
+      //Insert the new elements into the available space.
+      std::copy(first, last, position);
+
+      mEnd += n;
+    }
+  }
+
+  template<class T, class Alloc> void ring<T, Alloc>::insert(iterator position, const_pointer first, const_pointer last)
+  {
+    size_type n = (last - first);
+    if ((size() + n) > capacity())
+    {
+      if (mFixed)
+      {
+        throw std::runtime_error("flex::ring.insert() - fill range exceeds capacity");
+      }
+      else
+      {
+        //Allocate memory with sufficient capacity.
+        size_type new_size = size() + n;
+        size_type new_capacity = GetNewCapacity(new_size);
+        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+
+        //Copy all values to the left of position.
+        pointer new_end = std::copy(mBegin, position, new_begin);
+
+        //Copy the inserted range.
+        new_end = std::copy(first, last, new_end);
+
+        //Copy all values that come after position.
+        new_end = std::copy(position, mEnd, new_end);
+
+        //Deallocate and reassign
+        DoDestroyAndDeallocate();
+        mBegin.mPtr = new_begin;
+        mBegin.mLeftBound = new_begin;
+        mBegin.mRightBound = new_begin + new_capacity;
+        mEnd = mBegin + new_size;
+      }
+    }
+    else
+    {
+      //Slide everything to the right 'n' spaces to make room for the new elements.
+      std::copy_backward(position, mEnd, mEnd + n);
+
+      //Insert the new elements into the available space.
+      std::copy(first, last, position);
+
+      mEnd += n;
+    }
   }
 
   template<class T, class Alloc>
@@ -276,7 +659,7 @@ namespace flex
   template<class T, class Alloc>
   inline typename ring<T, Alloc>::const_reference ring<T, Alloc>::operator[](size_t n) const
   {
-    return ((const_iterator) mBegin)[n];
+    return mBegin[n];
   }
 
   template<class T, class Alloc>
@@ -292,7 +675,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void ring<T, Alloc>::push_back(const T& val)
+  inline void ring<T, Alloc>::push_back(const value_type& val)
   {
     if (size() == capacity())
     {
@@ -361,27 +744,54 @@ namespace flex
     }
   }
 
-  /*
-   template<class T, class Alloc> array_reverse_iterator<T, Alloc> ring<T, Alloc>::rbegin()
-   {
-   return array_reverse_iterator<T, Alloc>(&mAryPtr[mSize - 1]);
-   }
+  template<class T, class Alloc> typename ring<T, Alloc>::reverse_iterator ring<T, Alloc>::rbegin()
+  {
+    return reverse_iterator((mEnd - 1).mPtr, mEnd.mLeftBound, mEnd.mRightBound);
+  }
 
-   template<class T, class Alloc> array_const_reverse_iterator<T, Alloc> ring<T, Alloc>::rbegin() const
-   {
-   return array_const_reverse_iterator<T, Alloc>(&mAryPtr[mSize - 1]);
-   }
+  template<class T, class Alloc> typename ring<T, Alloc>::const_reverse_iterator ring<T, Alloc>::rbegin() const
+  {
+    return const_reverse_iterator((mEnd - 1).mPtr, mEnd.mLeftBound, mEnd.mRightBound);
+  }
 
-   template<class T, class Alloc> array_reverse_iterator<T, Alloc> ring<T, Alloc>::rend()
-   {
-   return array_reverse_iterator<T, Alloc>(&mAryPtr[-1]);
-   }
+  template<class T, class Alloc> typename ring<T, Alloc>::reverse_iterator ring<T, Alloc>::rend()
+  {
+    return reverse_iterator((mBegin - 1).mPtr, mBegin.mLeftBound, mBegin.mRightBound);
+  }
 
-   template<class T, class Alloc> array_const_reverse_iterator<T, Alloc> ring<T, Alloc>::rend() const
-   {
-   return array_const_reverse_iterator<T, Alloc>(&mAryPtr[-1]);
-   }
-   */
+  template<class T, class Alloc> typename ring<T, Alloc>::const_reverse_iterator ring<T, Alloc>::rend() const
+  {
+    return const_reverse_iterator((mBegin - 1).mPtr, mBegin.mLeftBound, mBegin.mRightBound);
+  }
+
+  template<class T, class Alloc>
+  inline void ring<T, Alloc>::reserve(size_type n)
+  {
+    if (n > capacity())
+    {
+      if (mFixed)
+      {
+        throw std::runtime_error("flex::ring.reserve() - exceeded capacity");
+      }
+      else
+      {
+        //Allocate memory with sufficient capacity.
+        size_type new_size = size();
+        size_type new_capacity = GetNewCapacity(n);
+        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+
+        //Copy all current values.
+        std::copy(mBegin, mEnd, new_begin);
+
+        DoDestroyAndDeallocate();
+        mBegin.mPtr = new_begin;
+        mBegin.mLeftBound = new_begin;
+        mBegin.mRightBound = new_begin + new_capacity;
+        mEnd = mBegin + new_size;
+      }
+    }
+  }
+
   template<class T, class Alloc>
   inline size_t ring<T, Alloc>::size() const
   {
@@ -423,10 +833,20 @@ namespace flex
   template<class T, class Alloc>
   inline void ring<T, Alloc>::DoDestroyAndDeallocate()
   {
-    for (pointer it = mBegin.mLeftBound; it != (mBegin.mRightBound + 1); ++it)
+    for (pointer it = mBegin.mLeftBound; it != mBegin.mRightBound; ++it)
     {
       mAllocator.destroy(it);
     }
+
+    //Due to the circular nature of the container, mRightBound points to the last element in the allocated space.  This
+    //is different than a typical end iterator which points to a place one beyond the last element.  Therefore, the above
+    //loop misses the last space.  We don't want to use (mRightBound+1) in the above loop because it doesn't work when
+    //both mLeftBound and mRightBound are NULL.  The best option is to simply handle the last element after the loop.
+    if (mBegin.mRightBound != NULL)
+    {
+      mAllocator.destroy(mBegin.mRightBound);
+    }
+
     //Once again, the allocated size is one more than capacity.  Increment capacity by one when deallocating.
     mAllocator.deallocate(mBegin.mLeftBound, capacity() + 1);
   }

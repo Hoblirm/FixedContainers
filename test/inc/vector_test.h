@@ -186,7 +186,7 @@ public:
   void test_max_size(void)
   {
     vec a;
-    TS_ASSERT_EQUALS(a.max_size(), 0);
+    TS_ASSERT_EQUALS(a.max_size(), a.get_allocator().max_size());
   }
 
   void test_assignment_operator(void)

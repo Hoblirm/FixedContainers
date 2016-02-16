@@ -20,6 +20,7 @@ namespace flex
     fixed_vector(const vector<T, Alloc> & obj);
     fixed_vector<T, N, Alloc>& operator=(const fixed_vector<T, N, Alloc>& obj);
     fixed_vector<T, N, Alloc>& operator=(const vector<T, Alloc>& obj);
+    size_t max_size() const;
   private:
     T mAry[N];
   };
@@ -71,6 +72,11 @@ namespace flex
   {
     vector<T, Alloc>::operator=(obj);
     return *this;
+  }
+
+  template<class T, size_t N, class Alloc> size_t fixed_vector<T, N, Alloc>::max_size() const
+  {
+    return mCapacity;
   }
 
 } //namespace flex
