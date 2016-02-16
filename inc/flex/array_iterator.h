@@ -6,55 +6,45 @@
 namespace flex
 {
 //TODO: Need to add +, -, +=, -=, [], posfix++.--, and casting() to const, also need to inherit from std::iterator
-  template<class T> struct array_reverse_iterator_base
+
+  template<class T> struct array_const_reverse_iterator
   {
+
     T* mPtr;
 
-    array_reverse_iterator_base(T * p) :
+    array_const_reverse_iterator(T * p) :
         mPtr(p)
     {
     }
 
-    bool operator==(array_reverse_iterator_base<T> obj) const
+    bool operator==(array_const_reverse_iterator<T> obj) const
     {
       return (mPtr == obj.mPtr);
     }
 
-    bool operator!=(array_reverse_iterator_base<T> obj) const
+    bool operator!=(array_const_reverse_iterator<T> obj) const
     {
       return (mPtr != obj.mPtr);
     }
 
-    bool operator<(array_reverse_iterator_base<T> obj) const
+    bool operator<(array_const_reverse_iterator<T> obj) const
     {
       return (mPtr > obj.mPtr);
     }
 
-    bool operator<=(array_reverse_iterator_base<T> obj) const
+    bool operator<=(array_const_reverse_iterator<T> obj) const
     {
       return (mPtr >= obj.mPtr);
     }
 
-    bool operator>(array_reverse_iterator_base<T> obj) const
+    bool operator>(array_const_reverse_iterator<T> obj) const
     {
       return (mPtr < obj.mPtr);
     }
 
-    bool operator>=(array_reverse_iterator_base<T> obj) const
+    bool operator>=(array_const_reverse_iterator<T> obj) const
     {
       return (mPtr <= obj.mPtr);
-    }
-
-  };
-
-  template<class T> struct array_const_reverse_iterator: public array_reverse_iterator_base<T>
-  {
-    typedef array_reverse_iterator_base<T> base_type;
-    using base_type::mPtr;
-
-    array_const_reverse_iterator(T * p) :
-        array_reverse_iterator_base<T>(p)
-    {
     }
 
     array_const_reverse_iterator<T>& operator++()
@@ -80,13 +70,13 @@ namespace flex
     }
   };
 
-  template<class T> struct array_reverse_iterator: public array_reverse_iterator_base<T>
+  template<class T> struct array_reverse_iterator: public array_const_reverse_iterator<T>
   {
-    typedef array_reverse_iterator_base<T> base_type;
+    typedef array_const_reverse_iterator<T> base_type;
     using base_type::mPtr;
 
     array_reverse_iterator(T * p) :
-        array_reverse_iterator_base<T>(p)
+        array_const_reverse_iterator<T>(p)
     {
     }
 
