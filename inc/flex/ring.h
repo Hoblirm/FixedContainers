@@ -36,59 +36,48 @@ namespace flex
     //TODO: Get template to work with ring assign() to use multiple iterators.
     void assign(const_iterator first, const_iterator last);
     void assign(const_pointer first, const_pointer last);
-
     reference at(size_t n);
     const_reference at(size_t n) const;
-
     reference back();
     const_reference back() const;
-
     iterator begin();
     const_iterator begin() const;
     const_iterator cbegin() const;
     const_iterator cend() const;
     const_reverse_iterator crbegin() const;
     const_reverse_iterator crend() const;
-
     size_type capacity() const;
     void clear();
-
     bool empty() const;
     iterator erase(iterator position);
     iterator erase(iterator first, iterator last);
-
     iterator end();
     const_iterator end() const;
-
     bool fixed() const;
     reference front();
     const_reference front() const;
     allocator_type get_allocator() const;
-
     iterator insert(iterator position, const value_type& val);
     //TODO: Get template to work with ring insert() to use multiple iterators.
     void insert(iterator position, size_t n, const value_type& val);
     void insert(iterator position, const_iterator first, const_iterator last);
     void insert(iterator position, const_pointer first, const_pointer last);
-
     size_t max_size() const;
-
     ring<T, Alloc>& operator=(const ring<T, Alloc>& obj);
     reference operator[](size_t n);
     const_reference operator[](size_t n) const;
-
     void pop_back();
     void pop_front();
     void push_back(const value_type& val);
     void push_front(const value_type& val);
-
     reverse_iterator rbegin();
     const_reverse_iterator rbegin() const;
     reverse_iterator rend();
     const_reverse_iterator rend() const;
-
     void reserve(size_type n);
+    void resize(size_t n, const value_type& val = value_type());
     size_t size() const;
+    void swap(ring<T, Alloc>& obj);
 
   protected:
     ring(size_t size, T* ptr);
@@ -360,6 +349,19 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline void ring<T, Alloc>::resize(size_t n, const value_type& val)
+  {
+    if (n < size())
+    {
+      mEnd.mPtr = (mBegin + n).mPtr;
+    }
+    else if (n > size())
+    {
+      insert(mEnd, n - size(), val);
+    }
+  }
+
+  template<class T, class Alloc>
   inline typename ring<T, Alloc>::size_type ring<T, Alloc>::capacity() const
   {
     return (mBegin.mRightBound - mBegin.mLeftBound);
@@ -368,7 +370,7 @@ namespace flex
   template<class T, class Alloc>
   inline void ring<T, Alloc>::clear()
   {
-    assign((pointer)NULL,(pointer)NULL);
+    assign((pointer) NULL, (pointer) NULL);
   }
 
   template<class T, class Alloc>
@@ -775,6 +777,37 @@ namespace flex
   inline size_t ring<T, Alloc>::size() const
   {
     return (mEnd - mBegin);
+  }
+
+  template<class T, class Alloc>
+  inline void ring<T, Alloc>::swap(ring<T, Alloc>& obj)
+  {
+    if ((!mFixed) && (!obj.fixed()))
+    {
+      std::swap(mBegin, obj.mBegin);
+      std::swap(mEnd, obj.mEnd);
+    }
+    else
+    {
+      if ((obj.size() > capacity()) || (size() > obj.capacity()))
+      {
+        throw std::runtime_error("flex::vector - swap() parameters' size exceed capacity");
+      }
+
+      if (size() < obj.size())
+      {
+        iterator it = std::swap_ranges(mBegin, mEnd, obj.begin());
+        std::copy(it, obj.end(), mEnd);
+      }
+      else
+      {
+        iterator it = std::swap_ranges(obj.begin(), obj.end(), mBegin);
+        std::copy(it, mEnd, obj.end());
+      }
+      size_t tmp_size = size();
+      mEnd.mPtr = (mBegin + obj.size()).mPtr;
+      obj.mEnd.mPtr = (obj.mBegin + tmp_size).mPtr;
+    }
   }
 
   template<class T, class Alloc>

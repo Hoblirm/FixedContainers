@@ -971,6 +971,38 @@ public:
     }
   }
 
+  void test_resize(void)
+  {
+    ring_int a;
+    const int val = 19;
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      /*
+       * Case 1: Verify resize can decrease size.
+       */
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t new_size = SIZES[s] / 2;
+      a.resize(new_size);
+      TS_ASSERT_EQUALS(a.size(), new_size);
+      TS_ASSERT(a == ring_int(INT_DATA, INT_DATA + new_size));
+
+      /*
+       * Case 2: Verify resize can increase size.
+       */
+      a.resize(SIZES[s], val);
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      for (int i = 0; i < new_size; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
+      }
+      for (int i = new_size; i < SIZES[s]; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], val);
+      }
+
+    } //for: SIZE_COUNT
+  }
+
   void test_size(void)
   {
     unsigned size = 3;
@@ -978,38 +1010,37 @@ public:
     TS_ASSERT_EQUALS(a.size(), size);
   }
 
-//  void test_swap(void)
-//  {
-//    unsigned size = 5;
-//
-//    ring_int first;
-//    first[0] = 10;
-//    first[1] = 20;
-//    first[2] = 30;
-//    first[3] = 40;
-//    first[4] = 50;
-//
-//    ring_int second;
-//    second[0] = 11;
-//    second[1] = 22;
-//    second[2] = 33;
-//    second[3] = 44;
-//    second[4] = 55;
-//
-//    first.swap(second);
-//
-//    TS_ASSERT_EQUALS(first[0], 11);
-//    TS_ASSERT_EQUALS(first[1], 22);
-//    TS_ASSERT_EQUALS(first[2], 33);
-//    TS_ASSERT_EQUALS(first[3], 44);
-//    TS_ASSERT_EQUALS(first[4], 55);
-//
-//    TS_ASSERT_EQUALS(second[0], 10);
-//    TS_ASSERT_EQUALS(second[1], 20);
-//    TS_ASSERT_EQUALS(second[2], 30);
-//    TS_ASSERT_EQUALS(second[3], 40);
-//    TS_ASSERT_EQUALS(second[4], 50);
-//  }
+  void test_swap(void)
+  {
+    ring_int a;
+    ring_int b;
+
+    /*
+     * Case 1: Test on empty container
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      b.clear();
+
+      a.swap(b);
+      TS_ASSERT_EQUALS(a.size(), 0);
+      TS_ASSERT_EQUALS(b.size(), SIZES[s]);
+      TS_ASSERT(b == ring_int(INT_DATA, INT_DATA + SIZES[s]));
+    }
+
+    /*
+     * Case 2: Test on two populated containers
+     */
+    a.assign(INT_DATA, INT_DATA + 9);
+    b.assign(INT_DATA + 9, INT_DATA + 16);
+
+    a.swap(b);
+    TS_ASSERT_EQUALS(a.size(), 7);
+    TS_ASSERT_EQUALS(b.size(), 9);
+    TS_ASSERT(a == ring_int(INT_DATA + 9, INT_DATA + 16));
+    TS_ASSERT(b == ring_int(INT_DATA, INT_DATA + 9));
+  }
 
   void test_assignment_operator(void)
   {
@@ -1026,70 +1057,140 @@ public:
     }
   }
 
-  void test_push_back_and_pop_back(void)
+  void test_pop_back(void)
   {
-    ring_int myring;
-    int size = 0;
-    TS_ASSERT_EQUALS(myring.size(), size);
+    ring_int a;
 
-    int sum(0);
-    myring.push_back(100);
-    ++size;
-    TS_ASSERT_EQUALS(myring.size(), size);
-    myring.push_back(200);
-    ++size;
-    TS_ASSERT_EQUALS(myring.size(), size);
-    myring.push_back(300);
-    ++size;
-    TS_ASSERT_EQUALS(myring.size(), size);
-    myring.push_back(300);
-    ++size;
-    TS_ASSERT_EQUALS(myring.size(), size);
-
-    while (!myring.empty())
+    /*
+     * Case 1: Container doesn't wrap
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      sum += myring.back();
-      myring.pop_back();
-      --size;
-      TS_ASSERT_EQUALS(myring.size(), size);
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
+      while (!a.empty())
+      {
+        TS_ASSERT_EQUALS(a.back(), INT_DATA[current_size - 1]);
+        a.pop_back();
+        --current_size;
+        TS_ASSERT_EQUALS(a.size(), current_size);
+      }
     }
-    TS_ASSERT_EQUALS(sum, 900);
+
+    /*
+     * Case 2: Container wraps
+     */
+    for (unsigned s = 2; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA + 2, INT_DATA + SIZES[s]);
+      a.push_front(INT_DATA[1]);
+      a.push_front(INT_DATA[0]);
+      size_t current_size = a.size();
+      while (!a.empty())
+      {
+        TS_ASSERT_EQUALS(a.back(), INT_DATA[current_size - 1]);
+        a.pop_back();
+        --current_size;
+        TS_ASSERT_EQUALS(a.size(), current_size);
+      }
+    }
   }
 
   void test_pop_front(void)
   {
-    ring_int myring;
-    myring.push_back(100);
-    myring.push_back(200);
-    myring.push_back(300);
+    ring_int a;
 
-    myring.pop_front();
-    TS_ASSERT_EQUALS(myring.size(), 2);
-    ring_int::iterator it = myring.begin();
-    TS_ASSERT_EQUALS(*(it++), 200);
-    TS_ASSERT_EQUALS(*(it++), 300);
+    /*
+     * Case 1: Container doesn't wrap
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
+      while (!a.empty())
+      {
+        TS_ASSERT_EQUALS(a.front(), INT_DATA[SIZES[s] - current_size]);
+        a.pop_front();
+        --current_size;
+        TS_ASSERT_EQUALS(a.size(), current_size);
+      }
+    }
 
-    myring.pop_front();
-    TS_ASSERT_EQUALS(myring.size(), 1);
-    it = myring.begin();
-    TS_ASSERT_EQUALS(*(it++), 300);
+    /*
+     * Case 2: Container wraps
+     */
+    for (unsigned s = 2; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA + 2, INT_DATA + SIZES[s]);
+      a.push_front(INT_DATA[1]);
+      a.push_front(INT_DATA[0]);
+      size_t current_size = a.size();
+      while (!a.empty())
+      {
+        TS_ASSERT_EQUALS(a.front(), INT_DATA[SIZES[s] - current_size]);
+        a.pop_front();
+        --current_size;
+        TS_ASSERT_EQUALS(a.size(), current_size);
+      }
+    }
+  }
 
-    myring.pop_front();
-    TS_ASSERT_EQUALS(myring.size(), 0);
+  void test_push_back(void)
+  {
+    ring_int a;
+
+    /*
+     * Case 1: Normal condition.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.clear();
+      for (int i = 0; i < SIZES[s]; ++i)
+      {
+        a.push_back(INT_DATA[i]);
+        TS_ASSERT_EQUALS(a.back(), INT_DATA[i]);
+        TS_ASSERT_EQUALS(a.size(), i + 1);
+      }
+      TS_ASSERT(a == ring_int(INT_DATA, INT_DATA + SIZES[s]));
+    }
+
+    /*
+     * Case 2: Container wraps.
+     */
+    for (unsigned s = 2; s < SIZE_COUNT; ++s)
+    {
+      a.clear();
+      a.push_front(INT_DATA[1]);
+      a.push_front(INT_DATA[0]);
+      for (int i = 2; i < SIZES[s]; ++i)
+      {
+        a.push_back(INT_DATA[i]);
+        TS_ASSERT_EQUALS(a.back(), INT_DATA[i]);
+        TS_ASSERT_EQUALS(a.size(), i + 1);
+      }
+      TS_ASSERT(a == ring_int(INT_DATA, INT_DATA + SIZES[s]));
+    }
   }
 
   void test_push_front(void)
   {
-    ring_int myring(2, 100); // two ints with a value of 100
-    myring.push_front(200);
-    myring.push_front(300);
+    ring_int a;
 
-    ring_int::iterator it = myring.begin();
-
-    TS_ASSERT_EQUALS(*(it++), 300);
-    TS_ASSERT_EQUALS(*(it++), 200);
-    TS_ASSERT_EQUALS(*(it++), 100);
-    TS_ASSERT_EQUALS(*(it++), 100);
+    /*
+     * Case 1: Normal condition.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.clear();
+      for (int i = 0; i < SIZES[s]; ++i)
+      {
+        const unsigned data_index = SIZES[s] - 1 - i;
+        a.push_front(INT_DATA[data_index]);
+        TS_ASSERT_EQUALS(a.front(), INT_DATA[data_index]);
+        TS_ASSERT_EQUALS(a.size(), i + 1);
+      }
+      TS_ASSERT(a == ring_int(INT_DATA, INT_DATA + SIZES[s]));
+    }
   }
 
   void test_equality_operator(void)
@@ -1156,7 +1257,7 @@ public:
       TS_ASSERT(a < b);
       TS_ASSERT(!(b < a));
 
-      b[0] = a[0]-1;
+      b[0] = a[0] - 1;
       TS_ASSERT(b < a);
       TS_ASSERT(!(a < b));
 
