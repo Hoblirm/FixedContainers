@@ -3,7 +3,57 @@
 #include <flex/ring.h>
 #include <flex/allocator_debug.h>
 
+#define INIT_VAL 1
+struct object
+{
+  object() :
+      val(INIT_VAL)
+  {
+  }
+
+  object(int i) :
+      val(i)
+  {
+  }
+
+  int val;
+};
+
 typedef flex::ring<int, flex::allocator_debug<int> > ring_int;
+typedef flex::ring<object, flex::allocator_debug<object> > ring_obj;
+
+const int INT_DATA[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
+    -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
+    414986917, -1084506988, -1274438196, -407784340, -1476797751, 952482371, 1659351065, -1840296979, 1174260466,
+    -830555035, 1187249412, -1439716735, -606656096, 1968778085, -468774603, -741213671, -1792595459, -1043591241,
+    -399781674, 1441797965, -539577554, -1712941906, 893437261, 1243708130, -276655685, 169167272, 1548266128,
+    2134938409, -165983522, 65335344, 777222631, -1975346548, 1736737965, -1297235370, -1778585082, -445115751,
+    77287795, -904742465, 1566979049, -1276550055, -1523151595, -1877472326, -1965521838, 309774311, 285638537,
+    1694499811, 395062486, -599472639, -562348494, 622523556, 1991792880, 1485225099, -26143183, 1213635789,
+    -1867261885, 1401932595, 1643956672, 1152265615, -206296253, -1341812088, -928119996, 1335888378, -2127839732,
+    -805081880, -461979923, 258594093, 1322814281, -1856950276, 763906168, -110775798, 29138078, -728231554,
+    -1738124420, -1130024844, 2112808498, -2147190929, -46681067, -1746560845, -1931350352, -2121713887, -2077836858,
+    -68560373, 542144249, -964249373, 672765407, 1240222082, -170251308, 573136605, 522427348, -1842488270, -803442179,
+    1214800559, -439290856, -850489475, -371113959, -528653948, -1466750983, -299654597, -1095361209, 912904732,
+    1884738031 };
+
+const object OBJ_DATA[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
+    -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
+    414986917, -1084506988, -1274438196, -407784340, -1476797751, 952482371, 1659351065, -1840296979, 1174260466,
+    -830555035, 1187249412, -1439716735, -606656096, 1968778085, -468774603, -741213671, -1792595459, -1043591241,
+    -399781674, 1441797965, -539577554, -1712941906, 893437261, 1243708130, -276655685, 169167272, 1548266128,
+    2134938409, -165983522, 65335344, 777222631, -1975346548, 1736737965, -1297235370, -1778585082, -445115751,
+    77287795, -904742465, 1566979049, -1276550055, -1523151595, -1877472326, -1965521838, 309774311, 285638537,
+    1694499811, 395062486, -599472639, -562348494, 622523556, 1991792880, 1485225099, -26143183, 1213635789,
+    -1867261885, 1401932595, 1643956672, 1152265615, -206296253, -1341812088, -928119996, 1335888378, -2127839732,
+    -805081880, -461979923, 258594093, 1322814281, -1856950276, 763906168, -110775798, 29138078, -728231554,
+    -1738124420, -1130024844, 2112808498, -2147190929, -46681067, -1746560845, -1931350352, -2121713887, -2077836858,
+    -68560373, 542144249, -964249373, 672765407, 1240222082, -170251308, 573136605, 522427348, -1842488270, -803442179,
+    1214800559, -439290856, -850489475, -371113959, -528653948, -1466750983, -299654597, -1095361209, 912904732,
+    1884738031 };
+
+const size_t SIZE_COUNT = 10;
+const size_t SIZES[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 128 };
 
 class ring_test: public CxxTest::TestSuite
 {
@@ -12,341 +62,847 @@ public:
   void setUp()
   {
     flex::allocator_debug<int>::clear();
+    flex::allocator_debug<object>::clear();
   }
 
   void tearDown()
   {
     //This ensures that all objects constructed by the container have their destructors called.
     TS_ASSERT(flex::allocator_debug<int>::mConstructedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<object>::mConstructedPointers.empty());
 
     //This ensures that all memory allocated by the container is properly freed.
     TS_ASSERT(flex::allocator_debug<int>::mAllocatedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<object>::mAllocatedPointers.empty());
   }
 
   void test_default_constructor(void)
   {
+    /*
+     * Case1: Verify default constructor works and doesn't allocate space.
+     */
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(ring_int a(1), std::runtime_error);
-
-    flex::allocation_guard::disable();
     ring_int a;
     TS_ASSERT_EQUALS(a.size(), 0);
     TS_ASSERT_EQUALS(a.capacity(), 0);
+    flex::allocation_guard::disable();
   }
 
   void test_default_fill_constructor(void)
   {
-    flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(ring_int a(2), std::runtime_error);
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      /*
+       * Case1: Verify fill constructor allocates memory.
+       */
+      flex::allocation_guard::enable();
+      TS_ASSERT_THROWS(ring_int a(SIZES[s]), std::runtime_error);
+      flex::allocation_guard::disable();
 
-    flex::allocation_guard::disable();
-    ring_int a(2);
-    TS_ASSERT_EQUALS(a.size(), 2);
-    TS_ASSERT_EQUALS(a.capacity(), 2);
-    TS_ASSERT_EQUALS(a[0], 0);
-    TS_ASSERT_EQUALS(a[1], 0);
+      /*
+       * Case2: Verify fill constructor with primitive elements.
+       */
+      ring_int a(SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
+      for (int i = 0; i < a.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], 0);
+      }
+
+      /*
+       * Case3: Verify fill constructor with object elements.
+       */
+      ring_obj b(SIZES[s]);
+      TS_ASSERT_EQUALS(b.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(b.size(), b.capacity());
+      for (int i = 0; i < b.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(b[i].val, INIT_VAL);
+      }
+    } //for: SIZE_COUNT
   }
 
   void test_fill_constructor(void)
   {
-    flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(ring_int a(2, 7), std::runtime_error);
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      const int fill_val = INT_DATA[SIZES[s] - 1];
 
-    flex::allocation_guard::disable();
-    ring_int a(2, 7);
-    TS_ASSERT_EQUALS(a.size(), 2);
-    TS_ASSERT_EQUALS(a.capacity(), 2);
-    TS_ASSERT_EQUALS(a[0], 7);
-    TS_ASSERT_EQUALS(a[1], 7);
+      /*
+       * Case1: Verify fill constructor assigns value parameter for primitives.
+       */
+      ring_int a(SIZES[s], fill_val);
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), SIZES[s] * 2);
+      for (int i = 0; i < a.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], fill_val);
+      }
+
+      /*
+       * Case1: Verify fill constructor assigns value parameter for objects.
+       */
+      ring_obj b(SIZES[s], object(fill_val));
+      TS_ASSERT_EQUALS(b.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(b.size(), b.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(b.capacity(), SIZES[s] * 2);
+      for (int i = 0; i < b.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(b[i].val, fill_val);
+      }
+    } //for: SIZE_COUNT
   }
 
   void test_range_constructor(void)
   {
-    ring_int first(4, 100);
-    ring_int second(first.begin(), first.end());  // iterating through first
-    TS_ASSERT_EQUALS(second.size(), 4);
-    for (ring_int::iterator it = second.begin(); it != second.end(); ++it)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      TS_ASSERT_EQUALS(*it, 100);
-    }
+      /*
+       * Case1: Verify range constructor with pointer parameters
+       */
+      ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), SIZES[s] * 2);
+      for (int i = 0; i < a.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
+      }
 
-    // the iterator constructor can also be used to construct from arrays:
-    int myints[] = { 16, 2, 77, 29 };
-    ring_int third(myints, myints + sizeof(myints) / sizeof(int));
-    TS_ASSERT_EQUALS(third.size(), 4);
-    TS_ASSERT_EQUALS(third[0], 16);
-    TS_ASSERT_EQUALS(third[1], 2);
-    TS_ASSERT_EQUALS(third[2], 77);
-    TS_ASSERT_EQUALS(third[3], 29);
+      /*
+       * Case2: Verify range constructor with iterator parameters
+       */
+      ring_int b(a.begin(), a.end());
+      TS_ASSERT_EQUALS(b.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(b.size(), b.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(b.capacity(), SIZES[s] * 2);
+      for (int i = 0; i < b.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(b[i], INT_DATA[i]);
+      }
+
+      /*
+       * Case3: Verify range constructor for object elements.
+       */
+      ring_obj c(OBJ_DATA, OBJ_DATA + SIZES[s]);
+      TS_ASSERT_EQUALS(c.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(c.size(), c.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(c.capacity(), SIZES[s] * 2);
+      for (int i = 0; i < c.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(c[i].val, OBJ_DATA[i].val);
+      }
+    }  //for: SIZE_COUNT
   }
 
   void test_copy_constructor(void)
   {
-    ring_int a(3, 7);
-
-    flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(ring_int b(a), std::runtime_error);
-
-    flex::allocation_guard::disable();
-    ring_int b(a);
-    for (int i = 0; i < b.size(); i++)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      TS_ASSERT_EQUALS(b[i], a[i]);
+      /*
+       * Case1: Verify copy constructor allocates memory
+       */
+      ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+      flex::allocation_guard::enable();
+      TS_ASSERT_THROWS(ring_int b(a), std::runtime_error);
+      flex::allocation_guard::disable();
+
+      /*
+       * Case2: Verify copy constructor with primitive elements.
+       */
+      ring_int b(a);
+      TS_ASSERT_EQUALS(b.size(), a.size());
+      TS_ASSERT_LESS_THAN_EQUALS(b.size(), b.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(b.capacity(), b.size() * 2);
+      for (int i = 0; i < b.size(); i++)
+      {
+        TS_ASSERT_EQUALS(b[i], a[i]);
+      }
+
+      /*
+       * Case3: Verify copy constructor with object elements.
+       */
+      ring_obj c(OBJ_DATA, OBJ_DATA + SIZES[s]);
+      ring_obj d(c);
+      TS_ASSERT_EQUALS(d.size(), c.size());
+      TS_ASSERT_LESS_THAN_EQUALS(d.size(), d.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(d.capacity(), d.size() * 2);
+      for (int i = 0; i < d.size(); i++)
+      {
+        TS_ASSERT_EQUALS(d[i].val, c[i].val);
+      }
+    }  //for: SIZE_COUNT
+  }
+
+  void test_assign_fill(void)
+  {
+    /*
+     * Case1: Verify assign can increase size.
+     */
+    ring_int a;
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      const int fill_val = INT_DATA[SIZES[s] - 1];
+      a.assign(SIZES[s], fill_val);
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), a.size() * 2);
+      for (int i = 0; i < a.size(); i++)
+      {
+        TS_ASSERT_EQUALS(a[i], fill_val);
+      }
+    }
+
+    /*
+     * Case2: Verify assign can decrease size.
+     */
+    for (int s = SIZE_COUNT - 1; s != -1; --s)
+    {
+      const int fill_val = INT_DATA[SIZES[s] - 1];
+      const size_t prev_capacity = a.capacity();
+      a.assign(SIZES[s], fill_val);
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
+      TS_ASSERT_EQUALS(a.capacity(), prev_capacity);
+      for (int i = 0; i < a.size(); i++)
+      {
+        TS_ASSERT_EQUALS(a[i], fill_val);
+      }
     }
   }
 
-  void test_assign(void)
+  void test_assign_iterator()
   {
-    ring_int first;
-    ring_int second;
-    ring_int third;
+    ring_int a;
 
-    //TS_ASSERT_THROWS(first.assign(8, 100), std::runtime_error);
-    first.assign(7, 100);             // 7 ints with a value of 100
-    ring_int::iterator it;
-    it = first.begin() + 1;
+    /*
+     * Case1: Verify assign can increase size.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      ring_int tmp(INT_DATA, INT_DATA + SIZES[s]);
+      a.assign(tmp.begin(), tmp.end());
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), a.size() * 2);
+      for (int i = 0; i < a.size(); i++)
+      {
+        TS_ASSERT_EQUALS(a[i], tmp[i]);
+      }
+    }
 
-    //TS_ASSERT_THROWS(second.assign(it, first.end()), std::runtime_error);
-    second.assign(it, first.end() - 1); // the 5 central values of first
+    /*
+     * Case2: Verify assign can decrease size.
+     */
+    for (int s = SIZE_COUNT - 1; s != -1; --s)
+    {
+      ring_int tmp(INT_DATA, INT_DATA + SIZES[s]);
+      size_t prev_capacity = a.capacity();
+      a.assign(tmp.begin(), tmp.end());
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), prev_capacity);
+      for (int i = 0; i < a.size(); i++)
+      {
+        TS_ASSERT_EQUALS(a[i], tmp[i]);
+      }
+    }
+  }
 
-    int myints[] = { 1776, 7, 4 };
-    third.assign(myints, myints + 3);   // assigning from array.
+  void test_assign_pointer()
+  {
+    ring_int a;
 
-    TS_ASSERT_EQUALS(first.size(), 7);
-    TS_ASSERT_EQUALS(first[0], 100);
-    TS_ASSERT_EQUALS(first[1], 100);
-    TS_ASSERT_EQUALS(first[2], 100);
-    TS_ASSERT_EQUALS(first[3], 100);
-    TS_ASSERT_EQUALS(first[4], 100);
-    TS_ASSERT_EQUALS(first[5], 100);
-    TS_ASSERT_EQUALS(first[6], 100);
+    /*
+     * Case1: Verify assign can increase size.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), a.size() * 2);
+      for (int i = 0; i < a.size(); i++)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
+      }
+    }
 
-    TS_ASSERT_EQUALS(second.size(), 5);
-    TS_ASSERT_EQUALS(second[0], 100);
-    TS_ASSERT_EQUALS(second[1], 100);
-    TS_ASSERT_EQUALS(second[2], 100);
-    TS_ASSERT_EQUALS(second[3], 100);
-    TS_ASSERT_EQUALS(second[4], 100);
-
-    TS_ASSERT_EQUALS(third.size(), 3);
-    TS_ASSERT_EQUALS(third[0], 1776);
-    TS_ASSERT_EQUALS(third[1], 7);
-    TS_ASSERT_EQUALS(third[2], 4);
+    /*
+     * Case2: Verify assign can decrease size.
+     */
+    for (int s = SIZE_COUNT - 1; s != -1; --s)
+    {
+      size_t prev_capacity = a.capacity();
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
+      TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), prev_capacity);
+      for (int i = 0; i < a.size(); i++)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
+      }
+    }
   }
 
   void test_at(void)
   {
-    unsigned size = 3;
-    ring_int a(size);
-    TS_ASSERT_THROWS(a.at(-1), std::out_of_range);
-    for (int i = 0; i < size; i++)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      a.at(i) = i;
-      TS_ASSERT_EQUALS(a.at(i), a[i]);
-    }
-    TS_ASSERT_THROWS(a.at(size), std::out_of_range);
+      ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+
+      /*
+       * Case1: Verify out_of_range error at both boundaries.
+       */
+      TS_ASSERT_THROWS(a.at(-1), std::out_of_range);
+      TS_ASSERT_THROWS(a.at(SIZES[s]), std::out_of_range);
+
+      /*
+       * Case2: Verify at() read.
+       */
+      for (int i = 0; i < SIZES[s]; i++)
+      {
+        TS_ASSERT_EQUALS(a.at(i), INT_DATA[i]);
+      }
+
+      /*
+       * Case3: Verify at() write.
+       */
+      for (int i = 0; i < SIZES[s]; i++)
+      {
+        const int val = -i;
+        a.at(i) = val;
+        TS_ASSERT_EQUALS(a.at(i), val);
+      }
+    }  //for: SIZE_COUNT
   }
 
   void test_at_const(void)
   {
-    unsigned size = 3;
-    const ring_int a(size, 7);
-    TS_ASSERT_THROWS(const int& v = a.at(-1), std::out_of_range);
-    for (int i = 0; i < size; i++)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      const int& v = a.at(i);
-      TS_ASSERT_EQUALS(v, a[i]);
-    }
-    TS_ASSERT_THROWS(const int& v = a.at(size), std::out_of_range);
+      const ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+
+      /*
+       * Case1: Verify out_of_range error at both boundaries.
+       */
+      TS_ASSERT_THROWS(a.at(-1), std::out_of_range);
+      TS_ASSERT_THROWS(a.at(SIZES[s]), std::out_of_range);
+
+      /*
+       * Case2: Verify at() read.
+       */
+      for (int i = 0; i < SIZES[s]; i++)
+      {
+        TS_ASSERT_EQUALS(a.at(i), INT_DATA[i]);
+      }
+
+    }  //for: SIZE_COUNT
   }
 
   void test_back(void)
   {
-    unsigned size = 3;
-    ring_int a(size);
-    a[size - 1] = size - 1;
-    TS_ASSERT_EQUALS(a.back(), size - 1);
+    //Start s at 1, as back() isn't supported on empty container.
+    for (unsigned s = 1; s < SIZE_COUNT; ++s)
+    {
+      ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT_EQUALS(a.back(), INT_DATA[SIZES[s] - 1]);
+    }  //for: SIZE_COUNT
   }
 
   void test_back_const(void)
   {
-    unsigned size = 3;
-    const ring_int a(3, 7);
-    TS_ASSERT_EQUALS(a.back(), 7);
+    //Start s at 1, as back() isn't supported on empty container.
+    for (unsigned s = 1; s < SIZE_COUNT; ++s)
+    {
+      const ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT_EQUALS(a.back(), INT_DATA[SIZES[s] - 1]);
+    }  //for: SIZE_COUNT
   }
 
   void test_begin_and_end(void)
   {
-    unsigned size = 3;
-
-    ring_int a(size);
-    for (int i = 0; i < size; i++)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      a[i] = i;
-    }
+      ring_int a(INT_DATA, INT_DATA + SIZES[s]);
 
-    int i = 0;
-    for (ring_int::iterator it = a.begin(); it != a.end(); ++it)
-    {
-      TS_ASSERT_EQUALS(*it, i);
-      *it = 0; //Ensure it is not const.
-      ++i;
-    }
-    TS_ASSERT_EQUALS(i, size);
+      int i = 0;
+      for (ring_int::iterator it = a.begin(); it != a.end(); ++it)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        *it = 0; //Ensure it is not const.
+        ++i;
+      }
+      TS_ASSERT_EQUALS(i, a.size());
+    }  //for: SIZE_COUNT
   }
 
   void test_begin_and_end_const(void)
   {
-    unsigned size = 3;
-
-    const ring_int a(3, 7);
-
-    int i = 0;
-    for (ring_int::const_iterator it = a.begin(); it != a.end(); ++it)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      TS_ASSERT_EQUALS(*it, 7);
-      ++i;
-    }
-    TS_ASSERT_EQUALS(i, size);
+      const ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+
+      int i = 0;
+      for (ring_int::const_iterator it = a.begin(); it != a.end(); ++it)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++i;
+      }
+      TS_ASSERT_EQUALS(i, a.size());
+    }  //for: SIZE_COUNT
   }
 
   void test_cbegin_and_cend(void)
   {
-    unsigned size = 3;
-
-    const ring_int a(size, 7);
-
-    int i = 0;
-    for (ring_int::const_iterator it = a.cbegin(); it != a.cend(); ++it)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      TS_ASSERT_EQUALS(*it, 7);
-      ++i;
-    }
-    TS_ASSERT_EQUALS(i, size);
+      const ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+
+      int i = 0;
+      for (ring_int::const_iterator it = a.cbegin(); it != a.cend(); ++it)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++i;
+      }
+      TS_ASSERT_EQUALS(i, a.size());
+    }  //for: SIZE_COUNT
   }
 
   void test_crbegin_and_crend(void)
   {
-    unsigned size = 3;
-
-    const ring_int a(size, 7);
-
-    int i = size - 1;
-    for (ring_int::const_reverse_iterator it = a.crbegin(); it != a.crend(); ++it)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      TS_ASSERT_EQUALS(*it, 7);
-      --i;
-    }
-    TS_ASSERT_EQUALS(i, -1);
+      const ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+
+      int i = 0;
+      for (ring_int::const_reverse_iterator it = a.crbegin(); it != a.crend(); ++it)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i + a.size() - 1]);
+        --i;
+      }
+      TS_ASSERT_EQUALS(i, -a.size());
+    }  //for: SIZE_COUNT
+  }
+
+  void test_capacity(void)
+  {
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      ring_int a(SIZES[s]);
+      TS_ASSERT_EQUALS(a.capacity(), SIZES[s]);
+    }  //for: SIZE_COUNT
+  }
+
+  void test_clear(void)
+  {
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+      a.clear();
+      TS_ASSERT_EQUALS(a.size(), 0);
+      TS_ASSERT(a.empty());
+    }  //for: SIZE_COUNT
   }
 
   void test_empty(void)
   {
-    unsigned size = 3;
-    ring_int a(size);
-    TS_ASSERT_EQUALS(a.empty(), false);
-    ring_int b;
-    TS_ASSERT_EQUALS(b.empty(), true);
+    /*
+     * Case 1: Verify empty on init.
+     */
+    ring_int a;
+    TS_ASSERT_EQUALS(a.empty(), true);
+
+    /*
+     * Case 2: Verify empty on modify
+     */
+    for (unsigned s = 1; s < SIZE_COUNT; ++s)
+    {
+      a.assign(SIZES[s], 0);
+      TS_ASSERT_EQUALS(a.empty(), false);
+      a.clear();
+      TS_ASSERT_EQUALS(a.empty(), true);
+    }  //for: SIZE_COUNT
   }
 
-  void test_erase()
+  void test_erase_position()
   {
-    ring_int myring;
+    /*
+     * Case 1: Test erase on size of 1.
+     */
+    ring_int a(1);
+    a.erase(a.begin());
+    TS_ASSERT_EQUALS(a.size(), 0);
 
-    // set some values (from 1 to 10)
-    for (int i = 1; i <= 10; i++)
-      myring.push_back(i);
-    TS_ASSERT_EQUALS(myring.size(), 10);
+    //Start s at 3, as the below tests expect a size of at least 3.
+    for (unsigned s = 3; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
 
-    // erase the 6th element
-    ring_int::iterator it = myring.erase(myring.begin() + 5);
-    TS_ASSERT_EQUALS(*it, 7);
-    TS_ASSERT_EQUALS(myring.size(), 9);
+      /*
+       * Case2: Test erase at end
+       */
+      a.erase(a.end() - 1);
+      --current_size;
 
-    // erase the first 3 elements:
-    it = myring.erase(myring.begin(), myring.begin() + 3);
-    TS_ASSERT_EQUALS(*it, 4);
-    TS_ASSERT_EQUALS(myring.size(), 6);
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < a.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
+      }
 
-    TS_ASSERT_EQUALS(myring[0], 4);
-    TS_ASSERT_EQUALS(myring[1], 5);
-    TS_ASSERT_EQUALS(myring[2], 7);
-    TS_ASSERT_EQUALS(myring[3], 8);
-    TS_ASSERT_EQUALS(myring[4], 9);
-    TS_ASSERT_EQUALS(myring[5], 10);
+      /*
+       * Case3: Test erase at begin
+       */
+      a.erase(a.begin());
+      --current_size;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < a.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i + 1]);
+      }
+
+      /*
+       * Case4: Test erase in middle
+       */
+      int mid_index = current_size / 2;
+      a.erase(a.begin() + mid_index);
+      --current_size;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i + 1]);
+      }
+      for (int i = mid_index; i < a.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i + 2]);
+      }
+    }  //for: SIZE_COUNT
+  }
+
+  void test_erase_range()
+  {
+    /*
+     * Case 1: Test erase on size of 1.
+     */
+    ring_int a(1);
+    a.erase(a.begin(), a.end());
+    TS_ASSERT_EQUALS(a.size(), 0);
+
+    //Start s at 7, as the below tests expect a size of at least 7.
+    for (unsigned s = 7; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
+
+      /*
+       * Case2: Test erase at end
+       */
+      a.erase(a.end() - 2, a.end());
+      current_size -= 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < a.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
+      }
+
+      /*
+       * Case3: Test erase at begin
+       */
+      a.erase(a.begin(), a.begin() + 2);
+      current_size -= 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < a.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i + 2]);
+      }
+
+      /*
+       * Case4: Test erase in middle
+       */
+      int mid_index = current_size / 2;
+      a.erase(a.begin() + mid_index, a.begin() + mid_index + 2);
+      current_size -= 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i + 2]);
+      }
+      for (int i = mid_index; i < a.size(); ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i + 4]);
+      }
+    }  //for: SIZE_COUNT
   }
 
   void test_front(void)
   {
-    unsigned size = 3;
-    ring_int a(size);
-    a[0] = size;
-    TS_ASSERT_EQUALS(a.front(), size);
+    for (unsigned s = 1; s < SIZE_COUNT; ++s)
+    {
+      ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT_EQUALS(a.front(), INT_DATA[0]);
+    }  //for: SIZE_COUNT
   }
 
   void test_front_const(void)
   {
-    unsigned size = 3;
-    const ring_int a(3, 7);
-    TS_ASSERT_EQUALS(a.front(), 7);
+    for (unsigned s = 1; s < SIZE_COUNT; ++s)
+    {
+      const ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT_EQUALS(a.front(), INT_DATA[0]);
+    }  //for: SIZE_COUNT
   }
 
-  void test_insert(void)
+  void test_insert_position(void)
   {
-    ring_int myring(3, 100);
-    ring_int::iterator it;
+    ring_int a;
 
-    it = myring.begin();
-    it = myring.insert(it, 200);
-    TS_ASSERT_EQUALS(myring.size(), 4);
-    TS_ASSERT_EQUALS(myring[0], 200);
-    TS_ASSERT_EQUALS(myring[1], 100);
-    TS_ASSERT_EQUALS(myring[2], 100);
-    TS_ASSERT_EQUALS(myring[3], 100);
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
+      const int val = 19;
 
-    myring.insert(it, 2, 300);
-    TS_ASSERT_EQUALS(myring.size(), 6);
-    TS_ASSERT_EQUALS(myring[0], 300);
-    TS_ASSERT_EQUALS(myring[1], 300);
-    TS_ASSERT_EQUALS(myring[2], 200);
-    TS_ASSERT_EQUALS(myring[3], 100);
-    TS_ASSERT_EQUALS(myring[4], 100);
-    TS_ASSERT_EQUALS(myring[5], 100);
+      /*
+       * Case1: Test insert at end
+       */
+      a.insert(a.end(), val);
+      ++current_size;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 1], val);
 
-    // "it" no longer valid, get a new one:
-    it = myring.begin();
-    ring_int anotherring(2, 400);
-    myring.insert(it + 2, anotherring.begin(), anotherring.end());
-    TS_ASSERT_EQUALS(myring.size(), 8);
-    TS_ASSERT_EQUALS(myring[0], 300);
-    TS_ASSERT_EQUALS(myring[1], 300);
-    TS_ASSERT_EQUALS(myring[2], 400);
-    TS_ASSERT_EQUALS(myring[3], 400);
-    TS_ASSERT_EQUALS(myring[4], 200);
-    TS_ASSERT_EQUALS(myring[5], 100);
-    TS_ASSERT_EQUALS(myring[6], 100);
-    TS_ASSERT_EQUALS(myring[7], 100);
+      /*
+       * Case2: Test insert at begin
+       */
+      a.insert(a.begin(), val);
+      ++current_size;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a[0], val);
+      for (int i = 1; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 1]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 1], val);
 
-    int myarray[] = { 501, 502, 503, 12, 13, 14, 15, 16, 17 };
-    myring.insert(myring.begin(), myarray, myarray + 3);
-    TS_ASSERT_EQUALS(myring.size(), 11);
-    TS_ASSERT_EQUALS(myring[0], 501);
-    TS_ASSERT_EQUALS(myring[1], 502);
-    TS_ASSERT_EQUALS(myring[2], 503);
-    TS_ASSERT_EQUALS(myring[3], 300);
-    TS_ASSERT_EQUALS(myring[4], 300);
-    TS_ASSERT_EQUALS(myring[5], 400);
-    TS_ASSERT_EQUALS(myring[6], 400);
-    TS_ASSERT_EQUALS(myring[7], 200);
-    TS_ASSERT_EQUALS(myring[8], 100);
-    TS_ASSERT_EQUALS(myring[9], 100);
-    TS_ASSERT_EQUALS(myring[10], 100);
+      /*
+       * Case3: Test insert in middle
+       */
+      int mid_index = current_size / 2;
+      a.insert(a.begin() + mid_index, val);
+      ++current_size;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a[0], val);
+      for (int i = 1; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 1]);
+      }
+      TS_ASSERT_EQUALS(a[mid_index], val);
+      for (int i = mid_index + 1; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 2]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 1], val);
+    }  //for: SIZE_COUNT
+  }
+
+  void test_insert_fill(void)
+  {
+    ring_int a;
+
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
+      const int val = 19;
+
+      /*
+       * Case1: Test insert at end
+       */
+      a.insert(a.end(), 2, val);
+      current_size += 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < a.size() - 2; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 1], val);
+      TS_ASSERT_EQUALS(a[a.size() - 2], val);
+
+      /*
+       * Case2: Test insert at begin
+       */
+      a.insert(a.begin(), 2, val);
+      current_size += 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a[0], val);
+      TS_ASSERT_EQUALS(a[1], val);
+      for (int i = 2; i < a.size() - 2; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 2]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 1], val);
+      TS_ASSERT_EQUALS(a[a.size() - 2], val);
+
+      /*
+       * Case3: Test insert in middle
+       */
+      int mid_index = current_size / 2;
+      a.insert(a.begin() + mid_index, 2, val);
+      current_size += 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a[0], val);
+      TS_ASSERT_EQUALS(a[1], val);
+      for (int i = 2; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 2]);
+      }
+      TS_ASSERT_EQUALS(a[mid_index], val);
+      TS_ASSERT_EQUALS(a[mid_index + 1], val);
+      for (int i = mid_index + 2; i < a.size() - 2; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 4]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 1], val);
+      TS_ASSERT_EQUALS(a[a.size() - 2], val);
+    }  //for: SIZE_COUNT
+  }
+
+  void test_insert_pointers(void)
+  {
+    ring_int a;
+
+    //Start s at 3, as the below tests expect a size of at least 3.
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
+
+      /*
+       * Case1: Test insert at end
+       */
+      a.insert(a.end(), INT_DATA, INT_DATA + 2);
+      current_size += 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < a.size() - 2; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 2], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[a.size() - 1], INT_DATA[1]);
+
+      /*
+       * Case2: Test insert at begin
+       */
+      a.insert(a.begin(), INT_DATA, INT_DATA + 2);
+      current_size += 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a[0], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[1], INT_DATA[1]);
+      for (int i = 2; i < a.size() - 2; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 2]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 2], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[a.size() - 1], INT_DATA[1]);
+
+      /*
+       * Case3: Test insert in middle
+       */
+      int mid_index = current_size / 2;
+      a.insert(a.begin() + mid_index, INT_DATA, INT_DATA + 2);
+      current_size += 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a[0], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[1], INT_DATA[1]);
+      for (int i = 2; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 2]);
+      }
+      TS_ASSERT_EQUALS(a[mid_index], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[mid_index + 1], INT_DATA[1]);
+      for (int i = mid_index + 2; i < a.size() - 2; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 4]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 2], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[a.size() - 1], INT_DATA[1]);
+    }  //for: SIZE_COUNT
+  }
+
+  void test_insert_iterators(void)
+  {
+    ring_int a;
+    ring_int b(INT_DATA, INT_DATA + 2);
+
+    //Start s at 3, as the below tests expect a size of at least 3.
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
+
+      /*
+       * Case1: Test insert at end
+       */
+      a.insert(a.end(), b.begin(), b.end());
+      current_size += 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < a.size() - 2; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 2], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[a.size() - 1], INT_DATA[1]);
+
+      /*
+       * Case2: Test insert at begin
+       */
+      a.insert(a.begin(), b.begin(), b.end());
+      current_size += 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a[0], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[1], INT_DATA[1]);
+      for (int i = 2; i < a.size() - 2; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 2]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 2], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[a.size() - 1], INT_DATA[1]);
+
+      /*
+       * Case3: Test insert in middle
+       */
+      int mid_index = current_size / 2;
+      a.insert(a.begin() + mid_index, b.begin(), b.end());
+      current_size += 2;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a[0], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[1], INT_DATA[1]);
+      for (int i = 2; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 2]);
+      }
+      TS_ASSERT_EQUALS(a[mid_index], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[mid_index + 1], INT_DATA[1]);
+      for (int i = mid_index + 2; i < a.size() - 2; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], INT_DATA[i - 4]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 2], INT_DATA[0]);
+      TS_ASSERT_EQUALS(a[a.size() - 1], INT_DATA[1]);
+    }  //for: SIZE_COUNT
   }
 
   void test_max_size(void)
   {
     const ring_int a;
-    //  TS_ASSERT_EQUALS(a.max_size(), a.get_allocator().max_size());
+    TS_ASSERT_EQUALS(a.max_size(), a.get_allocator().max_size());
   }
 
   void test_ary_operator(void)
@@ -356,7 +912,7 @@ public:
     for (int i = 0; i < size; i++)
     {
       a[i] = i;
-      TS_ASSERT_EQUALS(a[i], a[i]);
+      TS_ASSERT_EQUALS(a[i], i);
     }
   }
 
@@ -373,50 +929,46 @@ public:
 
   void test_rbegin_and_rend(void)
   {
-    unsigned size = 3;
-
-    ring_int a(size);
-    for (int i = 0; i < size; i++)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      a[i] = i;
-    }
+      ring_int a(INT_DATA, INT_DATA + SIZES[s]);
 
-    int i = size - 1;
-    for (ring_int::reverse_iterator it = a.rbegin(); it != a.rend(); ++it)
-    {
-      TS_ASSERT_EQUALS(*it, i);
-      *it = 0; //Ensure it is not const.
-      --i;
-    }
-    TS_ASSERT_EQUALS(i, -1);
+      int i = 0;
+      for (ring_int::reverse_iterator it = a.rbegin(); it != a.rend(); ++it)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i + a.size() - 1]);
+        *it = 0; //verify not const
+        --i;
+      }
+      TS_ASSERT_EQUALS(i, -a.size());
+    } //for: SIZE_COUNT
   }
 
   void test_rbegin_and_rend_const(void)
   {
-    unsigned size = 3;
-
-    const ring_int a(size, 7);
-
-    int i = size - 1;
-    for (ring_int::const_reverse_iterator it = a.rbegin(); it != a.rend(); ++it)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      TS_ASSERT_EQUALS(*it, 7);
-      --i;
-    }
-    TS_ASSERT_EQUALS(i, -1);
+      const ring_int a(INT_DATA, INT_DATA + SIZES[s]);
+
+      int i = 0;
+      for (ring_int::const_reverse_iterator it = a.rbegin(); it != a.rend(); ++it)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i + a.size() - 1]);
+        --i;
+      }
+      TS_ASSERT_EQUALS(i, -a.size());
+    } //for: SIZE_COUNT
   }
 
   void test_reserve(void)
   {
     ring_int bar;
-    bar.reserve(100);
-    TS_ASSERT_EQUALS(bar.capacity(), 100);
-    for (int i = 0; i < 100; ++i)
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      bar.push_back(i);
+      bar.reserve(SIZES[s]);
+      TS_ASSERT_EQUALS(bar.size(), 0);
+      TS_ASSERT_LESS_THAN_EQUALS(SIZES[s], bar.capacity());
     }
-
-    TS_ASSERT_EQUALS(bar.capacity(), 100);
   }
 
   void test_size(void)
@@ -459,72 +1011,19 @@ public:
 //    TS_ASSERT_EQUALS(second[4], 50);
 //  }
 
-  void test_constructor(void)
-  {
-    flex::allocation_guard::enable();
-    ring_int a;
-    TS_ASSERT_EQUALS(a.size(), 0);
-    flex::allocation_guard::disable();
-  }
-
   void test_assignment_operator(void)
   {
-    ring_int foo(3);
-    foo[0] = 1;
-    foo[1] = 5;
-    foo[2] = 17;
-
-    ring_int bar(5, 2);
-
-    bar = foo;
-    TS_ASSERT_EQUALS(bar.size(), 3);
-    TS_ASSERT_EQUALS(bar[0], 1);
-    TS_ASSERT_EQUALS(bar[1], 5);
-    TS_ASSERT_EQUALS(bar[2], 17);
-
-    //Ensure assignments on bar doens't impact foo.
-    bar.assign(0, 3);
-    TS_ASSERT_EQUALS(foo.size(), 3);
-    TS_ASSERT_EQUALS(foo[0], 1);
-    TS_ASSERT_EQUALS(foo[1], 5);
-    TS_ASSERT_EQUALS(foo[2], 17);
-
-    //We are setting foo to an empty array.  Size is zero, but the capacity is still eight.  Behavior-wise
-    //it doesn't matter what the contents are since the size is zero.  However, we want to ensure that the
-    //assignment operator doesn't perform extra work by resetting these values.  This happens if no assignment
-    //operator is defined and a default one is used.
-    foo = ring_int();
-    TS_ASSERT_EQUALS(foo.size(), 0);
-    TS_ASSERT_EQUALS(foo[0], 1);
-    TS_ASSERT_EQUALS(foo[1], 5);
-    TS_ASSERT_EQUALS(foo[2], 17);
-
-    //Same thing as above, but we want to ensure that the cast operator allows assignment of ring_inttors
-    //with different capacities.
-    foo = ring_int(1, 19);
-    TS_ASSERT_EQUALS(foo.size(), 1);
-    TS_ASSERT_EQUALS(foo[0], 19);
-    TS_ASSERT_EQUALS(foo[1], 5);
-    TS_ASSERT_EQUALS(foo[2], 17);
-
-    foo.assign(3, 0);
-    foo[0] = 1;
-    foo[1] = 5;
-    foo[2] = 17;
-
-    ring_int bar2(5, 2);
-    bar2 = foo;
-    TS_ASSERT_EQUALS(bar2.size(), 3);
-    TS_ASSERT_EQUALS(bar2[0], 1);
-    TS_ASSERT_EQUALS(bar2[1], 5);
-    TS_ASSERT_EQUALS(bar2[2], 17);
-
-    //Ensure assignments on bar doens't impact foo.
-    bar2.assign(0, 3);
-    TS_ASSERT_EQUALS(foo.size(), 3);
-    TS_ASSERT_EQUALS(foo[0], 1);
-    TS_ASSERT_EQUALS(foo[1], 5);
-    TS_ASSERT_EQUALS(foo[2], 17);
+    //Light-weight test, as this simply calls the assign() method.
+    ring_int a;
+    ring_int tmp(INT_DATA, INT_DATA + 8);
+    a = tmp;
+    TS_ASSERT_EQUALS(a.size(), 8);
+    TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
+    TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), a.size() * 2);
+    for (int i = 0; i < a.size(); i++)
+    {
+      TS_ASSERT_EQUALS(a[i], tmp[i]);
+    }
   }
 
   void test_push_back_and_pop_back(void)
@@ -543,6 +1042,9 @@ public:
     myring.push_back(300);
     ++size;
     TS_ASSERT_EQUALS(myring.size(), size);
+    myring.push_back(300);
+    ++size;
+    TS_ASSERT_EQUALS(myring.size(), size);
 
     while (!myring.empty())
     {
@@ -551,7 +1053,7 @@ public:
       --size;
       TS_ASSERT_EQUALS(myring.size(), size);
     }
-    TS_ASSERT_EQUALS(sum, 600);
+    TS_ASSERT_EQUALS(sum, 900);
   }
 
   void test_pop_front(void)
@@ -590,6 +1092,83 @@ public:
     TS_ASSERT_EQUALS(*(it++), 100);
   }
 
+  void test_equality_operator(void)
+  {
+    /*
+     * Case1: Test size of 0.
+     */
+    ring_int a;
+    ring_int b;
+    TS_ASSERT((a == b));
+
+    for (unsigned s = 1; s < SIZE_COUNT; ++s)
+    {
+      /*
+       * Case2: Test containers that are equal
+       */
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      b.assign(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT((a == b));
+
+      /*
+       * Case3: Test containers that are different sizes
+       */
+      a.pop_back();
+      TS_ASSERT(!(a == b));
+
+      /*
+       * Case4: Test on empty container
+       */
+      a.clear();
+      TS_ASSERT(!(a == b));
+    }
+  }
+
+  void test_less_than_operator(void)
+  {
+    /*
+     * Case1: Test size of 0.
+     */
+    ring_int a;
+    ring_int b;
+    TS_ASSERT(!(a < b));
+    TS_ASSERT(!(b < a));
+
+    for (unsigned s = 3; s < SIZE_COUNT; ++s)
+    {
+      /*
+       * Case1: Test containers that are equal
+       */
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      b.assign(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT(!(a < b));
+      TS_ASSERT(!(b < a));
+
+      /*
+       * Case2: Test containers that are not equal
+       */
+      a.pop_back();
+      TS_ASSERT(a < b);
+      TS_ASSERT(!(b < a));
+
+      b.pop_back();
+      b.pop_front();
+      TS_ASSERT(a < b);
+      TS_ASSERT(!(b < a));
+
+      b[0] = a[0]-1;
+      TS_ASSERT(b < a);
+      TS_ASSERT(!(a < b));
+
+      /*
+       * Case3: Test on empty containers
+       */
+      b.clear();
+      TS_ASSERT(b < a);
+      TS_ASSERT(!(a < b));
+    }
+  }
+
   void test_relational_operators(void)
   {
     int aAry[5] = { 10, 20, 30, 40, 50 };
@@ -612,4 +1191,5 @@ public:
     TS_ASSERT(a >= b);
   }
 
-};
+}
+;

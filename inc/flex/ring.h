@@ -51,6 +51,7 @@ namespace flex
     const_reverse_iterator crend() const;
 
     size_type capacity() const;
+    void clear();
 
     bool empty() const;
     iterator erase(iterator position);
@@ -65,8 +66,8 @@ namespace flex
     allocator_type get_allocator() const;
 
     iterator insert(iterator position, const value_type& val);
-    void insert(iterator position, size_t n, const value_type& val);
     //TODO: Get template to work with ring insert() to use multiple iterators.
+    void insert(iterator position, size_t n, const value_type& val);
     void insert(iterator position, const_iterator first, const_iterator last);
     void insert(iterator position, const_pointer first, const_pointer last);
 
@@ -96,7 +97,7 @@ namespace flex
 
     //Since a ring iterator contains a left and right-bound pointer, these values are duplicated between mBegin and mEnd.
     //These two iterators could be replaced by four unique pointers, but it would make the code a bit more messy and would
-    //require additional iterator construction within the runtime methods.
+    //require additional iterator construction within the functions.
     iterator mBegin;
     iterator mEnd;
 
@@ -365,6 +366,12 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline void ring<T, Alloc>::clear()
+  {
+    assign((pointer)NULL,(pointer)NULL);
+  }
+
+  template<class T, class Alloc>
   inline bool ring<T, Alloc>::empty() const
   {
     return (0 == size());
@@ -618,35 +625,7 @@ namespace flex
   template<class T, class Alloc>
   inline ring<T, Alloc>& ring<T, Alloc>::operator=(const ring<T, Alloc>& obj)
   {
-    //TODO: Consider changing to a method call to assign()
-    if (obj.size() > capacity())
-    {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.operator=() - parameter size exceeds capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_capacity = GetNewCapacity(obj.size());
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
-
-        //Copy object values to newly allocated space.
-        std::copy(obj.begin(), obj.end(), new_begin);
-
-        //Deallocate and reassign pointers to newly allocated space.
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        mEnd = mBegin + obj.size();
-      }
-    }
-    else
-    {
-      std::copy(obj.begin(), obj.end(), mBegin);
-      mEnd.mPtr = (mBegin + obj.size()).mPtr; //Slightly more efficient than "mEnd = mBegin + obj.size()";
-    }
+    assign(obj.begin(), obj.end());
     return *this;
   }
 
@@ -945,3 +924,65 @@ namespace flex
 } //namespace flex
 
 #endif /* FLEX_RING_H */
+
+//MY PRECIOUS!!!
+//hmdhdmmmNmdhmmmmmmdmmmmNNNdmmNNNNmNmmmNmmNmmdmmmmysddhymmmdyysyhhhhhhyyyyyssyyyyhhhossdNNddNNNNNNNmdmmmmmmmmmmmddddddmmm
+//mmddNmmNNNmmdmmmNmmmmmmmddmmmNNNmNddmNNNmmhddmddhdhddddmmdhysssssssyyysoo+++++++o+++oyyhymNNNNNNNNmmmmddmmddmmmmmmmdmmmm
+//mhhdNNmNmddmmmmNNNmmmhdmmmmNNmmNNNmmdNmNNmhhddmdmmmdhddhyssssssssssooo+oo++++++oo+/////+oydmNNNNNNmddmddmmdddmmddddddddd
+//mdddmdmNmdmmmhmmmmmmmmmmmdNNmmmmNNmmmNNNNdddddhhdddhyysssssyyyysso++osssoo++++o++++++//:::/ohmmNNNmdhdmmmdddddddmmmmmdhh
+//mdmdmmmmmdmmmdmmmmNmmhmmmmNNNNNNNNmmmdmNmddddddyhhhyssssssssooo+ooossoooooooo+++///+++/////::+shddmmdmmmmdddmmddddddmmdd
+//dmmdmdNdmhhmmmmdddmmhmNmmmmmmmmmdmddddmmddhddhhhhyyssyyysoo++oooooooooo++++o+++++////+++////::::+shhdddddddddddddddddddh
+//mmmddmmmdhmmdNNdmmdyydmdNNNmmmmNmmmdmmmdddddhhhyyyyyyhysooo+ooooooooooo+++++++++++++////+///:::--:/oyhdhddddddddddmmmmmd
+//mmmddmdhmmmdmmmddmmmmmmdmdmmmmdmNdmNmmNmhhddhyyyyyyyyyssoooooosooooo++++++++++++++++//////+//:------/yhhddddddddmmmmmmmm
+//mmdmmmmmmNNNmmmddmNNmmmmmmmmNmmmmdmNNmmdhddhyyyyyyyysssooooossosoo++++++++++++++++++///++////::----.-+yddddhhdddddmmmmmm
+//mddmmNmmmNmhdmmmmNNmddmmmmmNmmdmddmNmmmdddhyyyyyysyyssssooossssoooo++++oo++++++++++++/////++/:::::-..-/yhdddhhdmmmmmmmmm
+//mdmmmmmmmmmmmmmdmmNdddmmmmdmmmdmmmmmdmmddhyyyyyysyssssssosssooooo++++++++oo++++o++++++/+++++//::::-..--ohdmmmmmmNNNmmmmm
+//hdmdyyddddmddddhddddmmmmmmmmmmmmmmNddhdddhhhhhysyssssssossssoooooo+o+++ooooooooo++++o++++++o++/::--...-:ydmmmmNNNNNmmmmm
+//dmmhhhmmddmmddddddhhdddhhddmdddddddhdddddhhhhssssssooossooooooooooooooooooooooooooooooooooo+o++///:-..-:+hhddmmmmmmmmmmm
+//dddmddmNddmmddddmmmddhddmhhydhhddddddddddhhhyssssssosssoo++ooooo+++oooosossossoooooooooooooooo+++//:-.--:ssyhhhhhhdddhyy
+//hhhmmmmmhhddhhdddhdddddddhhhhhmmmmddhhddhhhhyyyyssssssooooooooooooooooooooooossoooooooooooo+oo+++++/-----+yyhyssssssssoo
+//dmhydmdmdddhhhhdhhhmdddhyyyssyyhhdmhhhdddhhyyyyssoyyssoo++oo+oossssssosssoooooooooooooooo+o+oo++////:----:ssyssossyyyyhh
+//mmmddddmmhddhddhshhyyddhsshhyysssyhdddmmdhhyyyssssysso+oooooooooooooossssoossssooooooooooooooo++//+/::-.--ossyhyyhddddmm
+//mmmmdmmhdddhdddddhyhhmdysyhhhhyyyssyhddmmdhyyysssyooooooooooosooooooooosossoossooooooooo++++oo++////:-----+yyhhyhdmNNNNN
+//mmdmmdmhhdhdhdmdddyhyhhhdhsyhmmdyyssoyyddhhhyyssyooo++++++++oossoooooooooooooosooooooo+++++o+++//////:----:hhdddmmNNmmNN
+//mmdmdhddddhdhdddhhhdhyhdNhsyhdmmmdyysssyysyyysssooooo+oso+++++oossssosssoooooosooooooo+++++++++///////:----yddmmmNNNNNNN
+//mhmmmmddmddddddhdddhhhhhmhyyhdmmmNmdyyyyssyyyssoooooosssssoooo+ooossssssossssssooooooooooo+++++++++++/:----ydddhyyhdNNNN
+//mddmmNdhdhhhhhdddmmhdmdmddhdmmmmmmmNmhyhssyyssoossssyyyyhhyyyssssssoossssosssssooosssoooooooooo++o++++/:---sdhs+//:/mNNN
+//hdmmmNmhhdddmhdddmddmNmmmmdhdmmmmmmNNmhyssssyssssssyyyyyyhhhhhyyyssysssssssssssssssyssooooooooooo++++++/:-.oso+++//ymmmm
+//dmmmmmhddhhdmdmdmmdddmmmmmmyyhdmmmmNNNdyssosssssssyyhhhddddddddhhhyyyyyyyyyyyyyssyyysssssssssssssssossso+:-:++o+oo/osssy
+//mmmNNmmddmmmdmNNmddhhmmmmNdsyyyyhdmNNhsssssosysssyhhhdhsoshdmNNmmddddddddddddhhyhhhhhhhhhyyyyyyyyyyyyssoo+:-/ossss/:yyys
+//mdmNmddmmNmmdmmmmmddddddmdmyyoooosyhhsyssssooyssyhddhs++yhdddmmNNNmmmmmmmmmmmddhhddddddddddhhhhhhhhhhhyso/:-ymdhyo/osyys
+//dmNMNdddmmdmmmdddmmddddmdhddhysoooo+shysooooossyhhmdhsoshshmNmhmmNNNNNmNmmmmmmddhhdmmmmmmdddmmmmmmdsoshys+-:dddyooyhyyss
+//mmmNmmddmmmmmmhddmNmmmmmmmmmdhdhyoo+oshyssssossyyyyhhhssysyhdddddmNNMNNNNNmmmddhhhdmmmmmmNmNNmNNmdhd/:/sy+:.yhs+oddddhhd
+//NmmdhddddmmddmdhmmddmmmmddmdhhhdmdhyssyyysssyyhyyhyyyyyyhhhddmmmmNNNNNNNNNmmdhhhyyhmmmNNNNmNNNNNmhhho::/yo/.oyoommdmmmmN
+//mmmdmdddhddmNmmmdmmdddmddmmmhdhdmmdddddyyyyhysyyyyhdddhhhhhhhhdddmmNNNNNNNmhso++ooymNNNNNNmmNNmdhhys++/+s:/--s/hmmmmmmmN
+//mmNmmhdmdddmmmmhdmdddymmdddhmmmddmddhddhhhhyssossyyhddmmmmmmmmmmmmmddddhhysooooo+osdNNNNNNNmddhhhhyyssso+/:--+smmmmmmmmm
+//mmmmmdmmdmmddmmmmhdhhhmdmdddddhhmNddhhddmdysssssyyyyhhdmmmmmmmmmmdhyyyhyyssosoooo+osyhmmNNNmmddhhhhhhyys+:::/ymmmmmmmmdd
+//mmmmNNmdmddmmmmdhddmmdmmmmmydhyhddhdddmdddhyyyyyyyyyyhhddddddddmmmddddhyssoossooo+osyyhddddmmmmmmmmdhyso/--/dNNmmmmdmmdd
+//NNNNNNmmNmdmmddmdmmmmmmmdddhdhdddhdddhhysydhyhhhhhhhhhhhhdddddmmmmmmmdysosoooooooo+shddhhyyyyyhhhhhyyso+/-:hNNNNmmmmmddd
+//mmNNmmmmddmmmmdmmNmmdmdddddddhhhhdyhhhhyyhdddmmmdddddddhhdddddmmmmdhhddhsooooossoooosdmmddhyyyyyyhhhyso+/-hNNNNNmmmmmmdd
+//mmmNNNmmmmmmmmmNNddhhhdddmmdddddyyhyyhhyyysdmmmmmmmmddddddddmmmmdyysyydmdhysyyssssssyhmmmmdddhhhhhyyso+/:omNNmmmmmmmmmmm
+//NNNNmNNmNmmmmmmNmddhhhhhhmmmdhysyyhhyysssssymmmmmmmmmmdmmmmmmmdhysssssyhdmmdhhhhdhddhyydmmmmddddhhyyoo++smNmmmmmmmmmmmmd
+//NNNNNNNNNmdmmNmmmhddddhhhdhhyyssssssyssoossydmmmmmmmmmmmmmmmmdyssssssssyydmmmmmmddhhhyyyydmmmmddhhysosyhdmmmmmmmdddddddd
+//mmNNNNNNmmmmdmmmdhddhdhyysssssssssssssooydmmmmmmmmmmmmmmmmmddhyssssssyyyyyhdmmdddhhhyyyyssymmmdhysshhhdddmdddmmddhhyyhdd
+//mNNNNNNmdddhdmmddhhyyssssoooossoossossoydmmdmmmmmmmmmmdmmmddhhyyyysssyyyyyyhddddhhhhysssssoymdhsoyddhdddmdddhhhhyyyssyhh
+//mNNmNmmmmmmhdmdyssssssosoooooosossssoooydmdddmmNmmmmmmddmmmmmddddhhyyyyyyyyhhddhhhyhysssyyoohyo+ydhdhhyhhhyyyysssyyssyhh
+//NmmmmmmmmNmddhssoooooooooooooosooosooosydddddmmmmmmmmmdddmmmmNNNNNmmmmmmdmmmmmmmmdddhhyhhdyss++yddhhhhyyhhyyyyssyhhyyyyy
+//NNmdmmddNmdysooooooooooooooooosoooosoossdddmmmmmmmNNmmmhhhhyhhhdmmNNNNNNNNNNNNNNNNmddmhhddyo///oyhhhhhhhdhhhdddddmmdhhhh
+//mNNmNmmmNmyooooooossoosssssssssoossssssshddmmmmmmmmNmmmhyyyyyyhhhhdddNNNNNNNmNmmNddhdhosyso//sooooyhdddmmmdddddmmmmmmmmm
+//mmNmmmmNhsooooooossoossssosssssysyyyssyyyddmmmmmmmmmmmmmhysyyyyhhhhyhhhddddmddmmmmdhysoooo/+hdhyys+sddmNNNmmmdddmmmmmmdm
+//mmNmdmNy+oooooooooooosooooosssyyyyyyhhhhhdmmmmmmmmmmmmmmdhyyyyyyyhhhddddhhhhhddddddys++oo/odmmddhys++hNNNNNNNmddmmmmmmmm
+//NNNmmds+ooooooooooooooosossssyyhyhhhhhhddmmmNmmmmmmmmmmmmddhhyyyyyhdddmmmddddddddhhyo++o+sddmmmddhyo//dNNNNNNNNmmmmmmmNm
+//NNNmh+ooooooooooooooooosssssyyyhyyhhhhddmdmmmNNNNmmmmmmmmmmmdhyyyyhhddddddddddddhhys++oshdmmmmmmddhy+-+NNNNNNNNNNNNNNNNN
+//NmNhoosssoooooooooosssssyyyyyyyhhyhdhhddddmmmmmNNNNmmmmmmmmmmmdhhhhhyyhhhhdddhhhhyyooyhdmmmmmmmmdddhs/:mNNNNNNNNNNNNNNNN
+//NmhssssssoooooooossssyyyyyyyyhhhhhhddhhddmmdddmmmNNNNmmmmmmmmmmmdddhhhdddddddddhyysydmmmmmmmmmmmdddhy+/mNNNNNNNNNNNNNNNN
+//Ndyssooooooossssssssssyyyyhhhddddddddhhhddhhddmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdhyhdmmmmmmmdmmmmdddddho+mNNNNNNNNNNNNNNNM
+//NhysoooooooossssssssssyyyhdddddddddddhhhhyyhhddmmmmmmmmmmmmmmmmmmmmmmmmmmmmdddddmmmmmmmmddddmmmmmmmdhosNNNNMNNNNNMNNMMMM
+//dyysoooooooossssssssyyyhhmmmmddmmmddddhhhyyyyyhdmmmmmmmmmmNNNmmmmmmmmmmmmddddmmmmmmmmmmmddmmmmmmmmmdysmMMNMMMMMMMMMMMMMM
+//hyssoooooosssssssssyyyhdmmmmmmmmmmmddddddhhhyyyhddddmmmNmmmmmmddddmmmmmddddmmmmmmmmmmmmmmmmmmmmmmmmdymMMMNMMMMNNNNNNNMMM
+//hysssosoossssssssssyhhdmmmmmmmmmmmmmmmdmdddhhhyyyhddmmmmmmmmmdddddddddddmmmmmmmmmmmmmmmmmmmmmmmmmddhmMMMMMNNNNNNNNNNNNNM
+//hysysoooossssssssyyhhdmmmmmmmmmmmmmmmmmmmdddhhhhhhhdmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdddmmmdymNNNNMMNNNNNNMMMNNNNM
+//hyssssssssssssssyyyhdmmNmmmmmmmmmmmmmmmmmmmmmmmmmddmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdddddmmdyhNNNNNNNNNMMMMMMMMMNNN
+//hyyyssssssssssssyyhdmmNNmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdmmmmmmmmmmmmdddddmmh+oo++++ooshdNNMMMMNNNNN
+//dhyysssssyyyyyyyhhdmmNNmmmmmmmmmmmmmmmmmmmddmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdhhdmmmmmmmmmmmmmdddmmmy/yssooosssso++dNMNNNNNN
+//dhyyyysssyyyyyyhhdmmmNNNmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmhydmNmmmmmmmmmmmmmddmmmds/hddddddddddhy+sNNNNNNN
