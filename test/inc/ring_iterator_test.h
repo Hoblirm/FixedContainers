@@ -1,6 +1,3 @@
-#ifndef FLEX_RING_ITERATOR_TEST_H
-#define FLEX_RING_ITERATOR_TEST_H
-
 #include <cxxtest/TestSuite.h>
 
 #include <flex/ring_iterator.h>
@@ -670,4 +667,3 @@ public:
    }
 }
 ;
-#endif /* FLEX_RING_ITERATOR_TEST_H */
