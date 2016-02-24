@@ -359,7 +359,7 @@ namespace flex
   template<class T, class Alloc>
   inline void ring<T, Alloc>::clear()
   {
-    assign((pointer) NULL, (pointer) NULL);
+    resize(0);
   }
 
   template<class T, class Alloc>
@@ -821,7 +821,7 @@ namespace flex
         mBegin.mLeftBound = new_begin;
         mBegin.mRightBound = new_begin + new_capacity;
         
-        mEnd.mPtr = new_begin + new_size;
+        mEnd.mPtr = mBegin.mPtr + new_size;
         mEnd.mLeftBound = mBegin.mLeftBound;
         mEnd.mRightBound = mBegin.mRightBound;
   }
