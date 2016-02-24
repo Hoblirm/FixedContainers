@@ -96,6 +96,7 @@ namespace flex
     size_t GetNewCapacity(size_type min);
     pointer DoAllocateAndConstruct(size_type capacity);
     void DoDestroyAndDeallocate();
+    void DoDeallocateAndReassign(pointer new_begin, size_type new_size, size_type new_capacity);
   };
 
   template<class T, class Alloc>
@@ -181,9 +182,9 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void ring<T, Alloc>::assign(size_type size, const value_type& val)
+  inline void ring<T, Alloc>::assign(size_type new_size, const value_type& val)
   {
-    if (size > capacity())
+    if (new_size > capacity())
     {
       if (mFixed)
       {
@@ -192,31 +193,27 @@ namespace flex
       else
       {
         //Allocate memory with sufficient capacity.
-        size_type new_capacity = GetNewCapacity(size);
+        size_type new_capacity = GetNewCapacity(new_size);
         pointer new_begin = DoAllocateAndConstruct(new_capacity);
 
         //Copy all values.
-        std::fill_n(new_begin, size, val);
+        std::fill_n(new_begin, new_size, val);
 
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        mEnd = mBegin + size;
+        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
     {
-      std::fill_n(mBegin, size, val);
-      mEnd.mPtr = (mBegin + size).mPtr;    //Slightly more efficient than "mEnd = mBegin + size";
+      std::fill_n(mBegin, new_size, val);
+      mEnd.mPtr = (mBegin + new_size).mPtr;    //Slightly more efficient than "mEnd = mBegin + size";
     }
   }
 
   template<class T, class Alloc>
   inline void ring<T, Alloc>::assign(const_iterator first, const_iterator last)
   {
-    size_type size = last - first;
-    if (size > capacity())
+    size_type new_size = last - first;
+    if (new_size > capacity())
     {
       if (mFixed)
       {
@@ -225,31 +222,27 @@ namespace flex
       else
       {
         //Allocate memory with sufficient capacity.
-        size_type new_capacity = GetNewCapacity(size);
+        size_type new_capacity = GetNewCapacity(new_size);
         pointer new_begin = DoAllocateAndConstruct(new_capacity);
 
         //Copy all values.
         std::copy(first, last, new_begin);
 
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        mEnd = mBegin + size;
+        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
     {
       std::copy(first, last, mBegin);
-      mEnd.mPtr = (mBegin + size).mPtr;    //Slightly more efficient than "mEnd = mBegin + size";
+      mEnd.mPtr = (mBegin + new_size).mPtr;    //Slightly more efficient than "mEnd = mBegin + size";
     }
   }
 
   template<class T, class Alloc>
   inline void ring<T, Alloc>::assign(const_pointer first, const_pointer last)
   {
-    size_type size = last - first;
-    if (size > capacity())
+    size_type new_size = last - first;
+    if (new_size > capacity())
     {
       if (mFixed)
       {
@@ -258,23 +251,19 @@ namespace flex
       else
       {
         //Allocate memory with sufficient capacity.
-        size_type new_capacity = GetNewCapacity(size);
+        size_type new_capacity = GetNewCapacity(new_size);
         pointer new_begin = DoAllocateAndConstruct(new_capacity);
 
         //Copy all values.
         std::copy(first, last, new_begin);
 
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        mEnd = mBegin + size;
+        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
     {
       std::copy(first, last, mBegin);
-      mEnd.mPtr = (mBegin + size).mPtr;    //Slightly more efficient than "mEnd = mBegin + size";
+      mEnd.mPtr = (mBegin + new_size).mPtr;    //Slightly more efficient than "mEnd = mBegin + size";
     }
   }
 
@@ -462,11 +451,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, mEnd, ++new_end);
 
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_position.mRightBound;
-        mEnd = mBegin + new_size;
+        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
         return new_position;
       }
     }
@@ -508,11 +493,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, mEnd, new_end + n);
 
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        mEnd = mBegin + new_size;
+        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -553,12 +534,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, mEnd, new_end);
 
-        //Deallocate and reassign
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        mEnd = mBegin + new_size;
+        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -598,12 +574,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, mEnd, new_end);
 
-        //Deallocate and reassign
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        mEnd = mBegin + new_size;
+        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -675,12 +646,7 @@ namespace flex
         pointer new_end = std::copy(mBegin, mEnd, new_begin);
         *new_end = val;
 
-        //Deallocate and reassign.
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        mEnd = mBegin + new_size;
+        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -710,12 +676,7 @@ namespace flex
         *new_begin = val;
         std::copy(mBegin, mEnd, (new_begin + 1));
 
-        //Deallocate and reassign.
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        mEnd = mBegin + new_size;
+        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -757,18 +718,13 @@ namespace flex
       else
       {
         //Allocate memory with sufficient capacity.
-        size_type new_size = size();
         size_type new_capacity = GetNewCapacity(n);
         pointer new_begin = DoAllocateAndConstruct(new_capacity);
 
         //Copy all current values.
         std::copy(mBegin, mEnd, new_begin);
 
-        DoDestroyAndDeallocate();
-        mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        mEnd = mBegin + new_size;
+        DoDeallocateAndReassign(new_begin,size(),new_capacity);
       }
     }
   }
@@ -816,15 +772,8 @@ namespace flex
     // This needs to return a value of at least currentCapacity and at least 1.
     size_t new_capacity = (capacity() > 0) ? (2 * capacity()) : 1;
 
-    // If we are still less than the min_size, just set to the min_size.
-    if (new_capacity < min_size)
-    {
-      return min_size;
-    }
-    else
-    {
-      return new_capacity;
-    }
+    // If we are still less than the min_size, just return the min_size.
+    return (new_capacity < min_size) ? min_size : new_capacity;
   }
 
   template<class T, class Alloc>
@@ -863,6 +812,20 @@ namespace flex
     mAllocator.deallocate(mBegin.mLeftBound, capacity() + 1);
   }
 
+  template<class T, class Alloc>
+  inline void ring<T, Alloc>::DoDeallocateAndReassign(pointer new_begin, size_type new_size, size_type new_capacity)
+  {
+        DoDestroyAndDeallocate();
+        
+        mBegin.mPtr = new_begin;
+        mBegin.mLeftBound = new_begin;
+        mBegin.mRightBound = new_begin + new_capacity;
+        
+        mEnd.mPtr = new_begin + new_size;
+        mEnd.mLeftBound = mBegin.mLeftBound;
+        mEnd.mRightBound = mBegin.mRightBound;
+  }
+  
   template<class T, class Alloc>
   inline bool operator==(const ring<T, Alloc>& lhs, const ring<T, Alloc>& rhs)
   {
@@ -957,65 +920,3 @@ namespace flex
 } //namespace flex
 
 #endif /* FLEX_RING_H */
-
-//MY PRECIOUS!!!
-//hmdhdmmmNmdhmmmmmmdmmmmNNNdmmNNNNmNmmmNmmNmmdmmmmysddhymmmdyysyhhhhhhyyyyyssyyyyhhhossdNNddNNNNNNNmdmmmmmmmmmmmddddddmmm
-//mmddNmmNNNmmdmmmNmmmmmmmddmmmNNNmNddmNNNmmhddmddhdhddddmmdhysssssssyyysoo+++++++o+++oyyhymNNNNNNNNmmmmddmmddmmmmmmmdmmmm
-//mhhdNNmNmddmmmmNNNmmmhdmmmmNNmmNNNmmdNmNNmhhddmdmmmdhddhyssssssssssooo+oo++++++oo+/////+oydmNNNNNNmddmddmmdddmmddddddddd
-//mdddmdmNmdmmmhmmmmmmmmmmmdNNmmmmNNmmmNNNNdddddhhdddhyysssssyyyysso++osssoo++++o++++++//:::/ohmmNNNmdhdmmmdddddddmmmmmdhh
-//mdmdmmmmmdmmmdmmmmNmmhmmmmNNNNNNNNmmmdmNmddddddyhhhyssssssssooo+ooossoooooooo+++///+++/////::+shddmmdmmmmdddmmddddddmmdd
-//dmmdmdNdmhhmmmmdddmmhmNmmmmmmmmmdmddddmmddhddhhhhyyssyyysoo++oooooooooo++++o+++++////+++////::::+shhdddddddddddddddddddh
-//mmmddmmmdhmmdNNdmmdyydmdNNNmmmmNmmmdmmmdddddhhhyyyyyyhysooo+ooooooooooo+++++++++++++////+///:::--:/oyhdhddddddddddmmmmmd
-//mmmddmdhmmmdmmmddmmmmmmdmdmmmmdmNdmNmmNmhhddhyyyyyyyyyssoooooosooooo++++++++++++++++//////+//:------/yhhddddddddmmmmmmmm
-//mmdmmmmmmNNNmmmddmNNmmmmmmmmNmmmmdmNNmmdhddhyyyyyyyysssooooossosoo++++++++++++++++++///++////::----.-+yddddhhdddddmmmmmm
-//mddmmNmmmNmhdmmmmNNmddmmmmmNmmdmddmNmmmdddhyyyyyysyyssssooossssoooo++++oo++++++++++++/////++/:::::-..-/yhdddhhdmmmmmmmmm
-//mdmmmmmmmmmmmmmdmmNdddmmmmdmmmdmmmmmdmmddhyyyyyysyssssssosssooooo++++++++oo++++o++++++/+++++//::::-..--ohdmmmmmmNNNmmmmm
-//hdmdyyddddmddddhddddmmmmmmmmmmmmmmNddhdddhhhhhysyssssssossssoooooo+o+++ooooooooo++++o++++++o++/::--...-:ydmmmmNNNNNmmmmm
-//dmmhhhmmddmmddddddhhdddhhddmdddddddhdddddhhhhssssssooossooooooooooooooooooooooooooooooooooo+o++///:-..-:+hhddmmmmmmmmmmm
-//dddmddmNddmmddddmmmddhddmhhydhhddddddddddhhhyssssssosssoo++ooooo+++oooosossossoooooooooooooooo+++//:-.--:ssyhhhhhhdddhyy
-//hhhmmmmmhhddhhdddhdddddddhhhhhmmmmddhhddhhhhyyyyssssssooooooooooooooooooooooossoooooooooooo+oo+++++/-----+yyhyssssssssoo
-//dmhydmdmdddhhhhdhhhmdddhyyyssyyhhdmhhhdddhhyyyyssoyyssoo++oo+oossssssosssoooooooooooooooo+o+oo++////:----:ssyssossyyyyhh
-//mmmddddmmhddhddhshhyyddhsshhyysssyhdddmmdhhyyyssssysso+oooooooooooooossssoossssooooooooooooooo++//+/::-.--ossyhyyhddddmm
-//mmmmdmmhdddhdddddhyhhmdysyhhhhyyyssyhddmmdhyyysssyooooooooooosooooooooosossoossooooooooo++++oo++////:-----+yyhhyhdmNNNNN
-//mmdmmdmhhdhdhdmdddyhyhhhdhsyhmmdyyssoyyddhhhyyssyooo++++++++oossoooooooooooooosooooooo+++++o+++//////:----:hhdddmmNNmmNN
-//mmdmdhddddhdhdddhhhdhyhdNhsyhdmmmdyysssyysyyysssooooo+oso+++++oossssosssoooooosooooooo+++++++++///////:----yddmmmNNNNNNN
-//mhmmmmddmddddddhdddhhhhhmhyyhdmmmNmdyyyyssyyyssoooooosssssoooo+ooossssssossssssooooooooooo+++++++++++/:----ydddhyyhdNNNN
-//mddmmNdhdhhhhhdddmmhdmdmddhdmmmmmmmNmhyhssyyssoossssyyyyhhyyyssssssoossssosssssooosssoooooooooo++o++++/:---sdhs+//:/mNNN
-//hdmmmNmhhdddmhdddmddmNmmmmdhdmmmmmmNNmhyssssyssssssyyyyyyhhhhhyyyssysssssssssssssssyssooooooooooo++++++/:-.oso+++//ymmmm
-//dmmmmmhddhhdmdmdmmdddmmmmmmyyhdmmmmNNNdyssosssssssyyhhhddddddddhhhyyyyyyyyyyyyyssyyysssssssssssssssossso+:-:++o+oo/osssy
-//mmmNNmmddmmmdmNNmddhhmmmmNdsyyyyhdmNNhsssssosysssyhhhdhsoshdmNNmmddddddddddddhhyhhhhhhhhhyyyyyyyyyyyyssoo+:-/ossss/:yyys
-//mdmNmddmmNmmdmmmmmddddddmdmyyoooosyhhsyssssooyssyhddhs++yhdddmmNNNmmmmmmmmmmmddhhddddddddddhhhhhhhhhhhyso/:-ymdhyo/osyys
-//dmNMNdddmmdmmmdddmmddddmdhddhysoooo+shysooooossyhhmdhsoshshmNmhmmNNNNNmNmmmmmmddhhdmmmmmmdddmmmmmmdsoshys+-:dddyooyhyyss
-//mmmNmmddmmmmmmhddmNmmmmmmmmmdhdhyoo+oshyssssossyyyyhhhssysyhdddddmNNMNNNNNmmmddhhhdmmmmmmNmNNmNNmdhd/:/sy+:.yhs+oddddhhd
-//NmmdhddddmmddmdhmmddmmmmddmdhhhdmdhyssyyysssyyhyyhyyyyyyhhhddmmmmNNNNNNNNNmmdhhhyyhmmmNNNNmNNNNNmhhho::/yo/.oyoommdmmmmN
-//mmmdmdddhddmNmmmdmmdddmddmmmhdhdmmdddddyyyyhysyyyyhdddhhhhhhhhdddmmNNNNNNNmhso++ooymNNNNNNmmNNmdhhys++/+s:/--s/hmmmmmmmN
-//mmNmmhdmdddmmmmhdmdddymmdddhmmmddmddhddhhhhyssossyyhddmmmmmmmmmmmmmddddhhysooooo+osdNNNNNNNmddhhhhyyssso+/:--+smmmmmmmmm
-//mmmmmdmmdmmddmmmmhdhhhmdmdddddhhmNddhhddmdysssssyyyyhhdmmmmmmmmmmdhyyyhyyssosoooo+osyhmmNNNmmddhhhhhhyys+:::/ymmmmmmmmdd
-//mmmmNNmdmddmmmmdhddmmdmmmmmydhyhddhdddmdddhyyyyyyyyyyhhddddddddmmmddddhyssoossooo+osyyhddddmmmmmmmmdhyso/--/dNNmmmmdmmdd
-//NNNNNNmmNmdmmddmdmmmmmmmdddhdhdddhdddhhysydhyhhhhhhhhhhhhdddddmmmmmmmdysosoooooooo+shddhhyyyyyhhhhhyyso+/-:hNNNNmmmmmddd
-//mmNNmmmmddmmmmdmmNmmdmdddddddhhhhdyhhhhyyhdddmmmdddddddhhdddddmmmmdhhddhsooooossoooosdmmddhyyyyyyhhhyso+/-hNNNNNmmmmmmdd
-//mmmNNNmmmmmmmmmNNddhhhdddmmdddddyyhyyhhyyysdmmmmmmmmddddddddmmmmdyysyydmdhysyyssssssyhmmmmdddhhhhhyyso+/:omNNmmmmmmmmmmm
-//NNNNmNNmNmmmmmmNmddhhhhhhmmmdhysyyhhyysssssymmmmmmmmmmdmmmmmmmdhysssssyhdmmdhhhhdhddhyydmmmmddddhhyyoo++smNmmmmmmmmmmmmd
-//NNNNNNNNNmdmmNmmmhddddhhhdhhyyssssssyssoossydmmmmmmmmmmmmmmmmdyssssssssyydmmmmmmddhhhyyyydmmmmddhhysosyhdmmmmmmmdddddddd
-//mmNNNNNNmmmmdmmmdhddhdhyysssssssssssssooydmmmmmmmmmmmmmmmmmddhyssssssyyyyyhdmmdddhhhyyyyssymmmdhysshhhdddmdddmmddhhyyhdd
-//mNNNNNNmdddhdmmddhhyyssssoooossoossossoydmmdmmmmmmmmmmdmmmddhhyyyysssyyyyyyhddddhhhhysssssoymdhsoyddhdddmdddhhhhyyyssyhh
-//mNNmNmmmmmmhdmdyssssssosoooooosossssoooydmdddmmNmmmmmmddmmmmmddddhhyyyyyyyyhhddhhhyhysssyyoohyo+ydhdhhyhhhyyyysssyyssyhh
-//NmmmmmmmmNmddhssoooooooooooooosooosooosydddddmmmmmmmmmdddmmmmNNNNNmmmmmmdmmmmmmmmdddhhyhhdyss++yddhhhhyyhhyyyyssyhhyyyyy
-//NNmdmmddNmdysooooooooooooooooosoooosoossdddmmmmmmmNNmmmhhhhyhhhdmmNNNNNNNNNNNNNNNNmddmhhddyo///oyhhhhhhhdhhhdddddmmdhhhh
-//mNNmNmmmNmyooooooossoosssssssssoossssssshddmmmmmmmmNmmmhyyyyyyhhhhdddNNNNNNNmNmmNddhdhosyso//sooooyhdddmmmdddddmmmmmmmmm
-//mmNmmmmNhsooooooossoossssosssssysyyyssyyyddmmmmmmmmmmmmmhysyyyyhhhhyhhhddddmddmmmmdhysoooo/+hdhyys+sddmNNNmmmdddmmmmmmdm
-//mmNmdmNy+oooooooooooosooooosssyyyyyyhhhhhdmmmmmmmmmmmmmmdhyyyyyyyhhhddddhhhhhddddddys++oo/odmmddhys++hNNNNNNNmddmmmmmmmm
-//NNNmmds+ooooooooooooooosossssyyhyhhhhhhddmmmNmmmmmmmmmmmmddhhyyyyyhdddmmmddddddddhhyo++o+sddmmmddhyo//dNNNNNNNNmmmmmmmNm
-//NNNmh+ooooooooooooooooosssssyyyhyyhhhhddmdmmmNNNNmmmmmmmmmmmdhyyyyhhddddddddddddhhys++oshdmmmmmmddhy+-+NNNNNNNNNNNNNNNNN
-//NmNhoosssoooooooooosssssyyyyyyyhhyhdhhddddmmmmmNNNNmmmmmmmmmmmdhhhhhyyhhhhdddhhhhyyooyhdmmmmmmmmdddhs/:mNNNNNNNNNNNNNNNN
-//NmhssssssoooooooossssyyyyyyyyhhhhhhddhhddmmdddmmmNNNNmmmmmmmmmmmdddhhhdddddddddhyysydmmmmmmmmmmmdddhy+/mNNNNNNNNNNNNNNNN
-//Ndyssooooooossssssssssyyyyhhhddddddddhhhddhhddmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdhyhdmmmmmmmdmmmmdddddho+mNNNNNNNNNNNNNNNM
-//NhysoooooooossssssssssyyyhdddddddddddhhhhyyhhddmmmmmmmmmmmmmmmmmmmmmmmmmmmmdddddmmmmmmmmddddmmmmmmmdhosNNNNMNNNNNMNNMMMM
-//dyysoooooooossssssssyyyhhmmmmddmmmddddhhhyyyyyhdmmmmmmmmmmNNNmmmmmmmmmmmmddddmmmmmmmmmmmddmmmmmmmmmdysmMMNMMMMMMMMMMMMMM
-//hyssoooooosssssssssyyyhdmmmmmmmmmmmddddddhhhyyyhddddmmmNmmmmmmddddmmmmmddddmmmmmmmmmmmmmmmmmmmmmmmmdymMMMNMMMMNNNNNNNMMM
-//hysssosoossssssssssyhhdmmmmmmmmmmmmmmmdmdddhhhyyyhddmmmmmmmmmdddddddddddmmmmmmmmmmmmmmmmmmmmmmmmmddhmMMMMMNNNNNNNNNNNNNM
-//hysysoooossssssssyyhhdmmmmmmmmmmmmmmmmmmmdddhhhhhhhdmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdddmmmdymNNNNMMNNNNNNMMMNNNNM
-//hyssssssssssssssyyyhdmmNmmmmmmmmmmmmmmmmmmmmmmmmmddmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdddddmmdyhNNNNNNNNNMMMMMMMMMNNN
-//hyyyssssssssssssyyhdmmNNmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdmmmmmmmmmmmmdddddmmh+oo++++ooshdNNMMMMNNNNN
-//dhyysssssyyyyyyyhhdmmNNmmmmmmmmmmmmmmmmmmmddmmmmmmmmmmmmmmmmmmmmmmmmmmmmmdhhdmmmmmmmmmmmmmdddmmmy/yssooosssso++dNMNNNNNN
-//dhyyyysssyyyyyyhhdmmmNNNmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmhydmNmmmmmmmmmmmmmddmmmds/hddddddddddhy+sNNNNNNN
