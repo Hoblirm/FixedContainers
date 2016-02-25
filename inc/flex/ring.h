@@ -110,12 +110,10 @@ namespace flex
       mFixed(false)
   {
     mBegin.mPtr = DoAllocateAndConstruct(capacity);
-    mBegin.mLeftBound = mBegin.mPtr;
-    mBegin.mRightBound = mBegin.mPtr + capacity;
+    mEnd.mPtr = mBegin.mPtr + capacity;
 
-    mEnd.mPtr = mBegin.mRightBound;
-    mEnd.mLeftBound = mBegin.mLeftBound;
-    mEnd.mRightBound = mBegin.mRightBound;
+    mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
+    mBegin.mRightBound = mEnd.mRightBound = mEnd.mPtr;
 
     //Using mPtr is a bit more efficient, as we know the the newly allocated data doesn't wrap.
     std::fill(mBegin.mPtr, mEnd.mPtr, val);
@@ -127,12 +125,10 @@ namespace flex
   {
     size_type new_size = last - first;
     mBegin.mPtr = DoAllocateAndConstruct(new_size);
-    mBegin.mLeftBound = mBegin.mPtr;
-    mBegin.mRightBound = mBegin.mPtr + new_size;
+    mEnd.mPtr = mBegin.mPtr + new_size;
 
-    mEnd.mPtr = mBegin.mRightBound;
-    mEnd.mLeftBound = mBegin.mLeftBound;
-    mEnd.mRightBound = mBegin.mRightBound;
+    mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
+    mBegin.mRightBound = mEnd.mRightBound = mEnd.mPtr;
 
     //Using the mBegin.mPtr is a bit more efficient, as we know the newly allocated data doesn't wrap.
     std::copy(first, last, mBegin.mPtr);
@@ -144,12 +140,10 @@ namespace flex
   {
     size_type new_size = last - first;
     mBegin.mPtr = DoAllocateAndConstruct(new_size);
-    mBegin.mLeftBound = mBegin.mPtr;
-    mBegin.mRightBound = mBegin.mPtr + new_size;
+    mEnd.mPtr = mBegin.mPtr + new_size;
 
-    mEnd.mPtr = mBegin.mRightBound;
-    mEnd.mLeftBound = mBegin.mLeftBound;
-    mEnd.mRightBound = mBegin.mRightBound;
+    mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
+    mBegin.mRightBound = mEnd.mRightBound = mEnd.mPtr;
 
     //Using the mBegin.mPtr is a bit more efficient, as we know the newly allocated data doesn't wrap.
     std::copy(first, last, mBegin.mPtr);
@@ -161,12 +155,10 @@ namespace flex
   {
     size_type new_size = obj.size();
     mBegin.mPtr = DoAllocateAndConstruct(new_size);
-    mBegin.mLeftBound = mBegin.mPtr;
-    mBegin.mRightBound = mBegin.mPtr + new_size;
+    mEnd.mPtr = mBegin.mPtr + new_size;
 
-    mEnd.mPtr = mBegin.mRightBound;
-    mEnd.mLeftBound = mBegin.mLeftBound;
-    mEnd.mRightBound = mBegin.mRightBound;
+    mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
+    mBegin.mRightBound = mEnd.mRightBound = mEnd.mPtr;
 
     //Using the mBegin.mPtr is a bit more efficient, as we know the newly allocated data doesn't wrap.
     std::copy(obj.begin(), obj.end(), mBegin.mPtr);
@@ -815,12 +807,10 @@ namespace flex
         DoDestroyAndDeallocate();
         
         mBegin.mPtr = new_begin;
-        mBegin.mLeftBound = new_begin;
-        mBegin.mRightBound = new_begin + new_capacity;
-        
         mEnd.mPtr = mBegin.mPtr + new_size;
-        mEnd.mLeftBound = mBegin.mLeftBound;
-        mEnd.mRightBound = mBegin.mRightBound;
+        
+        mBegin.mLeftBound = mEnd.mLeftBound = new_begin;
+        mBegin.mRightBound = mEnd.mRightBound = new_begin + new_capacity;
   }
   
   template<class T, class Alloc>
