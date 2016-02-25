@@ -533,7 +533,9 @@ public:
        * Case 1: Test erase on size of 1.
        */
       ring_int a(1);
-      a.erase(a.begin());
+      ring_int::iterator it;
+      it = a.erase(a.begin());
+      TS_ASSERT_EQUALS(it, a.begin());
       TS_ASSERT_EQUALS(a.size(), 0);
 
       //Start s at 3, as the below tests expect a size of at least 3.
@@ -545,9 +547,9 @@ public:
          /*
           * Case2: Test erase at end
           */
-         a.erase(a.end() - 1);
+         it = a.erase(a.end() - 1);
          --current_size;
-
+         TS_ASSERT_EQUALS(it, a.end());
          TS_ASSERT_EQUALS(a.size(), current_size);
          for (int i = 0; i < a.size(); ++i)
          {
@@ -557,8 +559,9 @@ public:
          /*
           * Case3: Test erase at begin
           */
-         a.erase(a.begin());
+         it = a.erase(a.begin());
          --current_size;
+         TS_ASSERT_EQUALS(it, a.begin());
          TS_ASSERT_EQUALS(a.size(), current_size);
          for (int i = 0; i < a.size(); ++i)
          {
@@ -569,8 +572,9 @@ public:
           * Case4: Test erase in middle
           */
          int mid_index = current_size / 2;
-         a.erase(a.begin() + mid_index);
+         it = a.erase(a.begin() + mid_index);
          --current_size;
+         TS_ASSERT_EQUALS(it, a.begin() + mid_index);
          TS_ASSERT_EQUALS(a.size(), current_size);
          for (int i = 0; i < mid_index; ++i)
          {
@@ -589,7 +593,9 @@ public:
        * Case 1: Test erase on size of 1.
        */
       ring_int a(1);
-      a.erase(a.begin(), a.end());
+      ring_int::iterator it;
+      it = a.erase(a.begin(), a.end());
+      TS_ASSERT_EQUALS(it, a.end());
       TS_ASSERT_EQUALS(a.size(), 0);
 
       //Start s at 7, as the below tests expect a size of at least 7.
@@ -601,8 +607,9 @@ public:
          /*
           * Case2: Test erase at end
           */
-         a.erase(a.end() - 2, a.end());
+         it = a.erase(a.end() - 2, a.end());
          current_size -= 2;
+         TS_ASSERT_EQUALS(it, a.end());
          TS_ASSERT_EQUALS(a.size(), current_size);
          for (int i = 0; i < a.size(); ++i)
          {
@@ -612,8 +619,9 @@ public:
          /*
           * Case3: Test erase at begin
           */
-         a.erase(a.begin(), a.begin() + 2);
+         it = a.erase(a.begin(), a.begin() + 2);
          current_size -= 2;
+         TS_ASSERT_EQUALS(it, a.begin());
          TS_ASSERT_EQUALS(a.size(), current_size);
          for (int i = 0; i < a.size(); ++i)
          {
@@ -624,8 +632,9 @@ public:
           * Case4: Test erase in middle
           */
          int mid_index = current_size / 2;
-         a.erase(a.begin() + mid_index, a.begin() + mid_index + 2);
+         it = a.erase(a.begin() + mid_index, a.begin() + mid_index + 2);
          current_size -= 2;
+         TS_ASSERT_EQUALS(it, a.begin() + mid_index);
          TS_ASSERT_EQUALS(a.size(), current_size);
          for (int i = 0; i < mid_index; ++i)
          {
@@ -659,7 +668,8 @@ public:
    void test_insert_position(void)
    {
       ring_int a;
-
+      ring_int::iterator it;
+      
       for (unsigned s = 0; s < SIZE_COUNT; ++s)
       {
          a.assign(INT_DATA, INT_DATA + SIZES[s]);
@@ -669,8 +679,9 @@ public:
          /*
           * Case1: Test insert at end
           */
-         a.insert(a.end(), val);
+         it = a.insert(a.end(), val);
          ++current_size;
+         TS_ASSERT_EQUALS(*it, val);
          TS_ASSERT_EQUALS(a.size(), current_size);
          for (int i = 0; i < a.size() - 1; ++i)
          {
@@ -681,8 +692,9 @@ public:
          /*
           * Case2: Test insert at begin
           */
-         a.insert(a.begin(), val);
+         it = a.insert(a.begin(), val);
          ++current_size;
+         TS_ASSERT_EQUALS(*it, val);
          TS_ASSERT_EQUALS(a.size(), current_size);
          TS_ASSERT_EQUALS(a[0], val);
          for (int i = 1; i < a.size() - 1; ++i)
@@ -695,8 +707,9 @@ public:
           * Case3: Test insert in middle
           */
          int mid_index = current_size / 2;
-         a.insert(a.begin() + mid_index, val);
+         it = a.insert(a.begin() + mid_index, val);
          ++current_size;
+         TS_ASSERT_EQUALS(*it, val);
          TS_ASSERT_EQUALS(a.size(), current_size);
          TS_ASSERT_EQUALS(a[0], val);
          for (int i = 1; i < mid_index; ++i)

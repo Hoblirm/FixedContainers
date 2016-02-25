@@ -442,14 +442,11 @@ namespace flex
         pointer new_end = std::copy(mBegin, position, new_begin);
 
         //Copy the inserted parameter val.
-        iterator new_position;
-        new_position.mPtr = new_end;
-        new_position.mLeftBound = new_begin;
-        new_position.mRightBound = new_begin + new_capacity;
+        iterator new_position(new_end, new_begin, new_begin + new_capacity);
         *new_end = val;
 
         //Copy all values that come after position.
-        new_end = std::copy(position, mEnd, ++new_end);
+        std::copy(position, mEnd, ++new_end);
 
         DoDeallocateAndReassign(new_begin,new_size,new_capacity);
         return new_position;
