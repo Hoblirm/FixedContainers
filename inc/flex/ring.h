@@ -16,10 +16,10 @@ namespace flex
     typedef const T* const_pointer;
     typedef T& reference;
     typedef const T& const_reference;
-    typedef ring_iterator<T> iterator;
-    typedef ring_const_iterator<T> const_iterator;
-    typedef ring_reverse_iterator<T> reverse_iterator;
-    typedef ring_const_reverse_iterator<T> const_reverse_iterator;
+    typedef ring_iterator<T, T*, T&> iterator;
+    typedef ring_iterator<T, const T*, const T&> const_iterator;
+    typedef std::reverse_iterator<iterator> reverse_iterator;
+    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
     typedef size_t size_type;
     typedef std::ptrdiff_t difference_type;
     typedef Alloc allocator_type;
@@ -321,12 +321,12 @@ namespace flex
 
   template<class T, class Alloc> typename ring<T, Alloc>::const_reverse_iterator ring<T, Alloc>::crbegin() const
   {
-    return const_reverse_iterator((mEnd - 1).mPtr, mEnd.mLeftBound, mEnd.mRightBound);
+    return const_reverse_iterator(mEnd);
   }
 
   template<class T, class Alloc> typename ring<T, Alloc>::const_reverse_iterator ring<T, Alloc>::crend() const
   {
-    return const_reverse_iterator((mBegin - 1).mPtr, mBegin.mLeftBound, mBegin.mRightBound);
+    return const_reverse_iterator(mBegin);
   }
 
   template<class T, class Alloc>
@@ -677,22 +677,22 @@ namespace flex
 
   template<class T, class Alloc> typename ring<T, Alloc>::reverse_iterator ring<T, Alloc>::rbegin()
   {
-    return reverse_iterator((mEnd - 1).mPtr, mEnd.mLeftBound, mEnd.mRightBound);
+    return reverse_iterator(mEnd);
   }
 
   template<class T, class Alloc> typename ring<T, Alloc>::const_reverse_iterator ring<T, Alloc>::rbegin() const
   {
-    return const_reverse_iterator((mEnd - 1).mPtr, mEnd.mLeftBound, mEnd.mRightBound);
+    return const_reverse_iterator(mEnd);
   }
 
   template<class T, class Alloc> typename ring<T, Alloc>::reverse_iterator ring<T, Alloc>::rend()
   {
-    return reverse_iterator((mBegin - 1).mPtr, mBegin.mLeftBound, mBegin.mRightBound);
+    return reverse_iterator(mBegin);
   }
 
   template<class T, class Alloc> typename ring<T, Alloc>::const_reverse_iterator ring<T, Alloc>::rend() const
   {
-    return const_reverse_iterator((mBegin - 1).mPtr, mBegin.mLeftBound, mBegin.mRightBound);
+    return const_reverse_iterator(mBegin);
   }
 
   template<class T, class Alloc>

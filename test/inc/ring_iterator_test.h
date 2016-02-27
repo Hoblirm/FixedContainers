@@ -38,164 +38,7 @@ class ring_iterator_test : public CxxTest::TestSuite
 
 public:
 
-   void test_rci_default_constructor(void)
-   {
-      ring_const_iterator<int> a;
-      TS_ASSERT(a.mPtr == NULL);
-      TS_ASSERT(a.mLeftBound == NULL);
-      TS_ASSERT(a.mRightBound == NULL);
-   }
-
-   void test_rci_assignment_constructor(void)
-   {
-      ring_const_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-      TS_ASSERT_EQUALS(a.mPtr, INT_DATA + 2);
-      TS_ASSERT_EQUALS(a.mLeftBound, INT_DATA);
-      TS_ASSERT_EQUALS(a.mRightBound, INT_DATA + 8);
-   }
-
-   void test_rci_equality_operator(void)
-   {
-      ring_const_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-      ring_const_iterator<int> b(INT_DATA + 2, INT_DATA, INT_DATA + 16);
-      TS_ASSERT(a == b);
-      a.mPtr += 1;
-      TS_ASSERT(a != b);
-   }
-
-   void test_rci_dereference_operator(void)
-   {
-      ring_const_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-      TS_ASSERT_EQUALS(*a, INT_DATA[2]);
-      TS_ASSERT_EQUALS(a[0], INT_DATA[2]);
-      TS_ASSERT_EQUALS(a[1], INT_DATA[3]);
-      TS_ASSERT_EQUALS(a[2], INT_DATA[4]);
-      TS_ASSERT_EQUALS(a[3], INT_DATA[5]);
-      TS_ASSERT_EQUALS(a[4], INT_DATA[6]);
-      TS_ASSERT_EQUALS(a[5], INT_DATA[7]);
-      TS_ASSERT_EQUALS(a[6], INT_DATA[8]);
-      TS_ASSERT_EQUALS(a[7], INT_DATA[0]);
-      TS_ASSERT_EQUALS(a[8], INT_DATA[1]);
-
-      const int obj_val = 7;
-      object obj(obj_val);
-      ring_const_iterator<object> b(&obj, &obj, &obj);
-      TS_ASSERT_EQUALS(b->val, obj_val);
-      TS_ASSERT_EQUALS(b[0].val, obj_val);
-   }
-
-   void test_rci_increment_operator(void)
-   {
-      ring_const_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[2]);
-
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[2]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*a, INT_DATA[2]);
-   }
-
-   void test_rci_decrement_operator(void)
-   {
-      ring_const_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[2]);
-
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[2]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*a, INT_DATA[2]);
-   }
-
-   void test_rci_plus_assign_operator(void)
-   {
-      ring_const_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a += 1), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[2]);
-   }
-
-   void test_rci_plus_operator(void)
-   {
-      ring_const_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a + 1), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(a + 3), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a + 5), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a + 7), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a + 9), INT_DATA[2]);
-   }
-
-   void test_rci_minus_assign_operator(void)
-   {
-      ring_const_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a -= 1), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[2]);
-   }
-
-   void test_rci_minus_operator(void)
-   {
-      ring_const_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a - 1), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(a - 3), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a - 5), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a - 7), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a - 9), INT_DATA[2]);
-   }
-
-   void test_rci_minus_iterator_operator(void)
-   {
-      ring_const_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(0, a - ring_const_iterator<int>(INT_DATA + 2, NULL, NULL));
-      TS_ASSERT_EQUALS(8, a - ring_const_iterator<int>(INT_DATA + 3, NULL, NULL));
-      TS_ASSERT_EQUALS(7, a - ring_const_iterator<int>(INT_DATA + 4, NULL, NULL));
-      TS_ASSERT_EQUALS(6, a - ring_const_iterator<int>(INT_DATA + 5, NULL, NULL));
-      TS_ASSERT_EQUALS(5, a - ring_const_iterator<int>(INT_DATA + 6, NULL, NULL));
-      TS_ASSERT_EQUALS(4, a - ring_const_iterator<int>(INT_DATA + 7, NULL, NULL));
-      TS_ASSERT_EQUALS(3, a - ring_const_iterator<int>(INT_DATA + 8, NULL, NULL));
-      TS_ASSERT_EQUALS(2, a - ring_const_iterator<int>(INT_DATA + 0, NULL, NULL));
-      TS_ASSERT_EQUALS(1, a - ring_const_iterator<int>(INT_DATA + 1, NULL, NULL));
-   }
-
-   void test_ri_default_constructor(void)
+   void test_default_constructor(void)
    {
       ring_iterator<int> a;
       TS_ASSERT(a.mPtr == NULL);
@@ -203,7 +46,7 @@ public:
       TS_ASSERT(a.mRightBound == NULL);
    }
 
-   void test_ri_assignment_constructor(void)
+   void test_assignment_constructor(void)
    {
       ring_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
       TS_ASSERT_EQUALS(a.mPtr, INT_DATA + 2);
@@ -211,7 +54,7 @@ public:
       TS_ASSERT_EQUALS(a.mRightBound, INT_DATA + 8);
    }
 
-   void test_ri_equality_operator(void)
+   void test_equality_operator(void)
    {
       ring_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
       ring_iterator<int> b(INT_DATA + 2, INT_DATA, INT_DATA + 16);
@@ -220,7 +63,7 @@ public:
       TS_ASSERT(a != b);
    }
 
-   void test_ri_dereference_operator(void)
+   void test_dereference_operator(void)
    {
       ring_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
       TS_ASSERT_EQUALS(*a, INT_DATA[2]);
@@ -241,7 +84,7 @@ public:
       TS_ASSERT_EQUALS(b[0].val, obj_val);
    }
 
-   void test_ri_increment_operator(void)
+   void test_increment_operator(void)
    {
       ring_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
 
@@ -267,7 +110,7 @@ public:
       TS_ASSERT_EQUALS(*a, INT_DATA[2]);
    }
 
-   void test_ri_decrement_operator(void)
+   void test_decrement_operator(void)
    {
       ring_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
 
@@ -293,7 +136,7 @@ public:
       TS_ASSERT_EQUALS(*a, INT_DATA[2]);
    }
 
-   void test_ri_plus_assign_operator(void)
+   void test_plus_assign_operator(void)
    {
       ring_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
 
@@ -304,7 +147,7 @@ public:
       TS_ASSERT_EQUALS(*(a += 2), INT_DATA[2]);
    }
 
-   void test_ri_plus_operator(void)
+   void test_plus_operator(void)
    {
       ring_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
 
@@ -315,7 +158,7 @@ public:
       TS_ASSERT_EQUALS(*(a + 9), INT_DATA[2]);
    }
 
-   void test_ri_minus_assign_operator(void)
+   void test_minus_assign_operator(void)
    {
       ring_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
 
@@ -326,7 +169,7 @@ public:
       TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[2]);
    }
 
-   void test_ri_minus_operator(void)
+   void test_minus_operator(void)
    {
       ring_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
 
@@ -337,7 +180,7 @@ public:
       TS_ASSERT_EQUALS(*(a - 9), INT_DATA[2]);
    }
 
-   void test_ri_minus_iterator_operator(void)
+   void test_minus_iterator_operator(void)
    {
       ring_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
 
@@ -351,319 +194,6 @@ public:
       TS_ASSERT_EQUALS(2, a - ring_iterator<int>(INT_DATA + 0, NULL, NULL));
       TS_ASSERT_EQUALS(1, a - ring_iterator<int>(INT_DATA + 1, NULL, NULL));
    }
-   
-   void test_rcri_default_constructor(void)
-   {
-      ring_const_reverse_iterator<int> a;
-      TS_ASSERT(a.mPtr == NULL);
-      TS_ASSERT(a.mLeftBound == NULL);
-      TS_ASSERT(a.mRightBound == NULL);
-   }
 
-   void test_rcri_assignment_constructor(void)
-   {
-      ring_const_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-      TS_ASSERT_EQUALS(a.mPtr, INT_DATA + 2);
-      TS_ASSERT_EQUALS(a.mLeftBound, INT_DATA);
-      TS_ASSERT_EQUALS(a.mRightBound, INT_DATA + 8);
-   }
-
-   void test_rcri_equality_operator(void)
-   {
-      ring_const_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-      ring_const_reverse_iterator<int> b(INT_DATA + 2, INT_DATA, INT_DATA + 16);
-      TS_ASSERT(a == b);
-      a.mPtr += 1;
-      TS_ASSERT(a != b);
-   }
-
-   void test_rcri_dereference_operator(void)
-   {
-      ring_const_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-      TS_ASSERT_EQUALS(*a, INT_DATA[2]);
-      TS_ASSERT_EQUALS(a[0], INT_DATA[2]);
-      TS_ASSERT_EQUALS(a[1], INT_DATA[3]);
-      TS_ASSERT_EQUALS(a[2], INT_DATA[4]);
-      TS_ASSERT_EQUALS(a[3], INT_DATA[5]);
-      TS_ASSERT_EQUALS(a[4], INT_DATA[6]);
-      TS_ASSERT_EQUALS(a[5], INT_DATA[7]);
-      TS_ASSERT_EQUALS(a[6], INT_DATA[8]);
-      TS_ASSERT_EQUALS(a[7], INT_DATA[0]);
-      TS_ASSERT_EQUALS(a[8], INT_DATA[1]);
-
-      const int obj_val = 7;
-      object obj(obj_val);
-      ring_const_reverse_iterator<object> b(&obj, &obj, &obj);
-      TS_ASSERT_EQUALS(b->val, obj_val);
-      TS_ASSERT_EQUALS(b[0].val, obj_val);
-   }
-
-   void test_rcri_increment_operator(void)
-   {
-      ring_const_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[2]);
-
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[2]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*a, INT_DATA[2]);
-   }
-
-   void test_rcri_decrement_operator(void)
-   {
-      ring_const_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[2]);
-
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[2]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*a, INT_DATA[2]);
-   }
-
-   void test_rcri_plus_assign_operator(void)
-   {
-      ring_const_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a += 1), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[2]);
-   }
-
-   void test_rcri_plus_operator(void)
-   {
-      ring_const_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a + 1), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(a + 3), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a + 5), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a + 7), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a + 9), INT_DATA[2]);
-   }
-
-   void test_rcri_minus_assign_operator(void)
-   {
-      ring_const_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a -= 1), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[2]);
-   }
-
-   void test_rcri_minus_operator(void)
-   {
-      ring_const_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a - 1), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(a - 3), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a - 5), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a - 7), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a - 9), INT_DATA[2]);
-   }
-
-   void test_rcri_minus_iterator_operator(void)
-   {
-      ring_const_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(0, a - ring_const_reverse_iterator<int>(INT_DATA + 2, NULL, NULL));
-      TS_ASSERT_EQUALS(8, a - ring_const_reverse_iterator<int>(INT_DATA + 1, NULL, NULL));
-      TS_ASSERT_EQUALS(7, a - ring_const_reverse_iterator<int>(INT_DATA + 0, NULL, NULL));
-      TS_ASSERT_EQUALS(6, a - ring_const_reverse_iterator<int>(INT_DATA + 8, NULL, NULL));
-      TS_ASSERT_EQUALS(5, a - ring_const_reverse_iterator<int>(INT_DATA + 7, NULL, NULL));
-      TS_ASSERT_EQUALS(4, a - ring_const_reverse_iterator<int>(INT_DATA + 6, NULL, NULL));
-      TS_ASSERT_EQUALS(3, a - ring_const_reverse_iterator<int>(INT_DATA + 5, NULL, NULL));
-      TS_ASSERT_EQUALS(2, a - ring_const_reverse_iterator<int>(INT_DATA + 4, NULL, NULL));
-      TS_ASSERT_EQUALS(1, a - ring_const_reverse_iterator<int>(INT_DATA + 3, NULL, NULL));
-   }
-   
-   void test_rri_default_constructor(void)
-   {
-      ring_reverse_iterator<int> a;
-      TS_ASSERT(a.mPtr == NULL);
-      TS_ASSERT(a.mLeftBound == NULL);
-      TS_ASSERT(a.mRightBound == NULL);
-   }
-
-   void test_rri_assignment_constructor(void)
-   {
-      ring_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-      TS_ASSERT_EQUALS(a.mPtr, INT_DATA + 2);
-      TS_ASSERT_EQUALS(a.mLeftBound, INT_DATA);
-      TS_ASSERT_EQUALS(a.mRightBound, INT_DATA + 8);
-   }
-
-   void test_rri_equality_operator(void)
-   {
-      ring_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-      ring_reverse_iterator<int> b(INT_DATA + 2, INT_DATA, INT_DATA + 16);
-      TS_ASSERT(a == b);
-      a.mPtr += 1;
-      TS_ASSERT(a != b);
-   }
-
-   void test_rri_dereference_operator(void)
-   {
-      ring_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-      TS_ASSERT_EQUALS(*a, INT_DATA[2]);
-      TS_ASSERT_EQUALS(a[0], INT_DATA[2]);
-      TS_ASSERT_EQUALS(a[1], INT_DATA[3]);
-      TS_ASSERT_EQUALS(a[2], INT_DATA[4]);
-      TS_ASSERT_EQUALS(a[3], INT_DATA[5]);
-      TS_ASSERT_EQUALS(a[4], INT_DATA[6]);
-      TS_ASSERT_EQUALS(a[5], INT_DATA[7]);
-      TS_ASSERT_EQUALS(a[6], INT_DATA[8]);
-      TS_ASSERT_EQUALS(a[7], INT_DATA[0]);
-      TS_ASSERT_EQUALS(a[8], INT_DATA[1]);
-
-      const int obj_val = 7;
-      object obj(obj_val);
-      ring_reverse_iterator<object> b(&obj, &obj, &obj);
-      TS_ASSERT_EQUALS(b->val, obj_val);
-      TS_ASSERT_EQUALS(b[0].val, obj_val);
-   }
-
-   void test_rri_increment_operator(void)
-   {
-      ring_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(++a), INT_DATA[2]);
-
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[2]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a++), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*a, INT_DATA[2]);
-   }
-
-   void test_rri_decrement_operator(void)
-   {
-      ring_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(--a), INT_DATA[2]);
-
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[2]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a--), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*a, INT_DATA[2]);
-   }
-
-   void test_rri_plus_assign_operator(void)
-   {
-      ring_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a += 1), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a += 2), INT_DATA[2]);
-   }
-
-   void test_rri_plus_operator(void)
-   {
-      ring_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a + 1), INT_DATA[1]);
-      TS_ASSERT_EQUALS(*(a + 3), INT_DATA[8]);
-      TS_ASSERT_EQUALS(*(a + 5), INT_DATA[6]);
-      TS_ASSERT_EQUALS(*(a + 7), INT_DATA[4]);
-      TS_ASSERT_EQUALS(*(a + 9), INT_DATA[2]);
-   }
-
-   void test_rri_minus_assign_operator(void)
-   {
-      ring_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a -= 1), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a -= 2), INT_DATA[2]);
-   }
-
-   void test_rri_minus_operator(void)
-   {
-      ring_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(*(a - 1), INT_DATA[3]);
-      TS_ASSERT_EQUALS(*(a - 3), INT_DATA[5]);
-      TS_ASSERT_EQUALS(*(a - 5), INT_DATA[7]);
-      TS_ASSERT_EQUALS(*(a - 7), INT_DATA[0]);
-      TS_ASSERT_EQUALS(*(a - 9), INT_DATA[2]);
-   }
-
-   void test_rri_minus_iterator_operator(void)
-   {
-      ring_reverse_iterator<int> a(INT_DATA + 2, INT_DATA, INT_DATA + 8);
-
-      TS_ASSERT_EQUALS(0, a - ring_reverse_iterator<int>(INT_DATA + 2, NULL, NULL));
-      TS_ASSERT_EQUALS(8, a - ring_reverse_iterator<int>(INT_DATA + 1, NULL, NULL));
-      TS_ASSERT_EQUALS(7, a - ring_reverse_iterator<int>(INT_DATA + 0, NULL, NULL));
-      TS_ASSERT_EQUALS(6, a - ring_reverse_iterator<int>(INT_DATA + 8, NULL, NULL));
-      TS_ASSERT_EQUALS(5, a - ring_reverse_iterator<int>(INT_DATA + 7, NULL, NULL));
-      TS_ASSERT_EQUALS(4, a - ring_reverse_iterator<int>(INT_DATA + 6, NULL, NULL));
-      TS_ASSERT_EQUALS(3, a - ring_reverse_iterator<int>(INT_DATA + 5, NULL, NULL));
-      TS_ASSERT_EQUALS(2, a - ring_reverse_iterator<int>(INT_DATA + 4, NULL, NULL));
-      TS_ASSERT_EQUALS(1, a - ring_reverse_iterator<int>(INT_DATA + 3, NULL, NULL));
-   }
 }
 ;

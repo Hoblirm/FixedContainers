@@ -2,9 +2,9 @@
 #define FLEX_ARRAY_H
 
 #include <algorithm>
+#include <iterator>
 
 #include <flex/allocator.h>
-#include <flex/array_iterator.h>
 
 namespace flex
 {
@@ -16,8 +16,8 @@ namespace flex
     typedef const T& const_reference;
     typedef T* iterator;
     typedef const T* const_iterator;
-    typedef array_reverse_iterator<T> reverse_iterator;
-    typedef array_const_reverse_iterator<T> const_reverse_iterator;
+    typedef std::reverse_iterator<T*> reverse_iterator;
+    typedef std::reverse_iterator<const T*> const_reverse_iterator;
 
     reference at(size_t n);
     const_reference at(size_t n) const;
@@ -120,14 +120,14 @@ namespace flex
     return &mAryPtr[mSize];
   }
 
-  template<class T> array_const_reverse_iterator<T> array_base<T>::crbegin() const
+  template<class T> typename array_base<T>::const_reverse_iterator array_base<T>::crbegin() const
   {
-    return array_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
+    return const_reverse_iterator(&mAryPtr[mSize]);
   }
 
-  template<class T> array_const_reverse_iterator<T> array_base<T>::crend() const
+  template<class T> typename array_base<T>::const_reverse_iterator array_base<T>::crend() const
   {
-    return array_const_reverse_iterator<T>(&mAryPtr[-1]);
+    return const_reverse_iterator(&mAryPtr[0]);
   }
 
   template<class T> T* array_base<T>::data()
@@ -195,24 +195,24 @@ namespace flex
     return mAryPtr[n];
   }
 
-  template<class T> array_reverse_iterator<T> array_base<T>::rbegin()
+  template<class T> typename array_base<T>::reverse_iterator array_base<T>::rbegin()
   {
-    return array_reverse_iterator<T>(&mAryPtr[mSize - 1]);
+    return reverse_iterator(&mAryPtr[mSize]);
   }
 
-  template<class T> array_const_reverse_iterator<T> array_base<T>::rbegin() const
+  template<class T> typename array_base<T>::const_reverse_iterator array_base<T>::rbegin() const
   {
-    return array_const_reverse_iterator<T>(&mAryPtr[mSize - 1]);
+    return const_reverse_iterator(&mAryPtr[mSize]);
   }
 
-  template<class T> array_reverse_iterator<T> array_base<T>::rend()
+  template<class T> typename array_base<T>::reverse_iterator array_base<T>::rend()
   {
-    return array_reverse_iterator<T>(&mAryPtr[-1]);
+    return reverse_iterator(&mAryPtr[0]);
   }
 
-  template<class T> array_const_reverse_iterator<T> array_base<T>::rend() const
+  template<class T> typename array_base<T>::const_reverse_iterator array_base<T>::rend() const
   {
-    return array_const_reverse_iterator<T>(&mAryPtr[-1]);
+    return const_reverse_iterator(&mAryPtr[0]);
   }
 
   template<class T> size_t array_base<T>::size() const
