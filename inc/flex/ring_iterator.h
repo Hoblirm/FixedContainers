@@ -26,7 +26,7 @@ namespace flex
 
     ring_iterator();
     ring_iterator(T* ptr, T* left_bound, T* right_bound);
-    ring_iterator(const ring_iterator<T, T*, T&>& x);
+    ring_iterator(const iterator& x);
 
     this_type& operator++();
     this_type operator++(int);
@@ -59,7 +59,7 @@ namespace flex
   }
 
   template<class T, class Pointer, class Reference>
-  inline ring_iterator<T, Pointer, Reference>::ring_iterator(const ring_iterator<T, T*, T&>& x) :
+  inline ring_iterator<T, Pointer, Reference>::ring_iterator(const iterator& x) :
       mPtr(x.mPtr), mLeftBound(x.mLeftBound), mRightBound(x.mRightBound)
   {
 
