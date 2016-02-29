@@ -1034,12 +1034,12 @@ public:
       for (unsigned s = 0; s < SIZE_COUNT; ++s)
       {
          a.assign(INT_DATA, INT_DATA + SIZES[s]);
-         b.clear();
 
-         a.swap(b);
+         ring_int tmp;
+         a.swap(tmp);
          TS_ASSERT_EQUALS(a.size(), 0);
-         TS_ASSERT_EQUALS(b.size(), SIZES[s]);
-         TS_ASSERT(b == ring_int(INT_DATA, INT_DATA + SIZES[s]));
+         TS_ASSERT_EQUALS(tmp.size(), SIZES[s]);
+         TS_ASSERT(tmp == ring_int(INT_DATA, INT_DATA + SIZES[s]));
       }
 
       /*

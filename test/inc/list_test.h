@@ -1049,12 +1049,11 @@ public:
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
       a.assign(INT_DATA, INT_DATA + SIZES[s]);
-      b.assign((int*) NULL, (int*) NULL);
-
-      a.swap(b);
+      list_int tmp;
+      a.swap(tmp);
       TS_ASSERT_EQUALS(a.size(), 0);
-      TS_ASSERT_EQUALS(b.size(), SIZES[s]);
-      TS_ASSERT(b == list_int(INT_DATA, INT_DATA + SIZES[s]));
+      TS_ASSERT_EQUALS(tmp.size(), SIZES[s]);
+      TS_ASSERT(tmp == list_int(INT_DATA, INT_DATA + SIZES[s]));
     }
 
     /*
