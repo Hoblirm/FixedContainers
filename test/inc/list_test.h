@@ -24,8 +24,8 @@ class list_test: public CxxTest::TestSuite
     int val;
   };
 
-  typedef flex::list<int, flex::allocator_debug<flex::list_node<int> > > list_int;
-  typedef flex::list<object, flex::allocator_debug<flex::list_node<object> > > list_obj;
+  typedef flex::list<int, flex::allocator_debug<flex::list<int>::node_type > > list_int;
+  typedef flex::list<object, flex::allocator_debug<flex::list<object>::node_type > > list_obj;
 
   const int INT_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
       -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
@@ -64,19 +64,19 @@ public:
 
   void setUp()
   {
-    flex::allocator_debug<flex::list_node<int> >::clear();
-    flex::allocator_debug<flex::list_node<object> >::clear();
+    flex::allocator_debug<flex::list<int>::node_type >::clear();
+    flex::allocator_debug<flex::list<object>::node_type >::clear();
   }
 
   void tearDown()
   {
     //This ensures that all objects constructed by the container have their destructors called.
-    TS_ASSERT(flex::allocator_debug<flex::list_node<int> >::mConstructedPointers.empty());
-    TS_ASSERT(flex::allocator_debug<flex::list_node<object> >::mConstructedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list<int>::node_type >::mConstructedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list<object>::node_type >::mConstructedPointers.empty());
 
     //This ensures that all memory allocated by the container is properly freed.
-    TS_ASSERT(flex::allocator_debug<flex::list_node<int> >::mAllocatedPointers.empty());
-    TS_ASSERT(flex::allocator_debug<flex::list_node<object> >::mAllocatedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list<int>::node_type >::mAllocatedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list<object>::node_type >::mAllocatedPointers.empty());
   }
 
   void test_default_constructor(void)

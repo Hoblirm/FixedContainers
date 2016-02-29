@@ -17,7 +17,7 @@ namespace flex
     T mValue;
   };
 
-  template<typename T, typename Pointer, typename Reference>
+  template<typename T, typename Pointer = T*, typename Reference = T&>
   struct list_iterator
   {
     typedef list_iterator<T, Pointer, Reference> this_type;

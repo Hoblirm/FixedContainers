@@ -38,9 +38,6 @@ namespace flex
     this_type& operator+=(difference_type n);
     this_type& operator-=(difference_type n);
 
-    bool operator==(const this_type& obj) const;
-    bool operator!=(const this_type& obj) const;
-
     reference operator*() const;
     pointer operator->() const;
     reference operator[](difference_type n) const;
@@ -63,18 +60,6 @@ namespace flex
       mPtr(x.mPtr), mLeftBound(x.mLeftBound), mRightBound(x.mRightBound)
   {
 
-  }
-
-  template<class T, class Pointer, class Reference>
-  inline bool ring_iterator<T, Pointer, Reference>::operator==(const this_type& obj) const
-  {
-    return (mPtr == obj.mPtr);
-  }
-
-  template<class T, class Pointer, class Reference>
-  inline bool ring_iterator<T, Pointer, Reference>::operator!=(const this_type& obj) const
-  {
-    return (mPtr != obj.mPtr);
   }
 
   template<class T, class Pointer, class Reference>
@@ -203,6 +188,18 @@ namespace flex
     return *tmp;
   }
 
+  // Extra template parameters were put in to support comparisons between const and non-const iterators.
+  template<typename T, typename PointerA, typename ReferenceA, typename PointerB, typename ReferenceB>
+  inline bool operator==(const ring_iterator<T, PointerA, ReferenceA>& a, const ring_iterator<T, PointerB, ReferenceB>& b)
+  {
+    return a.mPtr == b.mPtr;
+  }
+
+  template<typename T, typename PointerA, typename ReferenceA, typename PointerB, typename ReferenceB>
+  inline bool operator!=(const ring_iterator<T, PointerA, ReferenceA>& a, const ring_iterator<T, PointerB, ReferenceB>& b)
+  {
+    return a.mPtr != b.mPtr;
+  }
 }    //namespace flex
 
 #endif /* FLEX_RING_ITERATOR_H */
