@@ -64,19 +64,19 @@ public:
 
   void setUp()
   {
-    flex::allocator_debug<int>::clear();
-    flex::allocator_debug<object>::clear();
+    flex::allocator_debug<flex::list_node<int> >::clear();
+    flex::allocator_debug<flex::list_node<object> >::clear();
   }
 
   void tearDown()
   {
     //This ensures that all objects constructed by the container have their destructors called.
-    TS_ASSERT(flex::allocator_debug<int>::mConstructedPointers.empty());
-    TS_ASSERT(flex::allocator_debug<object>::mConstructedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list_node<int> >::mConstructedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list_node<object> >::mConstructedPointers.empty());
 
     //This ensures that all memory allocated by the container is properly freed.
-    TS_ASSERT(flex::allocator_debug<int>::mAllocatedPointers.empty());
-    TS_ASSERT(flex::allocator_debug<object>::mAllocatedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list_node<int> >::mAllocatedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list_node<object> >::mAllocatedPointers.empty());
   }
 
   void test_default_constructor(void)

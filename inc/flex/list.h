@@ -12,6 +12,8 @@ namespace flex
   {
   public:
     typedef T value_type;
+    typedef T* pointer;
+    typedef const T* const_pointer;
     typedef T& reference;
     typedef const T& const_reference;
     typedef list_node<T> node_type;
@@ -24,6 +26,7 @@ namespace flex
 
     list();
     explicit list(size_t size, const T& val = T());
+    //TODO: Need a constructor that supports list iterators.
     list(const T* first, const T* last);
     list(const list<T, Alloc> & obj);
     ~list();
@@ -31,7 +34,7 @@ namespace flex
     void assign(size_t size, const_reference val);
     //TODO: Get a template working with fixed_list assign() to use multiple iterators.
     void assign(const_iterator first, const_iterator last);
-    void assign(const T* first, const T* last);
+    void assign(const_pointer first, const_pointer last);
 
     reference back();
     const_reference back() const;
@@ -84,17 +87,19 @@ namespace flex
     list(size_t capacity, list_node<T>* contentPtr, list_node<T>** ptrPtr);
 
     base_node_type mAnchor;
+    bool mFixed;
     node_type* mDiscard;
     Alloc mAllocator;
 
   private:
     void push_back_no_throw(const_reference val);
-    node_type* DoAllocateAndConstruct();
-    void DoDestroyAndDeallocate(node_type* ptr);
+    node_type* DoRetrieveNode();
+    void DoDiscardNode(node_type* ptr);
+    void DoDestroyAndDeallocateNode(node_type* ptr);
   };
 
   template<class T, class Alloc> list<T, Alloc>::list() :
-      pool<list_node<T> >(0, NULL, NULL), mAnchor()
+      pool<list_node<T> >(0, NULL, NULL), mAnchor(), mFixed(false), mDiscard(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     Alloc a;
@@ -102,7 +107,7 @@ namespace flex
   }
 
   template<class T, class Alloc> list<T, Alloc>::list(size_t size, const T& val) :
-      pool<list_node<T> >(0, NULL, NULL), mAnchor()
+      pool<list_node<T> >(0, NULL, NULL), mAnchor(), mFixed(false), mDiscard(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     Alloc a;
@@ -111,7 +116,7 @@ namespace flex
   }
 
   template<class T, class Alloc> list<T, Alloc>::list(const T* first, const T* last) :
-      pool<list_node<T> >(0, NULL, NULL), mAnchor()
+      pool<list_node<T> >(0, NULL, NULL), mAnchor(), mFixed(false), mDiscard(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     Alloc a;
@@ -120,7 +125,7 @@ namespace flex
   }
 
   template<class T, class Alloc> list<T, Alloc>::list(const list<T, Alloc> & obj) :
-      pool<list_node<T> >(0, NULL, NULL), mAnchor()
+      pool<list_node<T> >(0, NULL, NULL), mAnchor(), mFixed(false), mDiscard(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     Alloc a;
@@ -130,9 +135,18 @@ namespace flex
 
   template<class T, class Alloc> list<T, Alloc>::~list()
   {
-    if (!fixed())
+    if (!mFixed)
     {
-      erase(begin(), end());
+      for (iterator it = begin(); it != end(); ++it)
+      {
+        DoDestroyAndDeallocateNode(it.mNode);
+      }
+      while (mDiscard != NULL)
+      {
+        node_type* next = static_cast<node_type*>(mDiscard->mNext);
+        DoDestroyAndDeallocateNode(mDiscard);
+        mDiscard = next;
+      }
     }
   }
 
@@ -291,13 +305,13 @@ namespace flex
       mAnchor.mPrev = lhs; //tail is being erased; must update
     }
 
-    if (fixed())
+    if (mFixed)
     {
       pool<list_node<T> >::deallocate(position.mNode);
     }
     else
     {
-      DoDestroyAndDeallocate(position.mNode);
+      DoDiscardNode(position.mNode);
       --this->mIndex;
     }
 
@@ -328,7 +342,7 @@ namespace flex
       mAnchor.mPrev = lhs; //tail is being erased; must update
     }
 
-    if (fixed())
+    if (mFixed)
     {
       for (iterator it = first; it != last; ++it)
       {
@@ -343,7 +357,7 @@ namespace flex
         //increment it first and destroy the previous value.
         node_type* ptr = it.mNode;
         ++it;
-        DoDestroyAndDeallocate(ptr);
+        DoDiscardNode(ptr);
         --this->mIndex;
       }
     }
@@ -353,7 +367,7 @@ namespace flex
 
   template<class T, class Alloc> bool list<T, Alloc>::fixed() const
   {
-    return (NULL != this->mContentList);
+    return mFixed;
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::allocator_type list<T, Alloc>::get_allocator() const
@@ -388,13 +402,13 @@ namespace flex
     {
       node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
       node_type* nd;
-      if (fixed())
+      if (mFixed)
       {
         nd = pool<list_node<T> >::allocate_no_throw();
       }
       else
       {
-        nd = DoAllocateAndConstruct();
+        nd = DoRetrieveNode();
         ++this->mIndex;
       }
 
@@ -441,13 +455,13 @@ namespace flex
       node_type* nd = NULL;
       for (size_t i = 0; i < n; ++i)
       {
-        if (fixed())
+        if (mFixed)
         {
           nd = pool<list_node<T> >::allocate_no_throw();
         }
         else
         {
-          nd = DoAllocateAndConstruct();
+          nd = DoRetrieveNode();
           ++this->mIndex;
         }
         nd->mValue = val;
@@ -489,13 +503,13 @@ namespace flex
 
       if (&mAnchor == lhs)
       {
-        if (fixed())
+        if (mFixed)
         {
           nd = pool<list_node<T> >::allocate();
         }
         else
         {
-          nd = DoAllocateAndConstruct();
+          nd = DoRetrieveNode();
           ++this->mIndex;
         }
         nd->mValue = *it;
@@ -506,13 +520,13 @@ namespace flex
 
       while (it != last)
       {
-        if (fixed())
+        if (mFixed)
         {
           nd = pool<list_node<T> >::allocate();
         }
         else
         {
-          nd = DoAllocateAndConstruct();
+          nd = DoRetrieveNode();
           ++this->mIndex;
         }
         nd->mValue = *it;
@@ -546,13 +560,13 @@ namespace flex
 
       if (&mAnchor == lhs)
       {
-        if (fixed())
+        if (mFixed)
         {
           nd = pool<list_node<T> >::allocate();
         }
         else
         {
-          nd = DoAllocateAndConstruct();
+          nd = DoRetrieveNode();
           ++this->mIndex;
         }
         nd->mValue = *it;
@@ -563,13 +577,13 @@ namespace flex
 
       while (it != last)
       {
-        if (fixed())
+        if (mFixed)
         {
           nd = pool<list_node<T> >::allocate();
         }
         else
         {
-          nd = DoAllocateAndConstruct();
+          nd = DoRetrieveNode();
           ++this->mIndex;
         }
         nd->mValue = *it;
@@ -606,13 +620,13 @@ namespace flex
     {
       mAnchor.mNext = &mAnchor;
     }
-    if (fixed())
+    if (mFixed)
     {
       pool<list_node<T> >::deallocate(static_cast<node_type*>(mAnchor.mPrev));
     }
     else
     {
-      DoDestroyAndDeallocate(static_cast<node_type*>(mAnchor.mPrev));
+      DoDiscardNode(static_cast<node_type*>(mAnchor.mPrev));
       --this->mIndex;
     }
     mAnchor.mPrev = prev;
@@ -629,13 +643,13 @@ namespace flex
     {
       mAnchor.mPrev = &mAnchor;
     }
-    if (fixed())
+    if (mFixed)
     {
       pool<list_node<T> >::deallocate(static_cast<node_type*>(mAnchor.mNext));
     }
     else
     {
-      DoDestroyAndDeallocate(static_cast<node_type*>(mAnchor.mNext));
+      DoDiscardNode(static_cast<node_type*>(mAnchor.mNext));
       --this->mIndex;
     }
     mAnchor.mNext = next;
@@ -654,7 +668,7 @@ namespace flex
   template<class T, class Alloc> void list<T, Alloc>::push_back_no_throw(const T& val)
   {
     node_type* nd;
-    if (fixed())
+    if (mFixed)
     {
       nd = pool<list_node<T> >::allocate_no_throw();
     }
@@ -663,7 +677,7 @@ namespace flex
       nd = mAllocator.allocate(1);
       mAllocator.construct(nd, list_node<T>());
 
-      //nd = DoAllocateAndConstruct();
+      //nd = DoRetrieveNode();
       ++this->mIndex;
     }
     nd->mPrev = mAnchor.mPrev;
@@ -688,13 +702,13 @@ namespace flex
     }
 
     node_type* nd;
-    if (fixed())
+    if (mFixed)
     {
       nd = pool<list_node<T> >::allocate_no_throw();
     }
     else
     {
-      nd = DoAllocateAndConstruct();
+      nd = DoRetrieveNode();
       ++this->mIndex;
     }
     nd->mNext = mAnchor.mNext;
@@ -802,7 +816,7 @@ namespace flex
   }
 
   template<class T, class Alloc> list<T, Alloc>::list(size_t capacity, list_node<T>* contentPtr, list_node<T>** ptrPtr) :
-      pool<list_node<T> >(capacity, contentPtr, ptrPtr), mAnchor()
+      pool<list_node<T> >(capacity, contentPtr, ptrPtr), mAnchor(), mDiscard(NULL), mFixed(true)
   {
     for (size_t i = 0; i < this->mCapacity; i++)
     {
@@ -810,14 +824,37 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> list_node<T>* list<T, Alloc>::DoAllocateAndConstruct()
+  template<class T, class Alloc> list_node<T>* list<T, Alloc>::DoRetrieveNode()
   {
-    list_node<T>* ptr = mAllocator.allocate(1);
-    mAllocator.construct(ptr, list_node<T>());
+    node_type* ptr;
+    if (NULL == mDiscard)
+    {
+      if (mFixed)
+      {
+        throw std::runtime_error("flex::fixed_list - exceeded capacity");
+      }
+      else
+      {
+        ptr = mAllocator.allocate(1);
+        mAllocator.construct(ptr, list_node<T>());
+      }
+    }
+    else
+    {
+      ptr = mDiscard;
+      mDiscard = static_cast<node_type*>(mDiscard->mNext);
+    }
     return ptr;
   }
 
-  template<class T, class Alloc> void list<T, Alloc>::DoDestroyAndDeallocate(list_node<T>* ptr)
+  template<class T, class Alloc>
+  inline void list<T, Alloc>::DoDiscardNode(list_node<T>* ptr)
+  {
+    ptr->mNext = mDiscard;
+    mDiscard = ptr;
+  }
+
+  template<class T, class Alloc> void list<T, Alloc>::DoDestroyAndDeallocateNode(list_node<T>* ptr)
   {
     mAllocator.destroy(ptr);
     mAllocator.deallocate(ptr, 1);
