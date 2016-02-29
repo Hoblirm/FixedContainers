@@ -278,62 +278,37 @@ namespace flex
    template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::erase(
    typename list<T, Alloc>::iterator position)
    {
+      //Reassign the pointers of nodes (position--) and (position++) to point to each other.
+      position.mNode->mPrev->mNext = position.mNode->mNext;
+      position.mNode->mNext->mPrev = position.mNode->mPrev;
 
-      node_type* lhs = static_cast<node_type*> (position.mNode->mPrev);
-      node_type* rhs = static_cast<node_type*> (position.mNode->mNext);
-
-      if (&mAnchor != lhs)
-      {
-         lhs->mNext = rhs;
-      }
-      else
-      {
-         mAnchor.mNext = rhs; //head is being erased; must update
-      }
-
-      if (&mAnchor != rhs)
-      {
-         rhs->mPrev = lhs;
-      }
-      else
-      {
-         mAnchor.mPrev = lhs; //tail is being erased; must update
-      }
-
-      DoPushToNodePool(position.mNode);
+      /*
+       *The list no longer points to position.  It is now safe to erase it.
+       */
+      //Pushing the node to the pool invalidates the iterator.  Therefore, we must store
+      //a temp pointer and increment the iterator BEFORE adding the node to the pool.
+      node_type* ptr = position.mNode;
+      ++position;
+      
+      DoPushToNodePool(ptr);
       --mSize;
 
-      return iterator(rhs);
+      return position;
    }
 
    template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::erase(
    typename list<T, Alloc>::iterator first, typename list<T, Alloc>::iterator last)
    {
-      node_type* lhs = static_cast<node_type*> (first.mNode->mPrev);
-      node_type* rhs = last.mNode;
+      //The erased range is [first,last).  Reassign the pointers of nodes (first-1) and last 
+      //to point to each other.
+      first.mNode->mPrev->mNext = last.mNode;
+      last.mNode->mPrev = first.mNode->mPrev;
 
-      if (&mAnchor != lhs)
-      {
-         lhs->mNext = rhs;
-      }
-      else
-      {
-         mAnchor.mNext = rhs; //head is being erased; must update
-      }
-
-      if (&mAnchor != rhs)
-      {
-         rhs->mPrev = lhs;
-      }
-      else
-      {
-         mAnchor.mPrev = lhs; //tail is being erased; must update
-      }
-
+      //The list no longer points to the range, now it is safe to erase it.
       for (iterator it = first; it != last;)
       {
-         //Since the iterator become invalidated after the destroy, we want to
-         //increment it first and destroy the previous value.
+         //Pushing the node to the pool invalidates the iterator.  Therefore, we must store
+         //a temp pointer and increment the iterator BEFORE adding the node to the pool.
          node_type* ptr = it.mNode;
          ++it;
          DoPushToNodePool(ptr);
