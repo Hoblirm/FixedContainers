@@ -99,7 +99,7 @@ public:
    void test_equality_operator(void)
    {
       list_iterator<int> a(&INT_NODES[1]);
-      list_iterator<int> b(&INT_NODES[1]);
+      list_iterator<int, const int*, const int&> b(a);
       TS_ASSERT(a == b);
       ++a;
       TS_ASSERT(a != b);
