@@ -101,34 +101,39 @@ namespace flex
       void DoDestroyAndDeallocateNode(node_type* ptr);
    };
 
-   template<class T, class Alloc> list<T, Alloc>::list() :
+   template<class T, class Alloc>
+   inline list<T, Alloc>::list() :
    mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
    {
       mAnchor.mNext = mAnchor.mPrev = &mAnchor;
    }
 
-   template<class T, class Alloc> list<T, Alloc>::list(size_t size, const T& val) :
+   template<class T, class Alloc>
+   inline list<T, Alloc>::list(size_t size, const T& val) :
    mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
    {
       mAnchor.mNext = mAnchor.mPrev = &mAnchor;
       list<T, Alloc>::assign(size, val);
    }
 
-   template<class T, class Alloc> list<T, Alloc>::list(const T* first, const T* last) :
+   template<class T, class Alloc>
+   inline list<T, Alloc>::list(const T* first, const T* last) :
    mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
    {
       mAnchor.mNext = mAnchor.mPrev = &mAnchor;
       list<T, Alloc>::assign(first, last);
    }
 
-   template<class T, class Alloc> list<T, Alloc>::list(const list<T, Alloc> & obj) :
+   template<class T, class Alloc>
+   inline list<T, Alloc>::list(const list<T, Alloc> & obj) :
    mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
    {
       mAnchor.mNext = mAnchor.mPrev = &mAnchor;
       list<T, Alloc>::assign(obj.cbegin(), obj.cend());
    }
 
-   template<class T, class Alloc> list<T, Alloc>::~list()
+   template<class T, class Alloc>
+   inline list<T, Alloc>::~list()
    {
       if (!mFixed)
       {
@@ -145,7 +150,8 @@ namespace flex
       }
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::assign(size_t rsize, list<T, Alloc>::const_reference val)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::assign(size_t rsize, const_reference val)
    {
       if (rsize > max_size())
       {
@@ -178,8 +184,8 @@ namespace flex
       }
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::assign(list<T, Alloc>::const_iterator first,
-   list::const_iterator last)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::assign(const_iterator first, const_iterator last)
    {
       typename list<T, Alloc>::iterator lit = begin();
       typename list<T, Alloc>::const_iterator rit = first;
@@ -199,7 +205,8 @@ namespace flex
       }
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::assign(const T* first, const T* last)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::assign(const T* first, const T* last)
    {
       typename list<T, Alloc>::iterator lit = begin();
       const T* rit = first;
@@ -219,85 +226,94 @@ namespace flex
       }
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::reference list<T, Alloc>::back()
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::reference list<T, Alloc>::back()
    {
       return static_cast<node_type*> (mAnchor.mPrev)->mValue;
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::const_reference list<T, Alloc>::back() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::const_reference list<T, Alloc>::back() const
    {
       return static_cast<node_type*> (mAnchor.mPrev)->mValue;
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::begin()
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::iterator list<T, Alloc>::begin()
    {
       return iterator(mAnchor.mNext);
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::const_iterator list<T, Alloc>::begin() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::const_iterator list<T, Alloc>::begin() const
    {
 
       return typename list<T, Alloc>::const_iterator(mAnchor.mNext);
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::const_iterator list<T, Alloc>::cbegin() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::const_iterator list<T, Alloc>::cbegin() const
    {
       return typename list<T, Alloc>::const_iterator(mAnchor.mNext);
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::const_iterator list<T, Alloc>::cend() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::const_iterator list<T, Alloc>::cend() const
    {
       return const_iterator(&mAnchor);
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::crbegin() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::crbegin() const
    {
       return const_reverse_iterator(end());
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::crend() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::crend() const
    {
       return const_reverse_iterator(begin());
    }
 
-   template<class T, class Alloc> bool list<T, Alloc>::empty() const
+   template<class T, class Alloc>
+   inline bool list<T, Alloc>::empty() const
    {
       return (0 == size());
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::end()
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::iterator list<T, Alloc>::end()
    {
       return iterator(&mAnchor);
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::const_iterator list<T, Alloc>::end() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::const_iterator list<T, Alloc>::end() const
    {
       return const_iterator(&mAnchor);
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::erase(
-   typename list<T, Alloc>::iterator position)
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::iterator list<T, Alloc>::erase(iterator position)
    {
       //Reassign the pointers of nodes (position--) and (position++) to point to each other.
       position.mNode->mPrev->mNext = position.mNode->mNext;
       position.mNode->mNext->mPrev = position.mNode->mPrev;
 
-      /*
-       *The list no longer points to position.  It is now safe to erase it.
-       */
+      //The list no longer points to position.  It is now safe to erase it.
       //Pushing the node to the pool invalidates the iterator.  Therefore, we must store
       //a temp pointer and increment the iterator BEFORE adding the node to the pool.
       node_type* ptr = position.mNode;
       ++position;
-      
+
       DoPushToNodePool(ptr);
       --mSize;
 
       return position;
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::erase(
-   typename list<T, Alloc>::iterator first, typename list<T, Alloc>::iterator last)
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::iterator list<T, Alloc>::erase(iterator first, iterator last)
    {
       //The erased range is [first,last).  Reassign the pointers of nodes (first-1) and last 
       //to point to each other.
@@ -318,28 +334,32 @@ namespace flex
       return last;
    }
 
-   template<class T, class Alloc> bool list<T, Alloc>::fixed() const
+   template<class T, class Alloc>
+   inline bool list<T, Alloc>::fixed() const
    {
       return mFixed;
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::allocator_type list<T, Alloc>::get_allocator() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::allocator_type list<T, Alloc>::get_allocator() const
    {
       return mAllocator;
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::reference list<T, Alloc>::front()
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::reference list<T, Alloc>::front()
    {
       return static_cast<node_type*> (mAnchor.mNext)->mValue;
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::const_reference list<T, Alloc>::front() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::const_reference list<T, Alloc>::front() const
    {
       return static_cast<node_type*> (mAnchor.mNext)->mValue;
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::insert(
-   typename list<T, Alloc>::iterator position, typename list<T, Alloc>::const_reference val)
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::iterator list<T, Alloc>::insert(iterator position, const_reference val)
    {
       if (size() == max_size())
       {
@@ -377,8 +397,8 @@ namespace flex
       return iterator(position.mNode->mPrev);
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::insert(list<T, Alloc>::iterator position, size_t n,
-   list<T, Alloc>::const_reference val)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::insert(iterator position, size_t n, const_reference val)
    {
       size_t rsize = size() + n;
       if (rsize > max_size())
@@ -423,8 +443,8 @@ namespace flex
       }
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::insert(list<T, Alloc>::iterator position,
-   list<T, Alloc>::const_iterator first, list<T, Alloc>::const_iterator last)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::insert(iterator position, const_iterator first, const_iterator last)
    {
       if (&mAnchor == position.mNode)
       {
@@ -468,8 +488,8 @@ namespace flex
       }
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::insert(list<T, Alloc>::iterator position, const T* first,
-   const T* last)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::insert(iterator position, const T* first, const T* last)
    {
       if (&mAnchor == position.mNode)
       {
@@ -513,18 +533,21 @@ namespace flex
       }
    }
 
-   template<class T, class Alloc> size_t list<T, Alloc>::max_size() const
+   template<class T, class Alloc>
+   inline size_t list<T, Alloc>::max_size() const
    {
       return mAllocator.max_size();
    }
 
-   template<class T, class Alloc> list<T, Alloc>& list<T, Alloc>::operator=(const list<T, Alloc>& obj)
+   template<class T, class Alloc>
+   inline list<T, Alloc>& list<T, Alloc>::operator=(const list<T, Alloc>& obj)
    {
       assign(obj.begin(), obj.end());
       return *this;
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::pop_back()
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::pop_back()
    {
       node_type* prev = static_cast<node_type*> (mAnchor.mPrev->mPrev);
       if (&mAnchor != prev)
@@ -542,7 +565,8 @@ namespace flex
       mAnchor.mPrev = prev;
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::pop_front()
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::pop_front()
    {
       node_type* next = static_cast<node_type*> (mAnchor.mNext->mNext);
       if (&mAnchor != next)
@@ -560,7 +584,8 @@ namespace flex
       mAnchor.mNext = next;
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::push_back(const T& val)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::push_back(const T& val)
    {
       if (size() == max_size())
       {
@@ -570,7 +595,8 @@ namespace flex
       push_back_no_throw(val);
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::push_back_no_throw(const T& val)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::push_back_no_throw(const T& val)
    {
       node_type* nd = DoRetrieveNode();
       ++mSize;
@@ -589,7 +615,8 @@ namespace flex
       mAnchor.mPrev = nd;
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::push_front(const T& val)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::push_front(const T& val)
    {
       if (size() == max_size())
       {
@@ -613,32 +640,38 @@ namespace flex
       mAnchor.mNext = nd;
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::reverse_iterator list<T, Alloc>::rbegin()
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::reverse_iterator list<T, Alloc>::rbegin()
    {
       return reverse_iterator(end());
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::rbegin() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::rbegin() const
    {
       return const_reverse_iterator(end());
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::reverse_iterator list<T, Alloc>::rend()
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::reverse_iterator list<T, Alloc>::rend()
    {
       return reverse_iterator(begin());
    }
 
-   template<class T, class Alloc> typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::rend() const
+   template<class T, class Alloc>
+   inline typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::rend() const
    {
       return const_reverse_iterator(begin());
    }
 
-   template<class T, class Alloc> size_t list<T, Alloc>::size() const
+   template<class T, class Alloc>
+   inline size_t list<T, Alloc>::size() const
    {
       return mSize;
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::swap(list<T, Alloc>& obj)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::swap(list<T, Alloc>& obj)
    {
       if ((!mFixed) && (!obj.fixed()))
       {
@@ -709,13 +742,15 @@ namespace flex
       }
    }
 
-   template<class T, class Alloc> list<T, Alloc>::list(size_t capacity, list_node<T>* contentPtr) :
+   template<class T, class Alloc>
+   inline list<T, Alloc>::list(size_t capacity, list_node<T>* contentPtr) :
    mAnchor(), mNodePool(NULL), mFixed(true)
    {
 
    }
 
-   template<class T, class Alloc> list_node<T>* list<T, Alloc>::DoRetrieveNode()
+   template<class T, class Alloc>
+   inline list_node<T>* list<T, Alloc>::DoRetrieveNode()
    {
       node_type* ptr;
       if (NULL == mNodePool)
@@ -745,7 +780,8 @@ namespace flex
       mNodePool = ptr;
    }
 
-   template<class T, class Alloc> void list<T, Alloc>::DoDestroyAndDeallocateNode(list_node<T>* ptr)
+   template<class T, class Alloc>
+   inline void list<T, Alloc>::DoDestroyAndDeallocateNode(list_node<T>* ptr)
    {
       mAllocator.destroy(ptr);
       mAllocator.deallocate(ptr, 1);
