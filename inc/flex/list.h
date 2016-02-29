@@ -14,11 +14,12 @@ namespace flex
     typedef T value_type;
     typedef T& reference;
     typedef const T& const_reference;
-    typedef list_node<T> node;
-    typedef list_iterator<T> iterator;
-    typedef list_const_iterator<T> const_iterator;
-    typedef list_reverse_iterator<T> reverse_iterator;
-    typedef list_const_reverse_iterator<T> const_reverse_iterator;
+    typedef list_node<T> node_type;
+    typedef list_node_base base_node_type;
+    typedef list_iterator<T, T*, T&> iterator;
+    typedef list_iterator<T, const T*, const T&> const_iterator;
+    typedef std::reverse_iterator<iterator> reverse_iterator;
+    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
     typedef Alloc allocator_type;
 
     list();
@@ -82,42 +83,46 @@ namespace flex
   protected:
     list(size_t capacity, list_node<T>* contentPtr, list_node<T>** ptrPtr);
 
-    node* mHead;
-    node* mTail;
+    base_node_type mAnchor;
+    node_type* mDiscard;
     Alloc mAllocator;
 
   private:
     void push_back_no_throw(const_reference val);
-    node* DoAllocateAndConstruct();
-    void DoDestroyAndDeallocate(node* ptr);
+    node_type* DoAllocateAndConstruct();
+    void DoDestroyAndDeallocate(node_type* ptr);
   };
 
   template<class T, class Alloc> list<T, Alloc>::list() :
-      pool<list_node<T> >(0, NULL, NULL), mHead(NULL), mTail(NULL)
+      pool<list_node<T> >(0, NULL, NULL), mAnchor()
   {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     Alloc a;
     this->mCapacity = a.max_size();
   }
 
   template<class T, class Alloc> list<T, Alloc>::list(size_t size, const T& val) :
-      pool<list_node<T> >(0, NULL, NULL), mHead(NULL), mTail(NULL)
+      pool<list_node<T> >(0, NULL, NULL), mAnchor()
   {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     Alloc a;
     this->mCapacity = a.max_size();
     list<T, Alloc>::assign(size, val);
   }
 
   template<class T, class Alloc> list<T, Alloc>::list(const T* first, const T* last) :
-      pool<list_node<T> >(0, NULL, NULL), mHead(NULL), mTail(NULL)
+      pool<list_node<T> >(0, NULL, NULL), mAnchor()
   {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     Alloc a;
     this->mCapacity = a.max_size();
     list<T, Alloc>::assign(first, last);
   }
 
   template<class T, class Alloc> list<T, Alloc>::list(const list<T, Alloc> & obj) :
-      pool<list_node<T> >(0, NULL, NULL), mHead(NULL), mTail(NULL)
+      pool<list_node<T> >(0, NULL, NULL), mAnchor()
   {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     Alloc a;
     this->mCapacity = a.max_size();
     list<T, Alloc>::assign(obj.cbegin(), obj.cend());
@@ -207,43 +212,43 @@ namespace flex
 
   template<class T, class Alloc> typename list<T, Alloc>::reference list<T, Alloc>::back()
   {
-    return mTail->val;
+    return static_cast<node_type*>(mAnchor.mPrev)->mValue;
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::const_reference list<T, Alloc>::back() const
   {
-    return mTail->val;
+    return static_cast<node_type*>(mAnchor.mPrev)->mValue;
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::begin()
   {
-    return typename list<T, Alloc>::iterator(mHead);
+    return iterator(mAnchor.mNext);
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::const_iterator list<T, Alloc>::begin() const
   {
 
-    return typename list<T, Alloc>::const_iterator(mHead);
+    return typename list<T, Alloc>::const_iterator(mAnchor.mNext);
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::const_iterator list<T, Alloc>::cbegin() const
   {
-    return typename list<T, Alloc>::const_iterator(mHead);
+    return typename list<T, Alloc>::const_iterator(mAnchor.mNext);
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::const_iterator list<T, Alloc>::cend() const
   {
-    return typename list<T, Alloc>::const_iterator(NULL);
+    return const_iterator(&mAnchor);
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::crbegin() const
   {
-    return list_const_reverse_iterator<T>(mTail);
+    return const_reverse_iterator(end());
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::crend() const
   {
-    return list_const_reverse_iterator<T>(NULL);
+    return const_reverse_iterator(begin());
   }
 
   template<class T, class Alloc> bool list<T, Alloc>::empty() const
@@ -253,52 +258,46 @@ namespace flex
 
   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::end()
   {
-    return typename list<T, Alloc>::iterator(NULL);
+    return iterator(&mAnchor);
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::const_iterator list<T, Alloc>::end() const
   {
-    return typename list<T, Alloc>::const_iterator(NULL);
+    return const_iterator(&mAnchor);
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::erase(
       typename list<T, Alloc>::iterator position)
   {
-    //TODO: This check could be removed once an anchor node is implemented.... as begin() returns
-    //NULL we need to check for this case.
-    if (position == NULL)
-    {
-      return NULL;
-    }
 
-    node* lhs = position.mNodePtr->prev;
-    node* rhs = position.mNodePtr->next;
+    node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
+    node_type* rhs = static_cast<node_type*>(position.mNode->mNext);
 
-    if (NULL != lhs)
+    if (&mAnchor != lhs)
     {
-      lhs->next = rhs;
+      lhs->mNext = rhs;
     }
     else
     {
-      mHead = rhs; //head is being erased; must update
+      mAnchor.mNext = rhs; //head is being erased; must update
     }
 
-    if (NULL != rhs)
+    if (&mAnchor != rhs)
     {
-      rhs->prev = lhs;
+      rhs->mPrev = lhs;
     }
     else
     {
-      mTail = lhs; //tail is being erased; must update
+      mAnchor.mPrev = lhs; //tail is being erased; must update
     }
 
     if (fixed())
     {
-      pool<list_node<T> >::deallocate(position.mNodePtr);
+      pool<list_node<T> >::deallocate(position.mNode);
     }
     else
     {
-      DoDestroyAndDeallocate(position.mNodePtr);
+      DoDestroyAndDeallocate(position.mNode);
       --this->mIndex;
     }
 
@@ -308,48 +307,41 @@ namespace flex
   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::erase(
       typename list<T, Alloc>::iterator first, typename list<T, Alloc>::iterator last)
   {
-    //TODO: This check could be removed once an anchor node is implemented... as begin() returns
-    //NULL we need to check for this case.
-    if (first == NULL)
-    {
-      return NULL;
-    }
+    node_type* lhs = static_cast<node_type*>(first.mNode->mPrev);
+    node_type* rhs = last.mNode;
 
-    node* lhs = first.mNodePtr->prev;
-    node* rhs = last.mNodePtr;
-
-    if (NULL != lhs)
+    if (&mAnchor != lhs)
     {
-      lhs->next = rhs;
+      lhs->mNext = rhs;
     }
     else
     {
-      mHead = rhs; //head is being erased; must update
+      mAnchor.mNext = rhs; //head is being erased; must update
     }
 
-    if (NULL != rhs)
+    if (&mAnchor != rhs)
     {
-      rhs->prev = lhs;
+      rhs->mPrev = lhs;
     }
     else
     {
-      mTail = lhs; //tail is being erased; must update
+      mAnchor.mPrev = lhs; //tail is being erased; must update
     }
 
     if (fixed())
     {
       for (iterator it = first; it != last; ++it)
       {
-        pool<list_node<T> >::deallocate(it.mNodePtr);
+        pool<list_node<T> >::deallocate(it.mNode);
       }
     }
     else
     {
-      for (iterator it = first; it != last; )
+      for (iterator it = first; it != last;)
       {
         //Since the iterator become invalidated after the destroy, we want to
         //increment it first and destroy the previous value.
-        node* ptr = it.mNodePtr;
+        node_type* ptr = it.mNode;
         ++it;
         DoDestroyAndDeallocate(ptr);
         --this->mIndex;
@@ -371,12 +363,12 @@ namespace flex
 
   template<class T, class Alloc> typename list<T, Alloc>::reference list<T, Alloc>::front()
   {
-    return mHead->val;
+    return static_cast<node_type*>(mAnchor.mNext)->mValue;
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::const_reference list<T, Alloc>::front() const
   {
-    return mHead->val;
+    return static_cast<node_type*>(mAnchor.mNext)->mValue;
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::insert(
@@ -387,15 +379,15 @@ namespace flex
       throw std::runtime_error("fixed_list: insert() called when size was at capacity");
     }
 
-    if (NULL == position.mNodePtr)
+    if (&mAnchor == position.mNode)
     {
       //List is empty, or we are inserting at the end of the list.
       push_back_no_throw(val);
     }
     else
     {
-      node* lhs = position.mNodePtr->prev;
-      node* nd;
+      node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
+      node_type* nd;
       if (fixed())
       {
         nd = pool<list_node<T> >::allocate_no_throw();
@@ -406,25 +398,24 @@ namespace flex
         ++this->mIndex;
       }
 
-      nd->val = val;
-      nd->next = position.mNodePtr;
-      position.mNodePtr->prev = nd;
+      nd->mValue = val;
+      nd->mNext = position.mNode;
+      position.mNode->mPrev = nd;
 
-      if (NULL != lhs)
+      if (&mAnchor != lhs)
       {
-        nd->prev = lhs;
-        lhs->next = nd;
+        nd->mPrev = lhs;
+        lhs->mNext = nd;
       }
       else
       {
-        nd->prev = NULL;
-        mHead = nd;
+        nd->mPrev = &mAnchor;
+        mAnchor.mNext = nd;
         //list cannot be empty due to position NULL check; therefore tail doesn't need to be examined
       }
-      position.mNodePtr = nd;
     }
 
-    return position;
+    return iterator(position.mNode->mPrev);
   }
 
   template<class T, class Alloc> void list<T, Alloc>::insert(list<T, Alloc>::iterator position, size_t n,
@@ -436,7 +427,7 @@ namespace flex
       throw std::runtime_error("fixed_list: insert() fill range exceeds capacity");
     }
 
-    if (NULL == position.mNodePtr)
+    if (&mAnchor == position.mNode)
     {
       //List is empty, or we are inserting at the end of the list.
       while (size() < rsize)
@@ -446,8 +437,8 @@ namespace flex
     }
     else
     {
-      node* lhs = position.mNodePtr->prev;
-      node* nd = NULL;
+      node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
+      node_type* nd = NULL;
       for (size_t i = 0; i < n; ++i)
       {
         if (fixed())
@@ -459,21 +450,21 @@ namespace flex
           nd = DoAllocateAndConstruct();
           ++this->mIndex;
         }
-        nd->val = val;
-        nd->next = position.mNodePtr;
-        position.mNodePtr->prev = nd;
-        position.mNodePtr = nd;
+        nd->mValue = val;
+        nd->mNext = position.mNode;
+        position.mNode->mPrev = nd;
+        position.mNode = nd;
       }
 
-      if (NULL != lhs)
+      if (&mAnchor != lhs)
       {
-        nd->prev = lhs;
-        lhs->next = nd;
+        nd->mPrev = lhs;
+        lhs->mNext = nd;
       }
       else
       {
-        nd->prev = NULL;
-        mHead = nd;
+        nd->mPrev = &mAnchor;
+        mAnchor.mNext = nd;
         //list cannot be empty due to position NULL check; therefore tail doesn't need to be examined
       }
     }
@@ -482,7 +473,7 @@ namespace flex
   template<class T, class Alloc> void list<T, Alloc>::insert(list<T, Alloc>::iterator position,
       list<T, Alloc>::const_iterator first, list<T, Alloc>::const_iterator last)
   {
-    if (NULL == position.mNodePtr)
+    if (&mAnchor == position.mNode)
     {
       //List is empty, or we are inserting at the end of the list.
       for (const_iterator it = first; it != last; ++it)
@@ -492,11 +483,11 @@ namespace flex
     }
     else
     {
-      node* lhs = position.mNodePtr->prev;
-      node* nd = NULL;
+      node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
+      node_type* nd = NULL;
       const_iterator it = first;
 
-      if (NULL == lhs)
+      if (&mAnchor == lhs)
       {
         if (fixed())
         {
@@ -507,9 +498,9 @@ namespace flex
           nd = DoAllocateAndConstruct();
           ++this->mIndex;
         }
-        nd->val = *it;
-        nd->prev = NULL;
-        mHead = lhs = nd;
+        nd->mValue = *it;
+        nd->mPrev = &mAnchor;
+        mAnchor.mNext = lhs = nd;
         ++it;
       }
 
@@ -524,22 +515,22 @@ namespace flex
           nd = DoAllocateAndConstruct();
           ++this->mIndex;
         }
-        nd->val = *it;
-        nd->prev = lhs;
-        lhs->next = nd;
+        nd->mValue = *it;
+        nd->mPrev = lhs;
+        lhs->mNext = nd;
         lhs = nd;
         ++it;
       }
 
-      nd->next = position.mNodePtr;
-      position.mNodePtr->prev = nd;
+      nd->mNext = position.mNode;
+      position.mNode->mPrev = nd;
     }
   }
 
   template<class T, class Alloc> void list<T, Alloc>::insert(list<T, Alloc>::iterator position, const T* first,
       const T* last)
   {
-    if (NULL == position.mNodePtr)
+    if (&mAnchor == position.mNode)
     {
       //List is empty, or we are inserting at the end of the list.
       for (const T* it = first; it != last; ++it)
@@ -549,11 +540,11 @@ namespace flex
     }
     else
     {
-      node* lhs = position.mNodePtr->prev;
-      node* nd = NULL;
+      node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
+      node_type* nd = NULL;
       const T* it = first;
 
-      if (NULL == lhs)
+      if (&mAnchor == lhs)
       {
         if (fixed())
         {
@@ -564,9 +555,9 @@ namespace flex
           nd = DoAllocateAndConstruct();
           ++this->mIndex;
         }
-        nd->val = *it;
-        nd->prev = NULL;
-        mHead = lhs = nd;
+        nd->mValue = *it;
+        nd->mPrev = &mAnchor;
+        mAnchor.mNext = lhs = nd;
         ++it;
       }
 
@@ -581,15 +572,15 @@ namespace flex
           nd = DoAllocateAndConstruct();
           ++this->mIndex;
         }
-        nd->val = *it;
-        nd->prev = lhs;
-        lhs->next = nd;
+        nd->mValue = *it;
+        nd->mPrev = lhs;
+        lhs->mNext = nd;
         lhs = nd;
         ++it;
       }
 
-      nd->next = position.mNodePtr;
-      position.mNodePtr->prev = nd;
+      nd->mNext = position.mNode;
+      position.mNode->mPrev = nd;
     }
   }
 
@@ -606,48 +597,48 @@ namespace flex
 
   template<class T, class Alloc> void list<T, Alloc>::pop_back()
   {
-    node* prev = mTail->prev;
-    if (NULL != prev)
+    node_type* prev = static_cast<node_type*>(mAnchor.mPrev->mPrev);
+    if (&mAnchor != prev)
     {
-      prev->next = NULL;
+      prev->mNext = &mAnchor;
     }
     else
     {
-      mHead = NULL;
+      mAnchor.mNext = &mAnchor;
     }
     if (fixed())
     {
-      pool<list_node<T> >::deallocate(mTail);
+      pool<list_node<T> >::deallocate(static_cast<node_type*>(mAnchor.mPrev));
     }
     else
     {
-      DoDestroyAndDeallocate(mTail);
+      DoDestroyAndDeallocate(static_cast<node_type*>(mAnchor.mPrev));
       --this->mIndex;
     }
-    mTail = prev;
+    mAnchor.mPrev = prev;
   }
 
   template<class T, class Alloc> void list<T, Alloc>::pop_front()
   {
-    node* next = mHead->next;
-    if (NULL != next)
+    node_type* next = static_cast<node_type*>(mAnchor.mNext->mNext);
+    if (&mAnchor != next)
     {
-      next->prev = NULL;
+      next->mPrev = &mAnchor;
     }
     else
     {
-      mTail = NULL;
+      mAnchor.mPrev = &mAnchor;
     }
     if (fixed())
     {
-      pool<list_node<T> >::deallocate(mHead);
+      pool<list_node<T> >::deallocate(static_cast<node_type*>(mAnchor.mNext));
     }
     else
     {
-      DoDestroyAndDeallocate(mHead);
+      DoDestroyAndDeallocate(static_cast<node_type*>(mAnchor.mNext));
       --this->mIndex;
     }
-    mHead = next;
+    mAnchor.mNext = next;
   }
 
   template<class T, class Alloc> void list<T, Alloc>::push_back(const T& val)
@@ -662,28 +653,31 @@ namespace flex
 
   template<class T, class Alloc> void list<T, Alloc>::push_back_no_throw(const T& val)
   {
-    node* nd;
+    node_type* nd;
     if (fixed())
     {
       nd = pool<list_node<T> >::allocate_no_throw();
     }
     else
     {
-      nd = DoAllocateAndConstruct();
+      nd = mAllocator.allocate(1);
+      mAllocator.construct(nd, list_node<T>());
+
+      //nd = DoAllocateAndConstruct();
       ++this->mIndex;
     }
-    nd->prev = mTail;
-    nd->val = val;
-    nd->next = NULL;
-    if (NULL != mTail)
+    nd->mPrev = mAnchor.mPrev;
+    nd->mValue = val;
+    nd->mNext = &mAnchor;
+    if (&mAnchor != mAnchor.mPrev)
     {
-      mTail->next = nd;
+      mAnchor.mPrev->mNext = nd;
     }
     else
     {
-      mHead = nd;
+      mAnchor.mNext = nd;
     }
-    mTail = nd;
+    mAnchor.mPrev = nd;
   }
 
   template<class T, class Alloc> void list<T, Alloc>::push_front(const T& val)
@@ -693,7 +687,7 @@ namespace flex
       throw std::runtime_error("fixed_list: push_front() caused size to exceed capacity");
     }
 
-    node* nd;
+    node_type* nd;
     if (fixed())
     {
       nd = pool<list_node<T> >::allocate_no_throw();
@@ -703,38 +697,38 @@ namespace flex
       nd = DoAllocateAndConstruct();
       ++this->mIndex;
     }
-    nd->next = mHead;
-    nd->val = val;
-    nd->prev = NULL;
-    if (NULL != mHead)
+    nd->mNext = mAnchor.mNext;
+    nd->mValue = val;
+    nd->mPrev = &mAnchor;
+    if (&mAnchor != mAnchor.mNext)
     {
-      mHead->prev = nd;
+      mAnchor.mNext->mPrev = nd;
     }
     else
     {
-      mTail = nd;
+      mAnchor.mPrev = nd;
     }
-    mHead = nd;
+    mAnchor.mNext = nd;
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::reverse_iterator list<T, Alloc>::rbegin()
   {
-    return list_reverse_iterator<T>(mTail);
+    return reverse_iterator(end());
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::rbegin() const
   {
-    return list_const_reverse_iterator<T>(mTail);
+    return const_reverse_iterator(end());
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::reverse_iterator list<T, Alloc>::rend()
   {
-    return list_reverse_iterator<T>(NULL);
+    return reverse_iterator(begin());
   }
 
   template<class T, class Alloc> typename list<T, Alloc>::const_reverse_iterator list<T, Alloc>::rend() const
   {
-    return list_const_reverse_iterator<T>(NULL);
+    return const_reverse_iterator(begin());
   }
 
   template<class T, class Alloc> size_t list<T, Alloc>::size() const
@@ -754,6 +748,7 @@ namespace flex
     if (lsize < rsize)
     {
       T tmp;
+
       typename list<T, Alloc>::iterator lit = begin();
       typename list<T, Alloc>::iterator rit = obj.begin();
       while (lit != end())
@@ -765,21 +760,17 @@ namespace flex
         ++rit;
       }
 
-      typename list<T, Alloc>::reverse_iterator rrit = obj.rbegin();
+      //typename list<T, Alloc>::reverse_iterator rrit = obj.rbegin();
       while (size() < rsize)
       {
         //Capacity check done at the top of method. Safe to do the faster no_throw method.
-        push_back_no_throw(*(rrit++));
+        push_back_no_throw(*(rit++));
+      }
+
+      while (obj.size() > lsize)
+      {
         obj.pop_back();
       }
-      /*while (mIndex < rsize)
-       {
-       push_back(*(rit++));
-       }
-       while (obj.size() > lsize)
-       {
-       obj.pop_back();
-       }*/
     }
     else
     {
@@ -795,27 +786,23 @@ namespace flex
         ++rit;
       }
 
-      typename list<T, Alloc>::reverse_iterator rlit = rbegin();
+      //typename list<T, Alloc>::reverse_iterator rlit = rbegin();
       while (obj.size() < lsize)
       {
         //Capacity check done at the top of method. Safe to do the faster no_throw method.
-        obj.push_back_no_throw(*(rlit++));
+        obj.push_back_no_throw(*(lit++));
+      }
+
+      while (size() > rsize)
+      {
         pop_back();
       }
-      /*while (obj.size() < lsize)
-       {
-       obj.push_back(*(rlit++));
-       }
-       while (size() > rsize)
-       {
-       pop_back();
-       }*/
     }
 
   }
 
   template<class T, class Alloc> list<T, Alloc>::list(size_t capacity, list_node<T>* contentPtr, list_node<T>** ptrPtr) :
-      pool<list_node<T> >(capacity, contentPtr, ptrPtr), mHead(NULL), mTail(NULL)
+      pool<list_node<T> >(capacity, contentPtr, ptrPtr), mAnchor()
   {
     for (size_t i = 0; i < this->mCapacity; i++)
     {
