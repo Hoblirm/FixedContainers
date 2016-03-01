@@ -3,6 +3,7 @@
 #include <flex/list.h>
 #include <flex/allocator_debug.h>
 
+//TODO: A method should be added to check the list range to ensure both forward and backward node pointers are set.
 //TODO: If you decide to add capacity to list, look at where capacity is used in ring_test
 class list_test: public CxxTest::TestSuite
 {
@@ -883,7 +884,6 @@ public:
     list_int b(INT_DATA, INT_DATA + 2);
     list_int::iterator it;
 
-    //Start s at 3, as the below tests expect a size of at least 3.
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
       a.assign(INT_DATA, INT_DATA + SIZES[s]);
