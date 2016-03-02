@@ -3,7 +3,6 @@
 #include <flex/list.h>
 #include <flex/allocator_debug.h>
 
-//TODO: A method should be added to check the list range to ensure both forward and backward node pointers are set.
 //TODO: If you decide to add capacity to list, look at where capacity is used in ring_test
 class list_test: public CxxTest::TestSuite
 {
@@ -25,8 +24,8 @@ class list_test: public CxxTest::TestSuite
     int val;
   };
 
-  typedef flex::list<int, flex::allocator_debug<flex::list<int>::node_type > > list_int;
-  typedef flex::list<object, flex::allocator_debug<flex::list<object>::node_type > > list_obj;
+  typedef flex::list<int, flex::allocator_debug<flex::list<int>::node_type> > list_int;
+  typedef flex::list<object, flex::allocator_debug<flex::list<object>::node_type> > list_obj;
 
   const int INT_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
       -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
@@ -65,19 +64,40 @@ public:
 
   void setUp()
   {
-    flex::allocator_debug<flex::list<int>::node_type >::clear();
-    flex::allocator_debug<flex::list<object>::node_type >::clear();
+    flex::allocator_debug<flex::list<int>::node_type>::clear();
+    flex::allocator_debug<flex::list<object>::node_type>::clear();
   }
 
   void tearDown()
   {
     //This ensures that all objects constructed by the container have their destructors called.
-    TS_ASSERT(flex::allocator_debug<flex::list<int>::node_type >::mConstructedPointers.empty());
-    TS_ASSERT(flex::allocator_debug<flex::list<object>::node_type >::mConstructedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list<int>::node_type>::mConstructedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list<object>::node_type>::mConstructedPointers.empty());
 
     //This ensures that all memory allocated by the container is properly freed.
-    TS_ASSERT(flex::allocator_debug<flex::list<int>::node_type >::mAllocatedPointers.empty());
-    TS_ASSERT(flex::allocator_debug<flex::list<object>::node_type >::mAllocatedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list<int>::node_type>::mAllocatedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<flex::list<object>::node_type>::mAllocatedPointers.empty());
+  }
+
+  template<class List>
+  void assert_list_validity(const List& list)
+  {
+    //This checks to ensure the list is valid.  The main purpose is to ensure that
+    //all next and prev node pointers are in sync.  This is used in list modifier
+    //tests such as assign(), insert(), erase() etc, to ensure the list is kept in
+    //a valid state.
+    typename List::const_iterator prev = --list.begin();
+    typename List::const_iterator it = list.begin();
+    size_t n = 0;
+    while (it != list.end())
+    {
+      TS_ASSERT_EQUALS(prev.mNode, it.mNode->mPrev);
+      ++it;
+      ++prev;
+      ++n;
+    }
+    TS_ASSERT_EQUALS(prev.mNode, it.mNode->mPrev);
+    TS_ASSERT_EQUALS(n,list.size());
   }
 
   void test_default_constructor(void)
@@ -114,6 +134,7 @@ public:
       {
         TS_ASSERT_EQUALS(*it, 0);
       }
+      assert_list_validity(a);
 
       /*
        * Case3: Verify fill constructor with object elements.
@@ -124,6 +145,8 @@ public:
       {
         TS_ASSERT_EQUALS((*it).val, object::INIT_VAL);
       }
+      assert_list_validity(b);
+
     } //for: SIZE_COUNT
   }
 
@@ -142,6 +165,7 @@ public:
       {
         TS_ASSERT_EQUALS(*it, fill_val);
       }
+      assert_list_validity(a);
 
       /*
        * Case1: Verify fill constructor assigns value parameter for objects.
@@ -152,6 +176,8 @@ public:
       {
         TS_ASSERT_EQUALS((*it).val, fill_val);
       }
+      assert_list_validity(b);
+
     } //for: SIZE_COUNT
   }
 
@@ -170,6 +196,7 @@ public:
         TS_ASSERT_EQUALS(*it, INT_DATA[i]);
         ++i;
       }
+      assert_list_validity(a);
 
       /*
        * Case2: Verify range constructor with iterator parameters
@@ -182,6 +209,8 @@ public:
 //        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
 //        ++i;
 //      }
+//      assert_list_validity(b);
+
       /*
        * Case3: Verify range constructor for object elements.
        */
@@ -193,6 +222,7 @@ public:
         TS_ASSERT_EQUALS((*it).val, OBJ_DATA[i].val);
         ++i;
       }
+      assert_list_validity(c);
     } //for: SIZE_COUNT
   }
 
@@ -210,6 +240,7 @@ public:
         TS_ASSERT_THROWS(list_int b(a), std::runtime_error);
         flex::allocation_guard::disable();
       }
+      assert_list_validity(a);
 
       /*
        * Case2: Verify copy constructor with primitive elements.
@@ -222,6 +253,7 @@ public:
         TS_ASSERT_EQUALS(*it, *ait);
         ++ait;
       }
+      assert_list_validity(b);
 
       /*
        * Case3: Verify copy constructor with object elements.
@@ -234,6 +266,8 @@ public:
         TS_ASSERT_EQUALS((*it).val, (*cit).val);
         ++cit;
       }
+      assert_list_validity(d);
+
     } //for: SIZE_COUNT
   }
 
@@ -252,6 +286,7 @@ public:
       {
         TS_ASSERT_EQUALS(*it, fill_val);
       }
+      assert_list_validity(a);
     }
 
     /*
@@ -266,6 +301,7 @@ public:
       {
         TS_ASSERT_EQUALS(*it, fill_val);
       }
+      assert_list_validity(a);
     }
   }
 
@@ -287,6 +323,7 @@ public:
         TS_ASSERT_EQUALS(*it, *tmp_it);
         ++tmp_it;
       }
+      assert_list_validity(a);
     }
 
     /*
@@ -305,6 +342,7 @@ public:
         TS_ASSERT_EQUALS(*it, *tmp_it);
         ++tmp_it;
       }
+      assert_list_validity(a);
     }
   }
 
@@ -327,6 +365,7 @@ public:
         TS_ASSERT_EQUALS(*it, INT_DATA[i]);
         ++i;
       }
+      assert_list_validity(a);
     }
 
     /*
@@ -345,6 +384,7 @@ public:
         TS_ASSERT_EQUALS(*it, INT_DATA[i]);
         ++i;
       }
+      assert_list_validity(a);
     }
   }
 
@@ -548,6 +588,7 @@ public:
         TS_ASSERT_EQUALS(*it, INT_DATA[i + 2]);
         ++it;
       }
+      assert_list_validity(a);
     } //for: SIZE_COUNT
   }
 
@@ -641,6 +682,7 @@ public:
         TS_ASSERT_EQUALS(*it, INT_DATA[i + 4]);
         ++it;
       }
+      assert_list_validity(a);
     } //for: SIZE_COUNT
   }
 
@@ -732,6 +774,7 @@ public:
         ++it;
       }
       TS_ASSERT_EQUALS(*it, val);
+      assert_list_validity(a);
     } //for: SIZE_COUNT
   }
 
@@ -804,6 +847,7 @@ public:
       }
       TS_ASSERT_EQUALS(*(it++), val);
       TS_ASSERT_EQUALS(*(it++), val);
+      assert_list_validity(a);
     } //for: SIZE_COUNT
   }
 
@@ -875,6 +919,7 @@ public:
       }
       TS_ASSERT_EQUALS(*(it++), INT_DATA[0]);
       TS_ASSERT_EQUALS(*(it++), INT_DATA[1]);
+      assert_list_validity(a);
     } //for: SIZE_COUNT
   }
 
@@ -946,6 +991,7 @@ public:
       }
       TS_ASSERT_EQUALS(*(it++), INT_DATA[0]);
       TS_ASSERT_EQUALS(*(it++), INT_DATA[1]);
+      assert_list_validity(a);
     } //for: SIZE_COUNT
   }
 
@@ -1054,6 +1100,7 @@ public:
       TS_ASSERT_EQUALS(a.size(), 0);
       TS_ASSERT_EQUALS(tmp.size(), SIZES[s]);
       TS_ASSERT(tmp == list_int(INT_DATA, INT_DATA + SIZES[s]));
+      assert_list_validity(a);
     }
 
     /*
@@ -1067,6 +1114,8 @@ public:
     TS_ASSERT_EQUALS(b.size(), 9);
     TS_ASSERT(a == list_int(INT_DATA + 9, INT_DATA + 16));
     TS_ASSERT(b == list_int(INT_DATA, INT_DATA + 9));
+    assert_list_validity(a);
+    assert_list_validity(b);
   }
 
   void test_assignment_operator(void)
@@ -1086,6 +1135,7 @@ public:
     {
       TS_ASSERT_EQUALS(*(it++), *(tmp_it++));
     }
+    assert_list_validity(a);
   }
 
   void test_pop_back(void)
@@ -1183,24 +1233,9 @@ public:
         TS_ASSERT_EQUALS(a.size(), i + 1);
       }
       TS_ASSERT(a == list_int(INT_DATA, INT_DATA + SIZES[s]));
+      assert_list_validity(a);
     }
 
-    /*
-     * Case 2: Container wraps.
-     */
-    for (unsigned s = 2; s < SIZE_COUNT; ++s)
-    {
-      a.assign((int*) NULL, (int*) NULL);
-      a.push_front(INT_DATA[1]);
-      a.push_front(INT_DATA[0]);
-      for (int i = 2; i < SIZES[s]; ++i)
-      {
-        a.push_back(INT_DATA[i]);
-        TS_ASSERT_EQUALS(a.back(), INT_DATA[i]);
-        TS_ASSERT_EQUALS(a.size(), i + 1);
-      }
-      TS_ASSERT(a == list_int(INT_DATA, INT_DATA + SIZES[s]));
-    }
   }
 
   void test_push_front(void)
@@ -1221,6 +1256,7 @@ public:
         TS_ASSERT_EQUALS(a.size(), i + 1);
       }
       TS_ASSERT(a == list_int(INT_DATA, INT_DATA + SIZES[s]));
+      assert_list_validity(a);
     }
   }
 
