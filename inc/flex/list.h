@@ -49,6 +49,8 @@ namespace flex
     const_reverse_iterator crbegin() const;
     const_reverse_iterator crend() const;
 
+    size_type capacity();
+    void clear();
     bool empty() const;
 
     iterator end();
@@ -97,6 +99,7 @@ namespace flex
 
   private:
     node_type* DoRetrieveNode();
+    size_type GetNodePoolSize();
     void DoPushToNodePool(node_type* ptr);
     void DoDestroyAndDeallocateNode(node_type* ptr);
   };
@@ -258,6 +261,18 @@ namespace flex
     return const_reverse_iterator(begin());
   }
 
+  template<class T, class Alloc>
+  inline typename list<T, Alloc>::size_type list<T, Alloc>::capacity() 
+  {
+     return mSize + GetNodePoolSize();
+  }
+  
+  template<class T, class Alloc>
+  inline void list<T, Alloc>::clear() 
+  {
+     erase(begin(),end());
+  }
+  
   template<class T, class Alloc>
   inline bool list<T, Alloc>::empty() const
   {
@@ -571,6 +586,19 @@ namespace flex
     return ptr;
   }
 
+  template<class T, class Alloc>
+  inline typename list<T, Alloc>::size_type list<T, Alloc>::GetNodePoolSize()
+  {
+     size_type n=0;
+     node_type* node_ptr = mNodePool;
+     while (node_ptr != NULL)
+      {
+        node_ptr = static_cast<node_type*>(node_ptr->mNext);
+        ++n;
+      }
+     return n;
+  }
+  
   template<class T, class Alloc>
   inline void list<T, Alloc>::DoPushToNodePool(list_node<T>* ptr)
   {

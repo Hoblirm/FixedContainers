@@ -473,25 +473,28 @@ public:
     } //for: SIZE_COUNT
   }
 
-//   void test_capacity(void)
-//   {
-//      for (unsigned s = 0; s < SIZE_COUNT; ++s)
-//      {
-//         list_int a(SIZES[s]);
-//         TS_ASSERT_EQUALS(a.capacity(), SIZES[s]);
-//      } //for: SIZE_COUNT
-//   }
+   void test_capacity(void)
+   {
+      for (unsigned s = 0; s < SIZE_COUNT; ++s)
+      {
+         list_int a(SIZES[s]);
+         TS_ASSERT_EQUALS(a.capacity(), SIZES[s]);
+         a.clear();
+         TS_ASSERT_EQUALS(a.capacity(), SIZES[s]);
+      } //for: SIZE_COUNT
+   }
 
-//   void test_clear(void)
-//   {
-//      for (unsigned s = 0; s < SIZE_COUNT; ++s)
-//      {
-//         list_int a(INT_DATA, INT_DATA + SIZES[s]);
-//         a.clear();
-//         TS_ASSERT_EQUALS(a.size(), 0);
-//         TS_ASSERT(a.empty());
-//      } //for: SIZE_COUNT
-//   }
+   void test_clear(void)
+   {
+      for (unsigned s = 0; s < SIZE_COUNT; ++s)
+      {
+         list_int a(INT_DATA, INT_DATA + SIZES[s]);
+         a.clear();
+         TS_ASSERT_EQUALS(a.size(), 0);
+         TS_ASSERT(a.empty());
+         assert_list_validity(a);
+      } //for: SIZE_COUNT
+   }
 
   void test_empty(void)
   {
@@ -1143,7 +1146,7 @@ public:
     list_int a;
 
     /*
-     * Case 1: Container doesn't wrap
+     * Case 1: Normal condition.
      */
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
@@ -1156,25 +1159,9 @@ public:
         --current_size;
         TS_ASSERT_EQUALS(a.size(), current_size);
       }
+      assert_list_validity(a);
     }
 
-    /*
-     * Case 2: Container wraps
-     */
-    for (unsigned s = 2; s < SIZE_COUNT; ++s)
-    {
-      a.assign(INT_DATA + 2, INT_DATA + SIZES[s]);
-      a.push_front(INT_DATA[1]);
-      a.push_front(INT_DATA[0]);
-      size_t current_size = a.size();
-      while (!a.empty())
-      {
-        TS_ASSERT_EQUALS(a.back(), INT_DATA[current_size - 1]);
-        a.pop_back();
-        --current_size;
-        TS_ASSERT_EQUALS(a.size(), current_size);
-      }
-    }
   }
 
   void test_pop_front(void)
@@ -1182,7 +1169,7 @@ public:
     list_int a;
 
     /*
-     * Case 1: Container doesn't wrap
+     * Case 1: Normal conditions
      */
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
@@ -1195,24 +1182,7 @@ public:
         --current_size;
         TS_ASSERT_EQUALS(a.size(), current_size);
       }
-    }
-
-    /*
-     * Case 2: Container wraps
-     */
-    for (unsigned s = 2; s < SIZE_COUNT; ++s)
-    {
-      a.assign(INT_DATA + 2, INT_DATA + SIZES[s]);
-      a.push_front(INT_DATA[1]);
-      a.push_front(INT_DATA[0]);
-      size_t current_size = a.size();
-      while (!a.empty())
-      {
-        TS_ASSERT_EQUALS(a.front(), INT_DATA[SIZES[s] - current_size]);
-        a.pop_front();
-        --current_size;
-        TS_ASSERT_EQUALS(a.size(), current_size);
-      }
+      assert_list_validity(a);
     }
   }
 
