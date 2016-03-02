@@ -151,78 +151,62 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void list<T, Alloc>::assign(size_t rsize, const_reference val)
+  inline void list<T, Alloc>::assign(size_t n, const_reference val)
   {
-    //TODO: The assign methods can be cleaned up.
-    if (rsize > max_size())
+    node_type* node_ptr = static_cast<node_type*>(mAnchor.mNext);
+    for (; (n > 0) && (node_ptr != &mAnchor); --n)
     {
-      throw std::runtime_error("fixed_list: assign() fill range exceeds capacity");
+      node_ptr->mValue = val;
+      node_ptr = static_cast<node_type*>(node_ptr->mNext);
     }
 
-    if (size() < rsize)
+    if (n)
     {
-      for (iterator it = begin(); it != end(); ++it)
-      {
-        *it = val;
-      }
-      while (size() < rsize)
-      {
-        push_back(val);
-      }
+      insert(iterator(node_ptr), n, val);
     }
     else
     {
-      iterator it = begin();
-      for (int i = 0; i < rsize; ++i)
-      {
-        *(it++) = val;
-      }
-      while (size() > rsize)
-      {
-        pop_back();
-      }
+      erase(iterator(node_ptr), iterator(&mAnchor));
     }
   }
 
   template<class T, class Alloc>
   inline void list<T, Alloc>::assign(const_iterator first, const_iterator last)
   {
-    typename list<T, Alloc>::iterator lit = begin();
-    typename list<T, Alloc>::const_iterator rit = first;
-    size_t rsize = 0;
-    while ((lit != end()) && (rit != last))
+    node_type* node_ptr = static_cast<node_type*>(mAnchor.mNext);
+    for (; (first != last) && (node_ptr != &mAnchor); ++first)
     {
-      *(lit++) = *(rit++);
-      ++rsize;
+      node_ptr->mValue = *first;
+      node_ptr = static_cast<node_type*>(node_ptr->mNext);
     }
-    while (size() > rsize)
+
+    if (first != last)
     {
-      pop_back();
+      insert(iterator(node_ptr), first, last);
     }
-    while (rit != last)
+    else
     {
-      push_back(*(rit++));
+      erase(iterator(node_ptr), iterator(&mAnchor));
     }
   }
 
   template<class T, class Alloc>
   inline void list<T, Alloc>::assign(const T* first, const T* last)
   {
-    typename list<T, Alloc>::iterator lit = begin();
-    const T* rit = first;
-    size_t rsize = 0;
-    while ((lit != end()) && (rit != last))
+    node_type* node_ptr = static_cast<node_type*>(mAnchor.mNext);
+    for (; (first != last) && (node_ptr != &mAnchor); ++first)
     {
-      *(lit++) = *(rit++);
-      ++rsize;
+      node_ptr->mValue = *first;
+      node_ptr = static_cast<node_type*>(node_ptr->mNext);
     }
-    while (size() > rsize)
+
+    if (first != last)
     {
-      pop_back();
+      insert(iterator(node_ptr), first, last);
     }
-    while (rit != last)
+    else
     {
-      push_back(*(rit++));
+      erase(iterator(node_ptr), iterator(&mAnchor));
     }
   }
 
@@ -247,7 +231,6 @@ namespace flex
   template<class T, class Alloc>
   inline typename list<T, Alloc>::const_iterator list<T, Alloc>::begin() const
   {
-
     return typename list<T, Alloc>::const_iterator(mAnchor.mNext);
   }
 
@@ -534,62 +517,25 @@ namespace flex
     }
     else
     {
-      //TODO: This swap method can be cleaned up.
-      if ((obj.size() > max_size()) || (size() > obj.max_size()))
+      iterator lhs_it = begin();
+      iterator lhs_end = end();
+      iterator rhs_it = obj.begin();
+      iterator rhs_end = obj.end();
+      while ((lhs_it != lhs_end) && (rhs_it != rhs_end))
       {
-        throw std::runtime_error("fixed_list: swap() parameters' size exceed capacity");
+        std::swap(*lhs_it, *rhs_it);
+        ++lhs_it;
+        ++rhs_it;
       }
-
-      size_t lsize = size();
-      size_t rsize = obj.size();
-      if (lsize < rsize)
+      if (lhs_it != lhs_end)
       {
-        T tmp;
-
-        typename list<T, Alloc>::iterator lit = begin();
-        typename list<T, Alloc>::iterator rit = obj.begin();
-        while (lit != end())
-        {
-          tmp = *lit;
-          *lit = *rit;
-          *rit = tmp;
-          ++lit;
-          ++rit;
-        }
-
-        while (size() < rsize)
-        {
-          push_back(*(rit++));
-        }
-
-        while (obj.size() > lsize)
-        {
-          obj.pop_back();
-        }
+        obj.insert(rhs_it, lhs_it, lhs_end);
+        erase(lhs_it, lhs_end);
       }
       else
       {
-        T tmp;
-        typename list<T, Alloc>::iterator lit = begin();
-        typename list<T, Alloc>::iterator rit = obj.begin();
-        while (rit != obj.end())
-        {
-          tmp = *lit;
-          *lit = *rit;
-          *rit = tmp;
-          ++lit;
-          ++rit;
-        }
-
-        while (obj.size() < lsize)
-        {
-          obj.push_back(*(lit++));
-        }
-
-        while (size() > rsize)
-        {
-          pop_back();
-        }
+        insert(lhs_it, rhs_it, rhs_end);
+        obj.erase(rhs_it, rhs_end);
       }
     }
   }
