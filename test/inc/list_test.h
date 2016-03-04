@@ -3,7 +3,6 @@
 #include <flex/list.h>
 #include <flex/allocator_debug.h>
 
-//TODO: If you decide to add capacity to list, look at where capacity is used in ring_test
 class list_test: public CxxTest::TestSuite
 {
 
@@ -97,7 +96,7 @@ public:
       ++n;
     }
     TS_ASSERT_EQUALS(prev.mNode, it.mNode->mPrev);
-    TS_ASSERT_EQUALS(n,list.size());
+    TS_ASSERT_EQUALS(n, list.size());
   }
 
   void test_default_constructor(void)
@@ -108,6 +107,7 @@ public:
     flex::allocation_guard::enable();
     list_int a;
     TS_ASSERT_EQUALS(a.size(), 0);
+    TS_ASSERT_EQUALS(a.capacity(), 0);
     flex::allocation_guard::disable();
   }
 
@@ -130,6 +130,7 @@ public:
        */
       list_int a(SIZES[s]);
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
       for (list_int::iterator it = a.begin(); it != a.end(); ++it)
       {
         TS_ASSERT_EQUALS(*it, 0);
@@ -141,6 +142,7 @@ public:
        */
       list_obj b(SIZES[s]);
       TS_ASSERT_EQUALS(b.size(), SIZES[s]);
+      TS_ASSERT_EQUALS(b.size(), b.capacity());
       for (list_obj::iterator it = b.begin(); it != b.end(); ++it)
       {
         TS_ASSERT_EQUALS((*it).val, object::INIT_VAL);
@@ -161,6 +163,7 @@ public:
        */
       list_int a(SIZES[s], fill_val);
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
       for (list_int::iterator it = a.begin(); it != a.end(); ++it)
       {
         TS_ASSERT_EQUALS(*it, fill_val);
@@ -172,6 +175,7 @@ public:
        */
       list_obj b(SIZES[s], object(fill_val));
       TS_ASSERT_EQUALS(b.size(), SIZES[s]);
+      TS_ASSERT_EQUALS(b.size(), b.capacity());
       for (list_obj::iterator it = b.begin(); it != b.end(); ++it)
       {
         TS_ASSERT_EQUALS((*it).val, fill_val);
@@ -190,6 +194,7 @@ public:
        */
       list_int a(INT_DATA, INT_DATA + SIZES[s]);
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
       int i = 0;
       for (list_int::iterator it = a.begin(); it != a.end(); ++it)
       {
@@ -201,21 +206,23 @@ public:
       /*
        * Case2: Verify range constructor with iterator parameters
        */
-//      list_int b(a.begin(), a.end());
-//      TS_ASSERT_EQUALS(b.size(), SIZES[s]);
-//      i = 0;
-//      for (list_int::iterator it = b.begin(); it != b.end(); ++it)
-//      {
-//        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
-//        ++i;
-//      }
-//      assert_list_validity(b);
+      list_int b(a.begin(), a.end());
+      TS_ASSERT_EQUALS(b.size(), SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
+      i = 0;
+      for (list_int::iterator it = b.begin(); it != b.end(); ++it)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++i;
+      }
+      assert_list_validity(b);
 
       /*
        * Case3: Verify range constructor for object elements.
        */
       list_obj c(OBJ_DATA, OBJ_DATA + SIZES[s]);
       TS_ASSERT_EQUALS(c.size(), SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
       i = 0;
       for (list_obj::iterator it = c.begin(); it != c.end(); ++it)
       {
@@ -247,6 +254,7 @@ public:
        */
       list_int b(a);
       TS_ASSERT_EQUALS(b.size(), a.size());
+      TS_ASSERT_EQUALS(b.size(), b.capacity());
       list_int::iterator ait = a.begin();
       for (list_int::iterator it = b.begin(); it != b.end(); ++it)
       {
@@ -260,6 +268,8 @@ public:
        */
       list_obj c(OBJ_DATA, OBJ_DATA + SIZES[s]);
       list_obj d(c);
+      TS_ASSERT_EQUALS(d.size(), c.size());
+      TS_ASSERT_EQUALS(d.size(), d.capacity());
       list_obj::iterator cit = c.begin();
       for (list_obj::iterator it = d.begin(); it != d.end(); ++it)
       {
@@ -282,6 +292,7 @@ public:
       const int fill_val = INT_DATA[SIZES[s] - 1];
       a.assign(SIZES[s], fill_val);
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
       for (list_int::iterator it = a.begin(); it != a.end(); ++it)
       {
         TS_ASSERT_EQUALS(*it, fill_val);
@@ -297,6 +308,7 @@ public:
       const int fill_val = INT_DATA[SIZES[s] - 1];
       a.assign(SIZES[s], fill_val);
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
       for (list_int::iterator it = a.begin(); it != a.end(); ++it)
       {
         TS_ASSERT_EQUALS(*it, fill_val);
@@ -317,6 +329,7 @@ public:
       list_int tmp(INT_DATA, INT_DATA + SIZES[s]);
       a.assign(tmp.begin(), tmp.end());
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
       list_int::iterator tmp_it = tmp.begin();
       for (list_int::iterator it = a.begin(); it != a.end(); ++it)
       {
@@ -332,10 +345,10 @@ public:
     for (int s = SIZE_COUNT - 1; s != -1; --s)
     {
       list_int tmp(INT_DATA, INT_DATA + SIZES[s]);
+      size_t prev_capacity = a.capacity();
       a.assign(tmp.begin(), tmp.end());
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
-//         TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
-//         TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), prev_capacity);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
       list_int::iterator tmp_it = tmp.begin();
       for (list_int::iterator it = a.begin(); it != a.end(); ++it)
       {
@@ -357,8 +370,7 @@ public:
     {
       a.assign(INT_DATA, INT_DATA + SIZES[s]);
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
-//         TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
-//         TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), a.size() * 2);
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
       int i = 0;
       for (list_int::iterator it = a.begin(); it != a.end(); ++it)
       {
@@ -373,11 +385,10 @@ public:
      */
     for (int s = SIZE_COUNT - 1; s != -1; --s)
     {
-//         size_t prev_capacity = a.capacity();
+      size_t prev_capacity = a.capacity();
       a.assign(INT_DATA, INT_DATA + SIZES[s]);
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
-//         TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
-//         TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), prev_capacity);
+      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
       int i = 0;
       for (list_int::iterator it = a.begin(); it != a.end(); ++it)
       {
@@ -473,28 +484,28 @@ public:
     } //for: SIZE_COUNT
   }
 
-   void test_capacity(void)
-   {
-      for (unsigned s = 0; s < SIZE_COUNT; ++s)
-      {
-         list_int a(SIZES[s]);
-         TS_ASSERT_EQUALS(a.capacity(), SIZES[s]);
-         a.clear();
-         TS_ASSERT_EQUALS(a.capacity(), SIZES[s]);
-      } //for: SIZE_COUNT
-   }
+  void test_capacity(void)
+  {
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      list_int a(SIZES[s]);
+      TS_ASSERT_EQUALS(a.capacity(), SIZES[s]);
+      a.clear();
+      TS_ASSERT_EQUALS(a.capacity(), SIZES[s]);
+    } //for: SIZE_COUNT
+  }
 
-   void test_clear(void)
-   {
-      for (unsigned s = 0; s < SIZE_COUNT; ++s)
-      {
-         list_int a(INT_DATA, INT_DATA + SIZES[s]);
-         a.clear();
-         TS_ASSERT_EQUALS(a.size(), 0);
-         TS_ASSERT(a.empty());
-         assert_list_validity(a);
-      } //for: SIZE_COUNT
-   }
+  void test_clear(void)
+  {
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      list_int a(INT_DATA, INT_DATA + SIZES[s]);
+      a.clear();
+      TS_ASSERT_EQUALS(a.size(), 0);
+      TS_ASSERT(a.empty());
+      assert_list_validity(a);
+    } //for: SIZE_COUNT
+  }
 
   void test_empty(void)
   {
@@ -1037,48 +1048,68 @@ public:
     } //for: SIZE_COUNT
   }
 
-//   void test_reserve(void)
-//   {
-//      list_int bar;
-//      for (unsigned s = 0; s < SIZE_COUNT; ++s)
-//      {
-//         bar.reserve(SIZES[s]);
-//         TS_ASSERT_EQUALS(bar.size(), 0);
-//         TS_ASSERT_LESS_THAN_EQUALS(SIZES[s], bar.capacity());
-//      }
-//   }
+  void test_reserve(void)
+  {
+    list_int bar;
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      bar.reserve(SIZES[s]);
+      TS_ASSERT_EQUALS(bar.size(), 0);
+      TS_ASSERT_LESS_THAN_EQUALS(SIZES[s], bar.capacity());
+    }
+  }
 
-//   void test_resize(void)
-//   {
-//      list_int a;
-//      const int val = 19;
-//      for (unsigned s = 0; s < SIZE_COUNT; ++s)
-//      {
-//         /*
-//          * Case 1: Verify resize can decrease size.
-//          */
-//         a.assign(INT_DATA, INT_DATA + SIZES[s]);
-//         size_t new_size = SIZES[s] / 2;
-//         a.resize(new_size);
-//         TS_ASSERT_EQUALS(a.size(), new_size);
-//         TS_ASSERT(a == list_int(INT_DATA, INT_DATA + new_size));
-//
-//         /*
-//          * Case 2: Verify resize can increase size.
-//          */
-//         a.resize(SIZES[s], val);
-//         TS_ASSERT_EQUALS(a.size(), SIZES[s]);
-//         for (int i = 0; i < new_size; ++i)
-//         {
-//            TS_ASSERT_EQUALS(a[i], INT_DATA[i]);
-//         }
-//         for (int i = new_size; i < SIZES[s]; ++i)
-//         {
-//            TS_ASSERT_EQUALS(a[i], val);
-//         }
-//
-//      } //for: SIZE_COUNT
-//   }
+  void test_resize(void)
+  {
+    list_int a;
+    const int val = 19;
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      /*
+       * Case 1: Verify resize can decrease size.
+       */
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t new_size = SIZES[s] / 2;
+      a.resize(new_size);
+      TS_ASSERT_EQUALS(a.size(), new_size);
+      TS_ASSERT(a == list_int(INT_DATA, INT_DATA + new_size));
+      assert_list_validity(a);
+
+      /*
+       * Case 2: Verify resize can increase size.
+       */
+      a.resize(SIZES[s], val);
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      list_int::iterator it = a.begin();
+      for (int i = 0; i < new_size; ++i)
+      {
+        TS_ASSERT_EQUALS(*(it++), INT_DATA[i]);
+      }
+      for (int i = new_size; i < SIZES[s]; ++i)
+      {
+        TS_ASSERT_EQUALS(*(it++), val);
+      }
+      assert_list_validity(a);
+    } //for: SIZE_COUNT
+  }
+
+  void test_shrink_to_fit(void)
+  {
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      list_int a(INT_DATA, INT_DATA + SIZES[s]);
+      a.shrink_to_fit();
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
+
+      a.assign(INT_DATA, INT_DATA + (SIZES[s] / 2));
+      a.shrink_to_fit();
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
+
+      a.clear();
+      a.shrink_to_fit();
+      TS_ASSERT_EQUALS(a.size(), a.capacity());
+    } //for: SIZE_COUNT
+  }
 
   void test_size(void)
   {
@@ -1130,8 +1161,7 @@ public:
     list_int::iterator tmp_it;
     a = tmp;
     TS_ASSERT_EQUALS(a.size(), 8);
-//      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
-//      TS_ASSERT_LESS_THAN_EQUALS(a.capacity(), a.size() * 2);
+    TS_ASSERT_EQUALS(a.size(), a.capacity());
     it = a.begin();
     tmp_it = tmp.begin();
     for (int i = 0; i < a.size(); i++)

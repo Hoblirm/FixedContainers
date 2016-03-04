@@ -94,9 +94,9 @@ namespace flex
 
   private:
     size_t GetNewCapacity(size_type min);
-    pointer DoAllocateAndConstruct(size_type capacity);
-    void DoDestroyAndDeallocate();
-    void DoDeallocateAndReassign(pointer new_begin, size_type new_size, size_type new_capacity);
+    pointer AllocateAndConstruct(size_type capacity);
+    void DestroyAndDeallocate();
+    void DeallocateAndReassign(pointer new_begin, size_type new_size, size_type new_capacity);
   };
 
   template<class T, class Alloc>
@@ -109,7 +109,7 @@ namespace flex
   inline ring<T, Alloc>::ring(size_type capacity, const value_type& val) :
       mFixed(false)
   {
-    mBegin.mPtr = DoAllocateAndConstruct(capacity);
+    mBegin.mPtr = AllocateAndConstruct(capacity);
     mEnd.mPtr = mBegin.mPtr + capacity;
 
     mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
@@ -124,7 +124,7 @@ namespace flex
       mFixed(false)
   {
     size_type new_size = last - first;
-    mBegin.mPtr = DoAllocateAndConstruct(new_size);
+    mBegin.mPtr = AllocateAndConstruct(new_size);
     mEnd.mPtr = mBegin.mPtr + new_size;
 
     mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
@@ -139,7 +139,7 @@ namespace flex
       mFixed(false)
   {
     size_type new_size = last - first;
-    mBegin.mPtr = DoAllocateAndConstruct(new_size);
+    mBegin.mPtr = AllocateAndConstruct(new_size);
     mEnd.mPtr = mBegin.mPtr + new_size;
 
     mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
@@ -154,7 +154,7 @@ namespace flex
       mFixed(false)
   {
     size_type new_size = obj.size();
-    mBegin.mPtr = DoAllocateAndConstruct(new_size);
+    mBegin.mPtr = AllocateAndConstruct(new_size);
     mEnd.mPtr = mBegin.mPtr + new_size;
 
     mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
@@ -169,7 +169,7 @@ namespace flex
   {
     if (!mFixed && (NULL != mBegin.mPtr))
     {
-      DoDestroyAndDeallocate();
+      DestroyAndDeallocate();
     }
   }
 
@@ -186,12 +186,12 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+        pointer new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
         std::fill_n(new_begin, new_size, val);
 
-        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -215,12 +215,12 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+        pointer new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
         std::copy(first, last, new_begin);
 
-        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -244,12 +244,12 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+        pointer new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
         std::copy(first, last, new_begin);
 
-        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -428,7 +428,7 @@ namespace flex
         //Allocate memory with sufficient capacity.
         size_type new_size = size() + 1;
         size_t new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+        pointer new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values to the left of position.
         pointer new_end = std::copy(mBegin, position, new_begin);
@@ -440,7 +440,7 @@ namespace flex
         //Copy all values that come after position.
         std::copy(position, mEnd, ++new_end);
 
-        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin,new_size,new_capacity);
         return new_position;
       }
     }
@@ -471,7 +471,7 @@ namespace flex
         //Allocate memory with sufficient capacity.
         size_type new_size = size() + n;
         size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+        pointer new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values to the left of position.
         pointer new_end = std::copy(mBegin, position, new_begin);
@@ -482,7 +482,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, mEnd, new_end + n);
 
-        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -512,7 +512,7 @@ namespace flex
         //Allocate memory with sufficient capacity.
         size_type new_size = size() + n;
         size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+        pointer new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values to the left of position.
         pointer new_end = std::copy(mBegin, position, new_begin);
@@ -523,7 +523,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, mEnd, new_end);
 
-        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -552,7 +552,7 @@ namespace flex
         //Allocate memory with sufficient capacity.
         size_type new_size = size() + n;
         size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+        pointer new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values to the left of position.
         pointer new_end = std::copy(mBegin, position, new_begin);
@@ -563,7 +563,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, mEnd, new_end);
 
-        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -629,13 +629,13 @@ namespace flex
         //Allocate memory with sufficient capacity.
         size_type new_size = size() + 1;
         size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+        pointer new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
         pointer new_end = std::copy(mBegin, mEnd, new_begin);
         *new_end = val;
 
-        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -659,13 +659,13 @@ namespace flex
         //Allocate memory with sufficient capacity.
         size_type new_size = size() + 1;
         size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+        pointer new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
         *new_begin = val;
         std::copy(mBegin, mEnd, (new_begin + 1));
 
-        DoDeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin,new_size,new_capacity);
       }
     }
     else
@@ -708,12 +708,12 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_type new_capacity = GetNewCapacity(n);
-        pointer new_begin = DoAllocateAndConstruct(new_capacity);
+        pointer new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all current values.
         std::copy(mBegin, mEnd, new_begin);
 
-        DoDeallocateAndReassign(new_begin,size(),new_capacity);
+        DeallocateAndReassign(new_begin,size(),new_capacity);
       }
     }
   }
@@ -766,7 +766,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline typename ring<T, Alloc>::pointer ring<T, Alloc>::DoAllocateAndConstruct(size_t capacity)
+  inline typename ring<T, Alloc>::pointer ring<T, Alloc>::AllocateAndConstruct(size_t capacity)
   {
     pointer new_begin;
     //The size allocated is 1 more than the capacity.  This is do to the fact that we don't want begin() to equal end().
@@ -781,7 +781,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void ring<T, Alloc>::DoDestroyAndDeallocate()
+  inline void ring<T, Alloc>::DestroyAndDeallocate()
   {
     for (pointer it = mBegin.mLeftBound; it != mBegin.mRightBound; ++it)
     {
@@ -802,9 +802,9 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void ring<T, Alloc>::DoDeallocateAndReassign(pointer new_begin, size_type new_size, size_type new_capacity)
+  inline void ring<T, Alloc>::DeallocateAndReassign(pointer new_begin, size_type new_size, size_type new_capacity)
   {
-        DoDestroyAndDeallocate();
+        DestroyAndDeallocate();
         
         mBegin.mPtr = new_begin;
         mEnd.mPtr = mBegin.mPtr + new_size;

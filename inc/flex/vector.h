@@ -55,8 +55,8 @@ namespace flex
 
   private:
     size_t GetNewCapacity(size_t min);
-    T* DoAllocateAndConstruct(size_t capacity);
-    void DoDestroyAndDeallocate();
+    T* AllocateAndConstruct(size_t capacity);
+    void DestroyAndDeallocate();
   };
 
   template<class T, class Alloc> vector<T, Alloc>::vector() :
@@ -67,21 +67,21 @@ namespace flex
   template<class T, class Alloc> vector<T, Alloc>::vector(size_t size, const T& val) :
       array_base<T>(size), mCapacity(size), mFixed(false)
   {
-    mAryPtr = DoAllocateAndConstruct(mCapacity);
+    mAryPtr = AllocateAndConstruct(mCapacity);
     array_base<T>::fill(val);
   }
 
   template<class T, class Alloc> vector<T, Alloc>::vector(const T* first, const T* last) :
       array_base<T>(last - first), mCapacity(last - first), mFixed(false)
   {
-    mAryPtr = DoAllocateAndConstruct(mCapacity);
+    mAryPtr = AllocateAndConstruct(mCapacity);
     std::copy(first, last, mAryPtr);
   }
 
   template<class T, class Alloc> vector<T, Alloc>::vector(const vector<T, Alloc> & obj) :
       array_base<T>(obj.size()), mCapacity(obj.capacity()), mFixed(false)
   {
-    mAryPtr = DoAllocateAndConstruct(mCapacity);
+    mAryPtr = AllocateAndConstruct(mCapacity);
     std::copy(obj.begin(), obj.end(), mAryPtr);
   }
 
@@ -89,7 +89,7 @@ namespace flex
   {
     if (!mFixed && (NULL != mAryPtr))
     {
-      DoDestroyAndDeallocate();
+      DestroyAndDeallocate();
     }
   }
 
@@ -105,12 +105,12 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_t new_capacity = GetNewCapacity(size);
-        T* new_begin = DoAllocateAndConstruct(new_capacity);
+        T* new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
         std::fill_n(new_begin, size, val);
 
-        DoDestroyAndDeallocate();
+        DestroyAndDeallocate();
 
         mAryPtr = new_begin;
         mCapacity = new_capacity;
@@ -136,12 +136,12 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_t new_capacity = GetNewCapacity(size);
-        T* new_begin = DoAllocateAndConstruct(new_capacity);
+        T* new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
         std::copy(first, last, new_begin);
 
-        DoDestroyAndDeallocate();
+        DestroyAndDeallocate();
 
         mAryPtr = new_begin;
         mCapacity = new_capacity;
@@ -209,7 +209,7 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_t new_capacity = GetNewCapacity(mSize + 1);
-        T* new_begin = DoAllocateAndConstruct(new_capacity);
+        T* new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values to the left of position.
         T* new_end = std::copy(mAryPtr, position, new_begin);
@@ -221,7 +221,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, (mAryPtr + mSize), ++new_end);
 
-        DoDestroyAndDeallocate();
+        DestroyAndDeallocate();
 
         mAryPtr = new_begin;
         ++mSize;
@@ -255,7 +255,7 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_t new_capacity = GetNewCapacity(mSize + n);
-        T* new_begin = DoAllocateAndConstruct(new_capacity);
+        T* new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values to the left of position.
         T* new_end = std::copy(mAryPtr, position, new_begin);
@@ -266,7 +266,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, (mAryPtr + mSize), new_end + n);
 
-        DoDestroyAndDeallocate();
+        DestroyAndDeallocate();
 
         mAryPtr = new_begin;
         mCapacity = new_capacity;
@@ -296,7 +296,7 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_t new_capacity = GetNewCapacity(mSize + n);
-        T* new_begin = DoAllocateAndConstruct(new_capacity);
+        T* new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values to the left of position.
         T* new_end = std::copy(mAryPtr, position, new_begin);
@@ -308,7 +308,7 @@ namespace flex
         new_end = std::copy(position, (mAryPtr + mSize), new_end);
 
         //Deallocate and reassign
-        DoDestroyAndDeallocate();
+        DestroyAndDeallocate();
         mAryPtr = new_begin;
         mCapacity = new_capacity;
       }
@@ -342,13 +342,13 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_t new_capacity = GetNewCapacity(obj.size());
-        T* new_begin = DoAllocateAndConstruct(new_capacity);
+        T* new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
         std::copy(obj.begin(), obj.end(), new_begin);
 
         //Deallocate and reassign.
-        DoDestroyAndDeallocate();
+        DestroyAndDeallocate();
         mAryPtr = new_begin;
         mCapacity = new_capacity;
       }
@@ -378,14 +378,14 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_t new_capacity = GetNewCapacity(mSize + 1);
-        T* new_begin = DoAllocateAndConstruct(new_capacity);
+        T* new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
         T* new_end = std::copy(mAryPtr, mAryPtr + mSize, new_begin);
         *new_end = val;
 
         //Deallocate and reassign.
-        DoDestroyAndDeallocate();
+        DestroyAndDeallocate();
         mAryPtr = new_begin;
         mCapacity = new_capacity;
       }
@@ -468,7 +468,7 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> T* vector<T, Alloc>::DoAllocateAndConstruct(size_t capacity)
+  template<class T, class Alloc> T* vector<T, Alloc>::AllocateAndConstruct(size_t capacity)
   {
     typename array_base<T>::iterator new_begin = mAllocator.allocate(capacity);
     for (T* it = new_begin; it != (new_begin + capacity); ++it)
@@ -478,7 +478,7 @@ namespace flex
     return new_begin;
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::DoDestroyAndDeallocate()
+  template<class T, class Alloc> void vector<T, Alloc>::DestroyAndDeallocate()
   {
     for (T* it = mAryPtr; it != (mAryPtr + mCapacity); ++it)
     {
