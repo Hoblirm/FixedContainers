@@ -76,6 +76,7 @@ namespace flex
     const_reverse_iterator rend() const;
     void reserve(size_type n);
     void resize(size_t n, const value_type& val = value_type());
+    void shrink_to_fit();
     size_t size() const;
     void swap(ring<T, Alloc>& obj);
 
@@ -191,7 +192,7 @@ namespace flex
         //Copy all values.
         std::fill_n(new_begin, new_size, val);
 
-        DeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin, new_size, new_capacity);
       }
     }
     else
@@ -220,7 +221,7 @@ namespace flex
         //Copy all values.
         std::copy(first, last, new_begin);
 
-        DeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin, new_size, new_capacity);
       }
     }
     else
@@ -249,7 +250,7 @@ namespace flex
         //Copy all values.
         std::copy(first, last, new_begin);
 
-        DeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin, new_size, new_capacity);
       }
     }
     else
@@ -440,7 +441,7 @@ namespace flex
         //Copy all values that come after position.
         std::copy(position, mEnd, ++new_end);
 
-        DeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin, new_size, new_capacity);
         return new_position;
       }
     }
@@ -482,7 +483,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, mEnd, new_end + n);
 
-        DeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin, new_size, new_capacity);
       }
     }
     else
@@ -523,7 +524,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, mEnd, new_end);
 
-        DeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin, new_size, new_capacity);
       }
     }
     else
@@ -563,7 +564,7 @@ namespace flex
         //Copy all values that come after position.
         new_end = std::copy(position, mEnd, new_end);
 
-        DeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin, new_size, new_capacity);
       }
     }
     else
@@ -635,7 +636,7 @@ namespace flex
         pointer new_end = std::copy(mBegin, mEnd, new_begin);
         *new_end = val;
 
-        DeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin, new_size, new_capacity);
       }
     }
     else
@@ -665,7 +666,7 @@ namespace flex
         *new_begin = val;
         std::copy(mBegin, mEnd, (new_begin + 1));
 
-        DeallocateAndReassign(new_begin,new_size,new_capacity);
+        DeallocateAndReassign(new_begin, new_size, new_capacity);
       }
     }
     else
@@ -713,8 +714,24 @@ namespace flex
         //Copy all current values.
         std::copy(mBegin, mEnd, new_begin);
 
-        DeallocateAndReassign(new_begin,size(),new_capacity);
+        DeallocateAndReassign(new_begin, size(), new_capacity);
       }
+    }
+  }
+
+  template<class T, class Alloc>
+  inline void ring<T, Alloc>::shrink_to_fit()
+  {
+    if (capacity() > size())
+    {
+      //Allocate memory with sufficient capacity.
+      size_type new_capacity = size();
+      pointer new_begin = AllocateAndConstruct(new_capacity);
+
+      //Copy all values.
+      std::copy(mBegin, mEnd, new_begin);
+
+      DeallocateAndReassign(new_begin, new_capacity, new_capacity);
     }
   }
 
@@ -804,15 +821,15 @@ namespace flex
   template<class T, class Alloc>
   inline void ring<T, Alloc>::DeallocateAndReassign(pointer new_begin, size_type new_size, size_type new_capacity)
   {
-        DestroyAndDeallocate();
-        
-        mBegin.mPtr = new_begin;
-        mEnd.mPtr = mBegin.mPtr + new_size;
-        
-        mBegin.mLeftBound = mEnd.mLeftBound = new_begin;
-        mBegin.mRightBound = mEnd.mRightBound = new_begin + new_capacity;
+    DestroyAndDeallocate();
+
+    mBegin.mPtr = new_begin;
+    mEnd.mPtr = mBegin.mPtr + new_size;
+
+    mBegin.mLeftBound = mEnd.mLeftBound = new_begin;
+    mBegin.mRightBound = mEnd.mRightBound = new_begin + new_capacity;
   }
-  
+
   template<class T, class Alloc>
   inline bool operator==(const ring<T, Alloc>& lhs, const ring<T, Alloc>& rhs)
   {
