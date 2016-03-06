@@ -102,7 +102,8 @@ namespace flex
     void splice(iterator position, this_type& x, iterator i);
     void splice(iterator position, this_type& x, iterator first, iterator last);
     void swap(list<T, Alloc>& obj);
-
+    void unique();
+    template<typename BinaryPredicate> void unique(BinaryPredicate binary_pred);
   protected:
     list(size_t capacity, list_node<T>* contentPtr);
 
@@ -786,6 +787,50 @@ namespace flex
       {
         insert(lhs_it, rhs_it, rhs_end);
         obj.erase(rhs_it, rhs_end);
+      }
+    }
+  }
+
+  template<typename T, typename Alloc>
+  void list<T, Alloc>::unique()
+  {
+    /*
+     * Based on the standard, we shall delete all but the first element of each consecutive group.  We will iterate
+     * backwards, as it is simpler to remove elements behind the iterator.  Although it shouldn't matter which unique
+     * elements are deleted, it is best to follow the standard just in case a dependency exists on the behavior.
+     */
+    node_type* begin_ptr = static_cast<node_type*>(mAnchor.mPrev);
+    node_type* end_ptr = static_cast<node_type*>(&mAnchor);
+
+    while (begin_ptr != end_ptr)
+    {
+      const iterator prev(begin_ptr);
+      begin_ptr = static_cast<node_type*>(begin_ptr->mPrev);
+      if (begin_ptr->mValue == *prev)
+      {
+        erase(prev);
+      }
+    }
+  }
+
+  template<typename T, typename Alloc>
+  template<typename BinaryPredicate> void list<T, Alloc>::unique(BinaryPredicate binary_pred)
+  {
+    /*
+     * Based on the standard, we shall delete all but the first element of each consecutive group.  We will iterate
+     * backwards, as it is simpler to remove elements behind the iterator.  Although it shouldn't matter which unique
+     * elements are deleted, it is best to follow the standard just in case a dependency exists on the behavior.
+     */
+    node_type* begin_ptr = static_cast<node_type*>(mAnchor.mPrev);
+    node_type* end_ptr = static_cast<node_type*>(&mAnchor);
+
+    while (begin_ptr != end_ptr)
+    {
+      const iterator prev(begin_ptr);
+      begin_ptr = static_cast<node_type*>(begin_ptr->mPrev);
+      if (binary_pred(begin_ptr->mValue, *prev))
+      {
+        erase(prev);
       }
     }
   }

@@ -1635,6 +1635,68 @@ public:
     assert_list_validity(b);
   }
 
+  void test_unique(void)
+  {
+    list_int a;
+
+    /*
+     * Case1: Test on empty list
+     */
+    a.unique();
+    TS_ASSERT_EQUALS(a.size(), 0);
+    assert_list_validity(a);
+
+    /*
+     * Case2: Normal conditions.
+     */
+    int data[25] = { 0, 0, 1, 2, 3, 4, 4, 5, 6, 7, 8, 8, 8, 9, 10, 11, 11, 11, 11, 12, 13, 14, 15, 15, 15 };
+    a.assign(data, data + 25);
+    TS_ASSERT_EQUALS(a.size(), 25);
+    a.unique();
+    TS_ASSERT_EQUALS(a.size(), 16);
+    list_int::iterator it = a.begin();
+    for (int i = 0; i < 16; ++i)
+    {
+      TS_ASSERT_EQUALS(*(it++), INT_DATA[i]);
+    }
+    assert_list_validity(a);
+  }
+
+  struct is_equal
+  {
+    bool operator()(int first, int second)
+    {
+      return (first == second);
+    }
+  };
+
+  void test_unique_predicate(void)
+  {
+    list_int a;
+
+    /*
+     * Case1: Test on empty list
+     */
+    a.unique(is_equal());
+    TS_ASSERT_EQUALS(a.size(), 0);
+    assert_list_validity(a);
+
+    /*
+     * Case2: Normal conditions.
+     */
+    int data[25] = { 0, 0, 1, 2, 3, 4, 4, 5, 6, 7, 8, 8, 8, 9, 10, 11, 11, 11, 11, 12, 13, 14, 15, 15, 15 };
+    a.assign(data, data + 25);
+    TS_ASSERT_EQUALS(a.size(), 25);
+    a.unique(is_equal());
+    TS_ASSERT_EQUALS(a.size(), 16);
+    list_int::iterator it = a.begin();
+    for (int i = 0; i < 16; ++i)
+    {
+      TS_ASSERT_EQUALS(*(it++), INT_DATA[i]);
+    }
+    assert_list_validity(a);
+  }
+
   void test_assignment_operator(void)
   {
     //Light-weight test, as this simply calls the assign() method.
@@ -1647,7 +1709,7 @@ public:
     TS_ASSERT_EQUALS(a.size(), a.capacity());
     it = a.begin();
     tmp_it = tmp.begin();
-    for (int i = 0; i < a.size(); i++)
+    for (int i = 0; i < a.size(); ++i)
     {
       TS_ASSERT_EQUALS(*(it++), *(tmp_it++));
     }
