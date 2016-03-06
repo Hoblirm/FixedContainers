@@ -179,21 +179,14 @@ namespace flex
   {
     if (new_size > capacity())
     {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.assign() - fill range exceeds capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = AllocateAndConstruct(new_capacity);
+      //Allocate memory with sufficient capacity.
+      size_type new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
 
-        //Copy all values.
-        std::fill_n(new_begin, new_size, val);
+      //Copy all values.
+      std::fill_n(new_begin, new_size, val);
 
-        DeallocateAndReassign(new_begin, new_size, new_capacity);
-      }
+      DeallocateAndReassign(new_begin, new_size, new_capacity);
     }
     else
     {
@@ -208,21 +201,14 @@ namespace flex
     size_type new_size = last - first;
     if (new_size > capacity())
     {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.assign() - iterator range exceeds capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = AllocateAndConstruct(new_capacity);
+      //Allocate memory with sufficient capacity.
+      size_type new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
 
-        //Copy all values.
-        std::copy(first, last, new_begin);
+      //Copy all values.
+      std::copy(first, last, new_begin);
 
-        DeallocateAndReassign(new_begin, new_size, new_capacity);
-      }
+      DeallocateAndReassign(new_begin, new_size, new_capacity);
     }
     else
     {
@@ -237,21 +223,14 @@ namespace flex
     size_type new_size = last - first;
     if (new_size > capacity())
     {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.assign() - pointer range exceeds capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = AllocateAndConstruct(new_capacity);
+      //Allocate memory with sufficient capacity.
+      size_type new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
 
-        //Copy all values.
-        std::copy(first, last, new_begin);
+      //Copy all values.
+      std::copy(first, last, new_begin);
 
-        DeallocateAndReassign(new_begin, new_size, new_capacity);
-      }
+      DeallocateAndReassign(new_begin, new_size, new_capacity);
     }
     else
     {
@@ -420,30 +399,23 @@ namespace flex
   {
     if (size() == capacity())
     {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.insert() - capacity exceeded");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_size = size() + 1;
-        size_t new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = AllocateAndConstruct(new_capacity);
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + 1;
+      size_t new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
 
-        //Copy all values to the left of position.
-        pointer new_end = std::copy(mBegin, position, new_begin);
+      //Copy all values to the left of position.
+      pointer new_end = std::copy(mBegin, position, new_begin);
 
-        //Copy the inserted parameter val.
-        iterator new_position(new_end, new_begin, new_begin + new_capacity);
-        *new_end = val;
+      //Copy the inserted parameter val.
+      iterator new_position(new_end, new_begin, new_begin + new_capacity);
+      *new_end = val;
 
-        //Copy all values that come after position.
-        std::copy(position, mEnd, ++new_end);
+      //Copy all values that come after position.
+      std::copy(position, mEnd, ++new_end);
 
-        DeallocateAndReassign(new_begin, new_size, new_capacity);
-        return new_position;
-      }
+      DeallocateAndReassign(new_begin, new_size, new_capacity);
+      return new_position;
     }
     else
     {
@@ -463,28 +435,21 @@ namespace flex
   {
     if ((size() + n) > capacity())
     {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.insert() - fill range exceeds capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_size = size() + n;
-        size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = AllocateAndConstruct(new_capacity);
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + n;
+      size_type new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
 
-        //Copy all values to the left of position.
-        pointer new_end = std::copy(mBegin, position, new_begin);
+      //Copy all values to the left of position.
+      pointer new_end = std::copy(mBegin, position, new_begin);
 
-        //Fill the parameter val.
-        std::fill_n(new_end, n, val);
+      //Fill the parameter val.
+      std::fill_n(new_end, n, val);
 
-        //Copy all values that come after position.
-        new_end = std::copy(position, mEnd, new_end + n);
+      //Copy all values that come after position.
+      new_end = std::copy(position, mEnd, new_end + n);
 
-        DeallocateAndReassign(new_begin, new_size, new_capacity);
-      }
+      DeallocateAndReassign(new_begin, new_size, new_capacity);
     }
     else
     {
@@ -504,28 +469,21 @@ namespace flex
     size_type n = (last - first);
     if ((size() + n) > capacity())
     {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.insert() - fill range exceeds capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_size = size() + n;
-        size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = AllocateAndConstruct(new_capacity);
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + n;
+      size_type new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
 
-        //Copy all values to the left of position.
-        pointer new_end = std::copy(mBegin, position, new_begin);
+      //Copy all values to the left of position.
+      pointer new_end = std::copy(mBegin, position, new_begin);
 
-        //Copy the inserted range.
-        new_end = std::copy(first, last, new_end);
+      //Copy the inserted range.
+      new_end = std::copy(first, last, new_end);
 
-        //Copy all values that come after position.
-        new_end = std::copy(position, mEnd, new_end);
+      //Copy all values that come after position.
+      new_end = std::copy(position, mEnd, new_end);
 
-        DeallocateAndReassign(new_begin, new_size, new_capacity);
-      }
+      DeallocateAndReassign(new_begin, new_size, new_capacity);
     }
     else
     {
@@ -544,28 +502,21 @@ namespace flex
     size_type n = (last - first);
     if ((size() + n) > capacity())
     {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.insert() - fill range exceeds capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_size = size() + n;
-        size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = AllocateAndConstruct(new_capacity);
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + n;
+      size_type new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
 
-        //Copy all values to the left of position.
-        pointer new_end = std::copy(mBegin, position, new_begin);
+      //Copy all values to the left of position.
+      pointer new_end = std::copy(mBegin, position, new_begin);
 
-        //Copy the inserted range.
-        new_end = std::copy(first, last, new_end);
+      //Copy the inserted range.
+      new_end = std::copy(first, last, new_end);
 
-        //Copy all values that come after position.
-        new_end = std::copy(position, mEnd, new_end);
+      //Copy all values that come after position.
+      new_end = std::copy(position, mEnd, new_end);
 
-        DeallocateAndReassign(new_begin, new_size, new_capacity);
-      }
+      DeallocateAndReassign(new_begin, new_size, new_capacity);
     }
     else
     {
@@ -621,23 +572,16 @@ namespace flex
   {
     if (size() == capacity())
     {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.push_back() - size exceeds capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_size = size() + 1;
-        size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = AllocateAndConstruct(new_capacity);
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + 1;
+      size_type new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
 
-        //Copy all values.
-        pointer new_end = std::copy(mBegin, mEnd, new_begin);
-        *new_end = val;
+      //Copy all values.
+      pointer new_end = std::copy(mBegin, mEnd, new_begin);
+      *new_end = val;
 
-        DeallocateAndReassign(new_begin, new_size, new_capacity);
-      }
+      DeallocateAndReassign(new_begin, new_size, new_capacity);
     }
     else
     {
@@ -651,23 +595,16 @@ namespace flex
   {
     if (size() == capacity())
     {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.push_front() - size exceeds capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_size = size() + 1;
-        size_type new_capacity = GetNewCapacity(new_size);
-        pointer new_begin = AllocateAndConstruct(new_capacity);
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + 1;
+      size_type new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
 
-        //Copy all values.
-        *new_begin = val;
-        std::copy(mBegin, mEnd, (new_begin + 1));
+      //Copy all values.
+      *new_begin = val;
+      std::copy(mBegin, mEnd, (new_begin + 1));
 
-        DeallocateAndReassign(new_begin, new_size, new_capacity);
-      }
+      DeallocateAndReassign(new_begin, new_size, new_capacity);
     }
     else
     {
@@ -701,21 +638,14 @@ namespace flex
   {
     if (n > capacity())
     {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::ring.reserve() - exceeded capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_type new_capacity = GetNewCapacity(n);
-        pointer new_begin = AllocateAndConstruct(new_capacity);
+      //Allocate memory with sufficient capacity.
+      size_type new_capacity = GetNewCapacity(n);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
 
-        //Copy all current values.
-        std::copy(mBegin, mEnd, new_begin);
+      //Copy all current values.
+      std::copy(mBegin, mEnd, new_begin);
 
-        DeallocateAndReassign(new_begin, size(), new_capacity);
-      }
+      DeallocateAndReassign(new_begin, size(), new_capacity);
     }
   }
 
@@ -751,24 +681,18 @@ namespace flex
     }
     else
     {
-      if ((obj.size() > capacity()) || (size() > obj.capacity()))
-      {
-        throw std::runtime_error("flex::vector - swap() parameters' size exceed capacity");
-      }
-
       if (size() < obj.size())
       {
         iterator it = std::swap_ranges(mBegin, mEnd, obj.begin());
-        std::copy(it, obj.end(), mEnd);
+        insert(mEnd, it, obj.end());
+        obj.erase(it, obj.end());
       }
       else
       {
         iterator it = std::swap_ranges(obj.begin(), obj.end(), mBegin);
-        std::copy(it, mEnd, obj.end());
+        obj.insert(obj.end(), it, mEnd);
+        erase(it, mEnd);
       }
-      size_t tmp_size = size();
-      mEnd.mPtr = (mBegin + obj.size()).mPtr;
-      obj.mEnd.mPtr = (obj.mBegin + tmp_size).mPtr;
     }
   }
 
@@ -785,6 +709,12 @@ namespace flex
   template<class T, class Alloc>
   inline typename ring<T, Alloc>::pointer ring<T, Alloc>::AllocateAndConstruct(size_t capacity)
   {
+    if (mFixed)
+    {
+      throw std::runtime_error("flex::fixed_ring - allocation performed");
+      mFixed = false;
+    }
+
     pointer new_begin;
     //The size allocated is 1 more than the capacity.  This is do to the fact that we don't want begin() to equal end().
     //Therefore there will always be one allocated element that is unused.

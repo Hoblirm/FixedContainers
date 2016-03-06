@@ -1015,6 +1015,54 @@ public:
     TS_ASSERT_EQUALS(a.max_size(), a.get_allocator().max_size());
   }
 
+  void test_merge(void)
+  {
+    int a_data[8] = { 0, 2, 4, 5, 8, 9, 11, 13 };
+    int b_data[8] = { 1, 3, 6, 7, 10, 12, 14, 15 };
+    list_int a(a_data, a_data + 8);
+    list_int b(b_data, b_data + 8);
+
+    a.merge(b);
+    TS_ASSERT_EQUALS(a.size(), 16);
+    TS_ASSERT_EQUALS(b.size(), 0);
+    list_int::iterator it = a.begin();
+    for (int i = 0; i < a.size(); ++i)
+    {
+      TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+      ++it;
+    }
+    assert_list_validity(a);
+    assert_list_validity(b);
+  }
+
+  struct reverse_merge_functor
+  {
+    bool operator()(int first, int second)
+    {
+      return (int(first) > int(second));
+    }
+  };
+
+  void test_merge_compare(void)
+  {
+    int a_data[8] = { 13, 11, 9, 8, 5, 4, 2, 0 };
+    int b_data[8] = { 15, 14, 12, 10, 7, 6, 3, 1 };
+    list_int a(a_data, a_data + 8);
+    list_int b(b_data, b_data + 8);
+
+    a.merge(b, reverse_merge_functor());
+    TS_ASSERT_EQUALS(a.size(), 16);
+    TS_ASSERT_EQUALS(b.size(), 0);
+    list_int::iterator it = a.begin();
+    for (int i = 15; i >= 0; --i)
+    {
+      TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+      ++it;
+    }
+    assert_list_validity(a);
+    assert_list_validity(b);
+  }
+
   void test_rbegin_and_rend(void)
   {
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
@@ -1046,6 +1094,108 @@ public:
       }
       TS_ASSERT_EQUALS(i, -a.size());
     } //for: SIZE_COUNT
+  }
+
+  void test_remove(void)
+  {
+    int data[16] = { 0, 0, 2, 3, 11, 5, 6, 7, 11, 9, 10, 11, 12, 13, 14, 15 };
+    list_int a(data, data + 16);
+
+    /*
+     * Case1: Attempt to remove entry not in list.
+     */
+    a.remove(16);
+    TS_ASSERT_EQUALS(a.size(), 16);
+
+    /*
+     * Case2: Remove entry that is at the end of list
+     */
+    a.remove(15);
+    TS_ASSERT_EQUALS(a.size(), 15);
+
+    /*
+     * Case3: Remove entry that is at the front of list
+     */
+    a.remove(0);
+    TS_ASSERT_EQUALS(a.size(), 13);
+
+    /*
+     * Case4: Remove entry that is duplicated
+     */
+    a.remove(11);
+    TS_ASSERT_EQUALS(a.size(), 10);
+    list_int::iterator it = a.begin();
+    TS_ASSERT_EQUALS(*(it++), 2);
+    TS_ASSERT_EQUALS(*(it++), 3);
+    TS_ASSERT_EQUALS(*(it++), 5);
+    TS_ASSERT_EQUALS(*(it++), 6);
+    TS_ASSERT_EQUALS(*(it++), 7);
+    TS_ASSERT_EQUALS(*(it++), 9);
+    TS_ASSERT_EQUALS(*(it++), 10);
+    TS_ASSERT_EQUALS(*(it++), 12);
+    TS_ASSERT_EQUALS(*(it++), 13);
+    TS_ASSERT_EQUALS(*(it++), 14);
+    assert_list_validity(a);
+  }
+
+  struct is_zero_functor
+  {
+    bool operator()(int val)
+    {
+      return (val == 0);
+    }
+  };
+
+  struct is_negative_functor
+  {
+    bool operator()(int val)
+    {
+      return (val < 0);
+    }
+  };
+
+  struct is_over_thirty
+  {
+    bool operator()(int val)
+    {
+      return (val > 30);
+    }
+  };
+
+  void test_remove_predicate(void)
+  {
+    int data[16] = { 0, 0, 2, 3, -11, 5, 6, 7, -11, 9, 10, -11, 12, 13, 14, 35 };
+    list_int a(data, data + 16);
+
+    /*
+     * Case1: Remove entry that is at the end of list
+     */
+    a.remove_if(is_over_thirty());
+    TS_ASSERT_EQUALS(a.size(), 15);
+
+    /*
+     * Case2: Remove entry that is at the front of list
+     */
+    a.remove_if(is_zero_functor());
+    TS_ASSERT_EQUALS(a.size(), 13);
+
+    /*
+     * Case3: Remove entry that is duplicated
+     */
+    a.remove_if(is_negative_functor());
+    TS_ASSERT_EQUALS(a.size(), 10);
+    list_int::iterator it = a.begin();
+    TS_ASSERT_EQUALS(*(it++), 2);
+    TS_ASSERT_EQUALS(*(it++), 3);
+    TS_ASSERT_EQUALS(*(it++), 5);
+    TS_ASSERT_EQUALS(*(it++), 6);
+    TS_ASSERT_EQUALS(*(it++), 7);
+    TS_ASSERT_EQUALS(*(it++), 9);
+    TS_ASSERT_EQUALS(*(it++), 10);
+    TS_ASSERT_EQUALS(*(it++), 12);
+    TS_ASSERT_EQUALS(*(it++), 13);
+    TS_ASSERT_EQUALS(*(it++), 14);
+    assert_list_validity(a);
   }
 
   void test_reserve(void)
@@ -1093,6 +1243,29 @@ public:
     } //for: SIZE_COUNT
   }
 
+  void test_reverse(void)
+  {
+    list_int a;
+    list_int::iterator it;
+
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      /*
+       * Case 1: Normal conditions
+       */
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      a.reverse();
+      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
+      it = a.begin();
+      for (int i = SIZES[s] - 1; i >= 0; --i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      assert_list_validity(a);
+    } //for: SIZE_COUNT
+  }
+
   void test_shrink_to_fit(void)
   {
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
@@ -1116,6 +1289,316 @@ public:
     unsigned size = 3;
     const list_int a(3);
     TS_ASSERT_EQUALS(a.size(), size);
+  }
+
+  void test_splice_list(void)
+  {
+    list_int a;
+    list_int b;
+    list_int::iterator it;
+
+    /*
+     * Case1: Test splice on empty list
+     */
+    a.splice(a.begin(), b);
+    TS_ASSERT_EQUALS(a.size(), 0);
+    TS_ASSERT_EQUALS(b.size(), 0);
+    assert_list_validity(a);
+    assert_list_validity(b);
+
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
+      const int val = 19;
+
+      /*
+       * Case 2: Test splice at end
+       */
+      b.assign(INT_DATA, INT_DATA + 4);
+      a.splice(a.end(), b);
+      current_size += 4;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(b.size(), 0);
+      assert_list_validity(b);
+      it = a.begin();
+      for (int i = 0; i < a.size() - 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      for (int i = 0; i < 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+
+      /*
+       * Case3: Test splice at begin
+       */
+      list_int c(INT_DATA + 4, INT_DATA + 8);
+      a.splice(a.begin(), c);
+      current_size += 4;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(c.size(), 0);
+      assert_list_validity(c);
+      it = a.begin();
+      for (int i = 4; i < 8; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      for (int i = 4; i < a.size() - 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i - 4]);
+        ++it;
+      }
+      for (int i = 0; i < 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+
+      /*
+       * Case4: Test splice in middle
+       */
+      list_int d(INT_DATA + 8, INT_DATA + 16);
+      int mid_index = current_size / 2;
+      it = a.begin();
+      for (int i = 0; i < mid_index; ++i)
+      {
+        ++it;
+      }
+      a.splice(it, d);
+      current_size += 8;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(d.size(), 0);
+      assert_list_validity(d);
+      it = a.begin();
+      for (int i = 4; i < 8; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      for (int i = 4; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i - 4]);
+        ++it;
+      }
+      for (int i = 8; i < 16; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      for (int i = mid_index + 8; i < a.size() - 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i - 12]);
+        ++it;
+      }
+      for (int i = 0; i < 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      assert_list_validity(a);
+    } //for: SIZE_COUNT
+  }
+
+  void test_splice_element(void)
+  {
+    list_int a;
+    list_int b;
+    list_int::iterator it;
+
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      b.assign(INT_DATA, INT_DATA + 16);
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
+      const int val = 19;
+
+      /*
+       * Case1: Test splice at end
+       */
+      a.splice(a.end(), b, b.begin());
+      ++current_size;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(b.size(), 15);
+      it = a.begin();
+      for (int i = 0; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, INT_DATA[0]);
+
+      /*
+       * Case2: Test splice at begin
+       */
+      a.splice(a.begin(), b, --b.end());
+      ++current_size;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(b.size(), 14);
+      TS_ASSERT_EQUALS(a.front(), INT_DATA[15]);
+      it = ++a.begin();
+      for (int i = 1; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i - 1]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, INT_DATA[0]);
+
+      /*
+       * Case3: Test splice in middle
+       */
+      int mid_index = current_size / 2;
+      it = a.begin();
+      for (int i = 0; i < mid_index; ++i)
+      {
+        ++it;
+      }
+      a.splice(it, b, b.begin());
+      ++current_size;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(b.size(), 13);
+      TS_ASSERT_EQUALS(a.front(), INT_DATA[15]);
+      it = ++a.begin();
+      for (int i = 1; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i - 1]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, INT_DATA[1]);
+      ++it;
+      for (int i = mid_index + 1; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i - 2]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, INT_DATA[0]);
+      assert_list_validity(a);
+
+      it = b.begin();
+      for (int i = 2; i < 15; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      assert_list_validity(b);
+    } //for: SIZE_COUNT
+  }
+
+  void test_splice_range(void)
+  {
+    list_int a;
+    list_int b;
+    list_int::iterator it;
+
+    /*
+     * Case1: Test splice on empty list
+     */
+    a.splice(a.begin(), b, b.begin(), b.end());
+    TS_ASSERT_EQUALS(a.size(), 0);
+    TS_ASSERT_EQUALS(b.size(), 0);
+    assert_list_validity(a);
+    assert_list_validity(b);
+
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(INT_DATA, INT_DATA + SIZES[s]);
+      size_t current_size = a.size();
+      const int val = 19;
+
+      /*
+       * Case 2: Test splice at end
+       */
+      b.assign(INT_DATA, INT_DATA + 4);
+      a.splice(a.end(), b, b.begin(), b.end());
+      current_size += 4;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(b.size(), 0);
+      assert_list_validity(b);
+      it = a.begin();
+      for (int i = 0; i < a.size() - 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      for (int i = 0; i < 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+
+      /*
+       * Case3: Test splice at begin
+       */
+      list_int c(INT_DATA + 4, INT_DATA + 8);
+      a.splice(a.begin(), c, c.begin(), c.end());
+      current_size += 4;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(c.size(), 0);
+      assert_list_validity(c);
+      it = a.begin();
+      for (int i = 4; i < 8; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      for (int i = 4; i < a.size() - 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i - 4]);
+        ++it;
+      }
+      for (int i = 0; i < 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+
+      /*
+       * Case4: Test splice in middle
+       */
+      list_int d(INT_DATA + 8, INT_DATA + 16);
+      int mid_index = current_size / 2;
+      it = a.begin();
+      for (int i = 0; i < mid_index; ++i)
+      {
+        ++it;
+      }
+      a.splice(it, d, d.begin(), d.end());
+      current_size += 8;
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(d.size(), 0);
+      assert_list_validity(d);
+      it = a.begin();
+      for (int i = 4; i < 8; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      for (int i = 4; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i - 4]);
+        ++it;
+      }
+      for (int i = 8; i < 16; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      for (int i = mid_index + 8; i < a.size() - 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i - 12]);
+        ++it;
+      }
+      for (int i = 0; i < 4; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, INT_DATA[i]);
+        ++it;
+      }
+      assert_list_validity(a);
+    } //for: SIZE_COUNT
   }
 
   void test_swap(void)

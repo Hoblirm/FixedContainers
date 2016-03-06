@@ -11,6 +11,8 @@ namespace flex
   template<class T, class Alloc = allocator<list_node<T> > > class list: public allocation_guard
   {
   public:
+    typedef list<T, Alloc> this_type;
+
     typedef T value_type;
     typedef T* pointer;
     typedef const T* const_pointer;
@@ -71,6 +73,8 @@ namespace flex
     void insert(iterator position, const T* first, const T* last);
 
     size_type max_size() const;
+    void merge(this_type& x);
+    template<typename Compare> void merge(this_type& x, Compare comp);
 
     list<T, Alloc>& operator=(const list<T, Alloc>& obj);
 
@@ -84,10 +88,19 @@ namespace flex
     reverse_iterator rend();
     const_reverse_iterator rend() const;
 
+    void remove(const T& x);
+    template<typename Predicate> void remove_if(Predicate pred);
+
     void reserve(size_type n);
     void resize(size_type n, const value_type& val = value_type());
+
+    void reverse(void);
+
     void shrink_to_fit();
     size_t size() const;
+    void splice(iterator position, this_type& x);
+    void splice(iterator position, this_type& x, iterator i);
+    void splice(iterator position, this_type& x, iterator first, iterator last);
     void swap(list<T, Alloc>& obj);
 
   protected:
@@ -444,6 +457,66 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline void list<T, Alloc>::merge(this_type& x)
+  {
+    if (this != &x)
+    {
+      iterator lhs_first(begin());
+      iterator rhs_first(x.begin());
+      const iterator lhs_last(end());
+      const iterator rhs_last(x.end());
+
+      while ((lhs_first != lhs_last) && (rhs_first != rhs_last))
+      {
+        if (*rhs_first < *lhs_first)
+        {
+          iterator splice_begin = rhs_first;
+          ++rhs_first;
+          while ((*rhs_first < *lhs_first) && (rhs_first != rhs_last))
+          {
+            ++rhs_first;
+          }
+          splice(lhs_first, x, splice_begin, rhs_first);
+        }
+        ++lhs_first;
+      }
+
+      if (rhs_first != rhs_last)
+        splice(lhs_last, x, rhs_first, rhs_last);
+    }
+  }
+
+  template<class T, class Alloc>
+  template<typename Compare> inline void list<T, Alloc>::merge(this_type& x, Compare comp)
+  {
+    if (this != &x)
+    {
+      iterator lhs_first(begin());
+      iterator rhs_first(x.begin());
+      const iterator lhs_last(end());
+      const iterator rhs_last(x.end());
+
+      while ((lhs_first != lhs_last) && (rhs_first != rhs_last))
+      {
+        if (comp(*rhs_first, *lhs_first))
+        {
+          iterator splice_begin = rhs_first;
+          ++rhs_first;
+          while ((comp(*rhs_first, *lhs_first)) && (rhs_first != rhs_last))
+          {
+            ++rhs_first;
+          }
+          splice(lhs_first, x, splice_begin, rhs_first);
+        }
+        ++lhs_first;
+      }
+
+      if (rhs_first != rhs_last)
+        splice(lhs_last, x, rhs_first, rhs_last);
+    }
+  }
+
+  template<class T, class Alloc>
   inline list<T, Alloc>& list<T, Alloc>::operator=(const list<T, Alloc>& obj)
   {
     assign(obj.begin(), obj.end());
@@ -522,6 +595,45 @@ namespace flex
     return const_reverse_iterator(begin());
   }
 
+  template<typename T, typename Alloc>
+  void list<T, Alloc>::remove(const value_type& value)
+  {
+    iterator it((base_node_type*) mAnchor.mNext);
+
+    while (it.mNode != &mAnchor)
+    {
+      if (*it == value)
+      {
+        ++it;
+        erase((base_node_type*) it.mNode->mPrev);
+      }
+      else
+      {
+        ++it;
+      }
+    }
+  }
+
+  template<typename T, typename Alloc>
+  template<typename Predicate>
+  inline void list<T, Alloc>::remove_if(Predicate pred)
+  {
+    iterator it((base_node_type*) mAnchor.mNext);
+
+    while (it.mNode != &mAnchor)
+    {
+      if (pred(*it))
+      {
+        ++it;
+        erase((base_node_type*) it.mNode->mPrev);
+      }
+      else
+      {
+        ++it;
+      }
+    }
+  }
+
   template<class T, class Alloc>
   inline void list<T, Alloc>::reserve(size_type n)
   {
@@ -557,6 +669,20 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline void list<T, Alloc>::reverse()
+  {
+    base_node_type* node_ptr = &mAnchor;
+    do
+    {
+      base_node_type* const tmp = node_ptr->mNext;
+      node_ptr->mNext = node_ptr->mPrev;
+      node_ptr->mPrev = tmp;
+      node_ptr = node_ptr->mPrev;
+    }
+    while (node_ptr != &mAnchor);
+  }
+
+  template<class T, class Alloc>
   inline void list<T, Alloc>::shrink_to_fit()
   {
     PurgeNodePool();
@@ -566,6 +692,68 @@ namespace flex
   inline size_t list<T, Alloc>::size() const
   {
     return mSize;
+  }
+
+  template<typename T, typename Alloc>
+  inline void list<T, Alloc>::splice(iterator position, this_type& x)
+  {
+    if (x.mSize)
+    {
+      if ((!mFixed) && (!x.fixed()))
+      {
+        ((base_node_type*) position.mNode)->splice((base_node_type*) x.mAnchor.mNext, (base_node_type*) &x.mAnchor);
+        mSize += x.mSize;
+        x.mSize = 0;
+      }
+      else
+      {
+        insert(position, x.begin(), x.end());
+        x.clear();
+      }
+    }
+  }
+
+  template<typename T, typename Alloc>
+  inline void list<T, Alloc>::splice(iterator position, list& x, iterator i)
+  {
+    if ((!mFixed) && (!x.fixed()))
+    {
+      iterator last(i);
+      ++last;
+      if ((position != i) && (position != last))
+      {
+        ((base_node_type*) position.mNode)->splice((base_node_type*) i.mNode, (base_node_type*) last.mNode);
+
+        ++mSize;
+        --x.mSize;
+      }
+    }
+    else
+    {
+      insert(position, *i);
+      x.erase(i);
+    }
+  }
+
+  template<typename T, typename Alloc>
+  inline void list<T, Alloc>::splice(iterator position, this_type& x, iterator first, iterator last)
+  {
+    if ((!mFixed) && (!x.fixed()))
+    {
+      const size_type n = (size_type) std::distance(first, last);
+
+      if (n)
+      {
+        ((base_node_type*) position.mNode)->splice((base_node_type*) first.mNode, (base_node_type*) last.mNode);
+        mSize += n;
+        x.mSize -= n;
+      }
+    }
+    else
+    {
+      insert(position, first, last);
+      x.erase(first, last);
+    }
   }
 
   template<class T, class Alloc>
@@ -618,12 +806,10 @@ namespace flex
       if (mFixed)
       {
         throw std::runtime_error("flex::fixed_list - exceeded capacity");
+        mFixed = false;
       }
-      else
-      {
-        ptr = mAllocator.allocate(1);
-        mAllocator.construct(ptr, node_type());
-      }
+      ptr = mAllocator.allocate(1);
+      mAllocator.construct(ptr, node_type());
     }
     else
     {
