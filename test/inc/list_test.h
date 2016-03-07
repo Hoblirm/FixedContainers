@@ -285,7 +285,7 @@ public:
   {
     /*
      * Case1: Verify assign can increase size.
-     */
+     */      
     list_int a;
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
@@ -1392,6 +1392,115 @@ public:
     assert_list_validity(a);
   }
 
+  struct is_less_than
+  {
+     bool operator()(int a, int b)
+     {
+        return (a<b);
+     }
+  };
+  
+  void test_sort_compare(void)
+  {
+    list_int a;
+    list_int::iterator it;
+
+    /*
+     * Case1: Sort empty list
+     */
+    a.sort(is_less_than());
+    assert_list_validity(a);
+
+    /*
+     * Case2: Sort all combinations of 3 unique elements.
+     */
+    int data_a[3] = { 0, 1, 2 };
+    a.assign(data_a, data_a + 3);
+    a.sort(is_less_than());
+    TS_ASSERT_EQUALS(a.size(), 3);
+    it = a.begin();
+    TS_ASSERT_EQUALS(*(it++), 0);
+    TS_ASSERT_EQUALS(*(it++), 1);
+    TS_ASSERT_EQUALS(*(it++), 2);
+    assert_list_validity(a);
+
+    int data_b[3] = { 0, 2, 1 };
+    a.assign(data_b, data_b + 3);
+    a.sort(is_less_than());
+    TS_ASSERT_EQUALS(a.size(), 3);
+    it = a.begin();
+    TS_ASSERT_EQUALS(*(it++), 0);
+    TS_ASSERT_EQUALS(*(it++), 1);
+    TS_ASSERT_EQUALS(*(it++), 2);
+    assert_list_validity(a);
+
+    int data_c[3] = { 1, 0, 2 };
+    a.assign(data_c, data_c + 3);
+    a.sort(is_less_than());
+    TS_ASSERT_EQUALS(a.size(), 3);
+    it = a.begin();
+    TS_ASSERT_EQUALS(*(it++), 0);
+    TS_ASSERT_EQUALS(*(it++), 1);
+    TS_ASSERT_EQUALS(*(it++), 2);
+    assert_list_validity(a);
+
+    int data_d[3] = { 1, 2, 0 };
+    a.assign(data_d, data_d + 3);
+    a.sort(is_less_than());
+    TS_ASSERT_EQUALS(a.size(), 3);
+    it = a.begin();
+    TS_ASSERT_EQUALS(*(it++), 0);
+    TS_ASSERT_EQUALS(*(it++), 1);
+    TS_ASSERT_EQUALS(*(it++), 2);
+    assert_list_validity(a);
+
+    int data_e[3] = { 2, 1, 0 };
+    a.assign(data_e, data_e + 3);
+    a.sort(is_less_than());
+    TS_ASSERT_EQUALS(a.size(), 3);
+    it = a.begin();
+    TS_ASSERT_EQUALS(*(it++), 0);
+    TS_ASSERT_EQUALS(*(it++), 1);
+    TS_ASSERT_EQUALS(*(it++), 2);
+    assert_list_validity(a);
+
+    int data_f[3] = { 2, 0, 1 };
+    a.assign(data_f, data_f + 3);
+    a.sort(is_less_than());
+    TS_ASSERT_EQUALS(a.size(), 3);
+    it = a.begin();
+    TS_ASSERT_EQUALS(*(it++), 0);
+    TS_ASSERT_EQUALS(*(it++), 1);
+    TS_ASSERT_EQUALS(*(it++), 2);
+    assert_list_validity(a);
+
+    /*
+     * Case3: Sort an array with duplicates.
+     */
+    int data_g[16] = { 13, 3, 7, 15, 2, 1, 14, 0, 11, 7, 4, 5, 11, 10, 7, 8 };
+    a.assign(data_g, data_g + 16);
+    a.sort(is_less_than());
+    TS_ASSERT_EQUALS(a.size(), 16);
+    it = a.begin();
+    TS_ASSERT_EQUALS(*(it++), 0);
+    TS_ASSERT_EQUALS(*(it++), 1);
+    TS_ASSERT_EQUALS(*(it++), 2);
+    TS_ASSERT_EQUALS(*(it++), 3);
+    TS_ASSERT_EQUALS(*(it++), 4);
+    TS_ASSERT_EQUALS(*(it++), 5);
+    TS_ASSERT_EQUALS(*(it++), 7);
+    TS_ASSERT_EQUALS(*(it++), 7);
+    TS_ASSERT_EQUALS(*(it++), 7);
+    TS_ASSERT_EQUALS(*(it++), 8);
+    TS_ASSERT_EQUALS(*(it++), 10);
+    TS_ASSERT_EQUALS(*(it++), 11);
+    TS_ASSERT_EQUALS(*(it++), 11);
+    TS_ASSERT_EQUALS(*(it++), 13);
+    TS_ASSERT_EQUALS(*(it++), 14);
+    TS_ASSERT_EQUALS(*(it++), 15);
+    assert_list_validity(a);
+  }
+  
   void test_splice_list(void)
   {
     list_int a;
