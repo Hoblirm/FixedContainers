@@ -98,12 +98,23 @@ namespace flex
 
     void shrink_to_fit();
     size_t size() const;
+
+    void sort();
+    template<typename Compare> void sort(Compare comp);
+
     void splice(iterator position, this_type& x);
     void splice(iterator position, this_type& x, iterator i);
     void splice(iterator position, this_type& x, iterator first, iterator last);
     void swap(list<T, Alloc>& obj);
     void unique();
     template<typename BinaryPredicate> void unique(BinaryPredicate binary_pred);
+
+    iterator sort(iterator first, iterator last);
+    iterator merge(iterator lhs_first, /*iterator lhs_last,*/iterator rhs_first, iterator rhs_last);
+
+    template<typename Compare>
+    void merge(iterator lhs_first, iterator lhs_last, iterator rhs_first, iterator rhs_last, Compare comp);
+    void splice(iterator position, iterator first, iterator last);
   protected:
     list(size_t capacity, list_node<T>* contentPtr);
 
@@ -114,6 +125,7 @@ namespace flex
     Alloc mAllocator;
 
   private:
+
     node_type* RetrieveNode();
     size_type GetNodePoolSize();
     void PushToNodePool(node_type* ptr);
@@ -518,6 +530,44 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline typename list<T, Alloc>::iterator list<T, Alloc>::merge(iterator lhs_first, /*iterator lhs_last,*/
+  iterator rhs_first, iterator rhs_last)
+  {
+//    iterator lhs_first(begin());
+//    iterator rhs_first(x.begin());
+//    const iterator lhs_last(end());
+//    const iterator rhs_last(x.end());
+
+    iterator front(lhs_first);
+    if (lhs_first != rhs_first)
+    {
+      if (*rhs_first < *lhs_first)
+      {
+        front = rhs_first;
+      }
+    }
+
+    while (/*(lhs_first != lhs_last) &&*/(lhs_first != rhs_first) && (rhs_first != rhs_last))
+    {
+      if (*rhs_first < *lhs_first)
+      {
+        iterator splice_begin = rhs_first;
+        ++rhs_first;
+        while ((*rhs_first < *lhs_first) && (rhs_first != rhs_last))
+        {
+          ++rhs_first;
+        }
+        splice(lhs_first, splice_begin, rhs_first);
+      }
+      ++lhs_first;
+    }
+
+//    if (rhs_first != rhs_last)
+//      splice(lhs_last, x, rhs_first, rhs_last);
+    return front;
+  }
+
+  template<class T, class Alloc>
   inline list<T, Alloc>& list<T, Alloc>::operator=(const list<T, Alloc>& obj)
   {
     assign(obj.begin(), obj.end());
@@ -696,6 +746,82 @@ namespace flex
   }
 
   template<typename T, typename Alloc>
+  void list<T, Alloc>::sort()
+  {
+    sort(begin(), end());
+  }
+
+  template<typename T, typename Alloc>
+  typename list<T, Alloc>::iterator list<T, Alloc>::sort(iterator first, iterator last)
+  {
+    //This 'if' statement is an optimized version of: "if (std::distance(first, last) >= 2)"
+    if ((first != last) && (first.mNode->mNext != static_cast<base_node_type*>(last.mNode)))
+    {
+      // Find an iterator which is in the middle of the list. The fastest way to do this
+      // is to iterate from both sides with two iterators and stop when they meet.
+      iterator mid(first), tail(last);
+      while ((mid != tail) && (++mid != tail))
+        --tail;
+
+      iterator lhs_front = sort(first, mid);
+      iterator rhs_front = sort(mid, last);
+
+      return merge(lhs_front, rhs_front, last);
+    }
+    else
+    {
+      return first;
+    }
+  }
+
+  template<typename T, typename Alloc>
+  template<typename Compare>
+  void list<T, Alloc>::sort(Compare comp)
+  {
+    // We implement the algorithm employed by Chris Caulfield whereby we use recursive
+    // function calls to sort the list. The sorting of a very large list may fail due to stack overflow
+    // if the stack is exhausted. The limit depends on the platform and the avaialable stack space.
+
+    // Easier-to-understand version of the 'if' statement:
+    // iterator i(begin());
+    // if((i != end()) && (++i != end())) // If the size is >= 2 (without calling the more expensive size() function)...
+
+    // Faster, more inlinable version of the 'if' statement:
+    if ((static_cast<node_type*>(mAnchor.mNext) != &mAnchor)
+        && (static_cast<node_type*>(mAnchor.mNext) != static_cast<node_type*>(mAnchor.mPrev)))
+    {
+      // We may have a stack space problem here if sizeof(this_type) is large (usually due to
+      // usage of a fixed_list). The only current resolution is to find an alternative way of
+      // doing things. I (Paul Pedriana) believe that the best long-term solution to this problem
+      // is to revise this sort function to not use this_type but instead use a ListNodeBase
+      // which involves no allocators and sort at that level, entirely with node pointers.
+
+      // Split the array into 2 roughly equal halves.
+      this_type leftList;     // This should cause no memory allocation.
+      this_type rightList;
+
+      // We find an iterator which is in the middle of the list. The fastest way to do
+      // this is to iterate from the base node both forwards and backwards with two
+      // iterators and stop when they meet each other. Recall that our size() function
+      // is not O(1) but is instead O(n), at least when EASTL_LIST_SIZE_CACHE is disabled.
+      iterator mid(begin());
+      std::advance(mid, size() / 2);
+
+      // Move the left half of this into leftList and the right half into rightList.
+      leftList.splice(leftList.begin(), *this, begin(), mid);
+      rightList.splice(rightList.begin(), *this);
+
+      // Sort the sub-lists.
+      leftList.sort(comp);
+      rightList.sort(comp);
+
+      // Merge the two halves into this list.
+      splice(begin(), leftList);
+      merge(rightList, comp);
+    }
+  }
+
+  template<typename T, typename Alloc>
   inline void list<T, Alloc>::splice(iterator position, this_type& x)
   {
     if (x.mSize)
@@ -754,6 +880,15 @@ namespace flex
     {
       insert(position, first, last);
       x.erase(first, last);
+    }
+  }
+
+  template<typename T, typename Alloc>
+  inline void list<T, Alloc>::splice(iterator position, iterator first, iterator last)
+  {
+    if (first != last)
+    {
+      ((base_node_type*) position.mNode)->splice((base_node_type*) first.mNode, (base_node_type*) last.mNode);
     }
   }
 

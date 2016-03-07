@@ -17,7 +17,6 @@ namespace flex
 
   inline void list_node_base::splice(list_node_base* first, list_node_base* last)
   {
-    // We assume that [first, last) are not within our list.
     last->mPrev->mNext = this;
     first->mPrev->mNext = last;
     this->mPrev->mNext = first;
