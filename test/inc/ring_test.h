@@ -933,7 +933,7 @@ public:
 
   void test_ary_operator_const(void)
   {
-    unsigned size = 3;
+    size_t size = 3;
     const ring_int a(size, 7);
     for (int i = 0; i < size; i++)
     {

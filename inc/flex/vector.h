@@ -331,33 +331,7 @@ namespace flex
 
   template<class T, class Alloc> vector<T, Alloc>& vector<T, Alloc>::operator=(const vector<T, Alloc>& obj)
   {
-    //TODO: Consider making method a call to assign().
-    if (obj.size() > mCapacity)
-    {
-      if (mFixed)
-      {
-        throw std::runtime_error("flex::vector - assignment operator's parameter size exceeds capacity");
-      }
-      else
-      {
-        //Allocate memory with sufficient capacity.
-        size_t new_capacity = GetNewCapacity(obj.size());
-        T* new_begin = AllocateAndConstruct(new_capacity);
-
-        //Copy all values.
-        std::copy(obj.begin(), obj.end(), new_begin);
-
-        //Deallocate and reassign.
-        DestroyAndDeallocate();
-        mAryPtr = new_begin;
-        mCapacity = new_capacity;
-      }
-    }
-    else
-    {
-      std::copy(obj.begin(), obj.end(), mAryPtr);
-    }
-    mSize = obj.size();
+    assign(obj.begin(),obj.end());
     return *this;
   }
 

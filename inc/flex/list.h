@@ -7,7 +7,6 @@
 
 namespace flex
 {
-   
   template<class T, class Alloc = allocator<list_node<T> > > class list: public allocation_guard
   {
   public:
@@ -30,14 +29,14 @@ namespace flex
 
     list();
     explicit list(size_t size, const T& val = T());
-    list(const_iterator first, const_iterator last);
-    list(const T* first, const T* last);
+    list(int size, const T& val);
+    template<typename InputIterator> list(InputIterator first, InputIterator last);
     list(const list<T, Alloc> & obj);
     ~list();
 
     void assign(size_t size, const_reference val);
-    void assign(int size, const_reference val) { assign((size_type) size,val); };
-    template <typename InputIterator> void assign(InputIterator first, InputIterator last);
+    void assign(int size, const_reference val);
+    template<typename InputIterator> void assign(InputIterator first, InputIterator last);
 
     reference back();
     const_reference back() const;
@@ -67,9 +66,8 @@ namespace flex
 
     iterator insert(iterator position, const_reference val);
     void insert(iterator position, size_type n, const_reference val);
-    //TODO: Get template to work with fixed_list insert() to use multiple iterators.
-    void insert(iterator position, const_iterator first, const_iterator last);
-    void insert(iterator position, const T* first, const T* last);
+    void insert(iterator position, int n, const_reference val);
+    template<typename InputIterator> void insert(iterator position, InputIterator first, InputIterator last);
 
     size_type max_size() const;
     void merge(this_type& x);
@@ -100,32 +98,33 @@ namespace flex
 
     void sort();
     template<typename Compare> void sort(Compare comp);
-    
-    
+
     void splice(iterator position, this_type& x);
     void splice(iterator position, this_type& x, iterator i);
     void splice(iterator position, this_type& x, iterator first, iterator last);
-    
-    
+
     void swap(list<T, Alloc>& obj);
     void unique();
     template<typename BinaryPredicate> void unique(BinaryPredicate binary_pred);
 
   protected:
     list(size_t capacity, list_node<T>* contentPtr);
-    
+
+    /*
+     * Internal methods used by the public sort() method.
+     */
     iterator merge(iterator lhs_first, iterator rhs_first, iterator rhs_last);
     template<typename Compare> iterator merge(iterator lhs_first, iterator rhs_first, iterator rhs_last, Compare comp);
     iterator sort(iterator first, iterator last);
     template<typename Compare> iterator sort(iterator first, iterator last, Compare comp);
     void splice(iterator position, iterator first, iterator last);
-    
+
     node_type* RetrieveNode();
     size_type GetNodePoolSize();
     void PushToNodePool(node_type* ptr);
     void PurgeNodePool();
     void DestroyAndDeallocateNode(node_type* ptr);
-    
+
     base_node_type mAnchor;
     size_type mSize;
     bool mFixed;
@@ -133,7 +132,7 @@ namespace flex
     Alloc mAllocator;
 
   private:
-    
+
   };
 
   template<class T, class Alloc>
@@ -144,7 +143,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline list<T, Alloc>::list(size_t size, const T& val) :
+  inline list<T, Alloc>::list(size_type size, const T& val) :
       mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
@@ -152,15 +151,16 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline list<T, Alloc>::list(const_iterator first, const_iterator last) :
+  inline list<T, Alloc>::list(int size, const T& val) :
       mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
-    list<T, Alloc>::assign(first, last);
+    list<T, Alloc>::assign((size_type) size, val);
   }
 
   template<class T, class Alloc>
-  inline list<T, Alloc>::list(const T* first, const T* last) :
+  template<typename InputIterator>
+  inline list<T, Alloc>::list(InputIterator first, InputIterator last) :
       mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
@@ -210,10 +210,19 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  template <typename InputIterator>
+  inline void list<T, Alloc>::assign(int n, const_reference val)
+  {
+    //The purpose of this method is to prevent ambiguity issues in the case where
+    //both n and val are type int.  Without this method, the compiler will incorrectly
+    //use the templated insert() method assuming n and val are type InputIterator.
+    assign((size_type) n, val);
+  }
+
+  template<class T, class Alloc>
+  template<typename InputIterator>
   inline void list<T, Alloc>::assign(InputIterator first, InputIterator last)
   {
-     node_type* node_ptr = static_cast<node_type*>(mAnchor.mNext);
+    node_type* node_ptr = static_cast<node_type*>(mAnchor.mNext);
     for (; (first != last) && (node_ptr != &mAnchor); ++first)
     {
       node_ptr->mValue = *first;
@@ -410,26 +419,17 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void list<T, Alloc>::insert(iterator position, const_iterator first, const_iterator last)
+  inline void list<T, Alloc>::insert(iterator position, int n, const_reference val)
   {
-    node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
-    for (; first != last; ++first)
-    {
-      node_type* new_node = RetrieveNode();
-      ++mSize;
-
-      new_node->mPrev = lhs;
-      new_node->mValue = *first;
-
-      lhs->mNext = new_node;
-      lhs = new_node;
-    }
-    lhs->mNext = position.mNode;
-    position.mNode->mPrev = lhs;
+    //The purpose of this method is to prevent ambiguity issues in the case where
+    //both n and val are type int.  Without this method, the compiler will incorrectly
+    //use the templated insert() method assuming n and val are type InputIterator.
+    insert(position, (size_type) n, val);
   }
 
   template<class T, class Alloc>
-  inline void list<T, Alloc>::insert(iterator position, const T* first, const T* last)
+  template<typename InputIterator>
+  inline void list<T, Alloc>::insert(iterator position, InputIterator first, InputIterator last)
   {
     node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
     for (; first != last; ++first)
@@ -484,7 +484,8 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  template<typename Compare> inline void list<T, Alloc>::merge(this_type& x, Compare comp)
+  template<typename Compare>
+  inline void list<T, Alloc>::merge(this_type& x, Compare comp)
   {
     if (this != &x)
     {
@@ -514,18 +515,19 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline typename list<T, Alloc>::iterator list<T, Alloc>::merge(iterator lhs_first, iterator rhs_first, iterator rhs_last)
+  inline typename list<T, Alloc>::iterator list<T, Alloc>::merge(iterator lhs_first, iterator rhs_first,
+      iterator rhs_last)
   {
     iterator front;
     if (*rhs_first < *lhs_first)
     {
-       front = rhs_first;
+      front = rhs_first;
     }
     else
     {
-       front = lhs_first;
+      front = lhs_first;
     }
-    
+
     while ((lhs_first != rhs_first) && (rhs_first != rhs_last))
     {
       if (*rhs_first < *lhs_first)
@@ -545,19 +547,20 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  template<typename Compare> 
-  inline typename list<T, Alloc>::iterator list<T, Alloc>::merge(iterator lhs_first, iterator rhs_first, iterator rhs_last, Compare comp)
+  template<typename Compare>
+  inline typename list<T, Alloc>::iterator list<T, Alloc>::merge(iterator lhs_first, iterator rhs_first,
+      iterator rhs_last, Compare comp)
   {
     iterator front;
     if (*rhs_first < *lhs_first)
     {
-       front = rhs_first;
+      front = rhs_first;
     }
     else
     {
-       front = lhs_first;
+      front = lhs_first;
     }
-    
+
     while ((lhs_first != rhs_first) && (rhs_first != rhs_last))
     {
       if (comp(*rhs_first, *lhs_first))
@@ -575,7 +578,7 @@ namespace flex
 
     return front;
   }
-  
+
   template<class T, class Alloc>
   inline list<T, Alloc>& list<T, Alloc>::operator=(const list<T, Alloc>& obj)
   {
@@ -656,7 +659,7 @@ namespace flex
   }
 
   template<typename T, typename Alloc>
-  void list<T, Alloc>::remove(const value_type& value)
+  inline void list<T, Alloc>::remove(const value_type& value)
   {
     iterator it((base_node_type*) mAnchor.mNext);
 
@@ -764,7 +767,7 @@ namespace flex
   template<typename Compare>
   inline void list<T, Alloc>::sort(Compare comp)
   {
-     sort(begin(), end(),comp);
+    sort(begin(), end(), comp);
   }
 
   template<typename T, typename Alloc>
@@ -789,7 +792,7 @@ namespace flex
       return first;
     }
   }
-  
+
   template<typename T, typename Alloc>
   template<typename Compare>
   inline typename list<T, Alloc>::iterator list<T, Alloc>::sort(iterator first, iterator last, Compare comp)
@@ -813,7 +816,7 @@ namespace flex
       return first;
     }
   }
-  
+
   template<typename T, typename Alloc>
   inline void list<T, Alloc>::splice(iterator position, this_type& x)
   {
@@ -920,7 +923,7 @@ namespace flex
   }
 
   template<typename T, typename Alloc>
-  void list<T, Alloc>::unique()
+  inline void list<T, Alloc>::unique()
   {
     /*
      * Based on the standard, we shall delete all but the first element of each consecutive group.  We will iterate
@@ -942,7 +945,8 @@ namespace flex
   }
 
   template<typename T, typename Alloc>
-  template<typename BinaryPredicate> void list<T, Alloc>::unique(BinaryPredicate binary_pred)
+  template<typename BinaryPredicate>
+  inline void list<T, Alloc>::unique(BinaryPredicate binary_pred)
   {
     /*
      * Based on the standard, we shall delete all but the first element of each consecutive group.  We will iterate

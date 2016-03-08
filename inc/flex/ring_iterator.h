@@ -18,7 +18,8 @@ namespace flex
     typedef std::ptrdiff_t difference_type;
     typedef Pointer pointer;
     typedef Reference reference;
-    typedef std::bidirectional_iterator_tag iterator_category;
+    typedef std::random_access_iterator_tag iterator_category; //Although this does not contain all methods of a random_access_iterator, we assign
+                                                               //it this tag to ensure the operator-() method is called by std::distance().
 
     pointer mPtr;
     pointer mLeftBound;

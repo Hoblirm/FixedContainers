@@ -4,7 +4,6 @@
 
 using namespace flex;
 
-//TODO: Create non-fixed list test and create setUp and tearDown methods to ensure proper allocations as in vector_test.h
 
 class fixed_list_test : public CxxTest::TestSuite
 {
