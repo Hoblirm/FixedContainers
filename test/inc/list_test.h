@@ -1045,8 +1045,8 @@ public:
 
   void test_merge_compare(void)
   {
-    int a_data[8] = { 13, 11, 9, 8, 5, 4, 2, 0 };
-    int b_data[8] = { 15, 14, 12, 10, 7, 6, 3, 1 };
+    int a_data[8] = { 13, 11, 9, 8, 5, 4, 3, 1 };
+    int b_data[8] = { 15, 14, 12, 10, 7, 6, 2, 0 };
     list_int a(a_data, a_data + 8);
     list_int b(b_data, b_data + 8);
 

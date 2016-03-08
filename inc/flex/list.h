@@ -125,7 +125,14 @@ namespace flex
     void PurgeNodePool();
     void DestroyAndDeallocateNode(node_type* ptr);
 
+    /*
+     * The anchor node contains the head and tail pointers for the list.  It is type base_node_type, and doesn't take up
+     * any space for a T value.  An anchor node provides various advantages over using a simple head and tail pointer.
+     * It simplifies logic when the list is empty, and when modifications are around list end-points.  The anchor node
+     * also allows the implementation of an end() iterator that can be decremented.
+     */
     base_node_type mAnchor;
+
     size_type mSize;
     bool mFixed;
     node_type* mNodePool;
