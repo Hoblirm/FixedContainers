@@ -996,7 +996,6 @@ namespace flex
       if (mFixed)
       {
         throw std::runtime_error("flex::fixed_list - exceeded capacity");
-        mFixed = false;
       }
       ptr = mAllocator.allocate(1);
       mAllocator.construct(ptr, node_type());
