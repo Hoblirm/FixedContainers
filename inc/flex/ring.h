@@ -326,7 +326,7 @@ namespace flex
   template<class T, class Alloc>
   inline bool ring<T, Alloc>::empty() const
   {
-    return (0 == size());
+    return (mBegin.mPtr == mEnd.mPtr);
   }
 
   template<class T, class Alloc>

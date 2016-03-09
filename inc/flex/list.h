@@ -309,7 +309,7 @@ namespace flex
   template<class T, class Alloc>
   inline bool list<T, Alloc>::empty() const
   {
-    return (0 == size());
+    return (0 == mSize);
   }
 
   template<class T, class Alloc>
