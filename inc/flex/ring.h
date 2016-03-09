@@ -96,7 +96,7 @@ namespace flex
     size_t GetNewCapacity(size_type min);
     pointer AllocateAndConstruct(size_type capacity);
     void DestroyAndDeallocate();
-    void DeallocateAndReassign(pointer new_begin, size_type new_size, size_type new_capacity);
+    void DeallocateAndReassign(pointer new_begin, pointer new_end, size_type new_capacity);
   };
 
   template<class T, class Alloc>
@@ -186,7 +186,7 @@ namespace flex
       //Copy all values.
       std::fill_n(new_begin, new_size, val);
 
-      DeallocateAndReassign(new_begin, new_size, new_capacity);
+      DeallocateAndReassign(new_begin, new_begin + new_size, new_capacity);
     }
     else
     {
@@ -213,9 +213,9 @@ namespace flex
       pointer new_begin = AllocateAndConstruct(new_capacity);
 
       //Copy all values.
-      std::copy(first, last, new_begin);
+      pointer new_end = std::copy(first, last, new_begin);
 
-      DeallocateAndReassign(new_begin, new_size, new_capacity);
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
     else
     {
@@ -409,9 +409,9 @@ namespace flex
       *new_end = val;
 
       //Copy all values that come after position.
-      std::copy(position, mEnd, ++new_end);
+      new_end = std::copy(position, mEnd, ++new_end);
 
-      DeallocateAndReassign(new_begin, new_size, new_capacity);
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
       return new_position;
     }
     else
@@ -447,7 +447,7 @@ namespace flex
       //Copy all values that come after position.
       new_end = std::copy(position, mEnd, new_end + n);
 
-      DeallocateAndReassign(new_begin, new_size, new_capacity);
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
     else
     {
@@ -488,7 +488,7 @@ namespace flex
       //Copy all values that come after position.
       new_end = std::copy(position, mEnd, new_end);
 
-      DeallocateAndReassign(new_begin, new_size, new_capacity);
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
     else
     {
@@ -552,8 +552,9 @@ namespace flex
       //Copy all values.
       pointer new_end = std::copy(mBegin, mEnd, new_begin);
       *new_end = val;
+      ++new_end;
 
-      DeallocateAndReassign(new_begin, new_size, new_capacity);
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
     else
     {
@@ -574,9 +575,9 @@ namespace flex
 
       //Copy all values.
       *new_begin = val;
-      std::copy(mBegin, mEnd, (new_begin + 1));
+      pointer new_end = std::copy(mBegin, mEnd, (new_begin + 1));
 
-      DeallocateAndReassign(new_begin, new_size, new_capacity);
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
     else
     {
@@ -619,9 +620,9 @@ namespace flex
       pointer new_begin = AllocateAndConstruct(new_capacity);
 
       //Copy all current values.
-      std::copy(mBegin, mEnd, new_begin);
+      pointer new_end = std::copy(mBegin, mEnd, new_begin);
 
-      DeallocateAndReassign(new_begin, size(), new_capacity);
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
   }
 
@@ -635,9 +636,9 @@ namespace flex
       pointer new_begin = AllocateAndConstruct(new_capacity);
 
       //Copy all values.
-      std::copy(mBegin, mEnd, new_begin);
+      pointer new_end = std::copy(mBegin, mEnd, new_begin);
 
-      DeallocateAndReassign(new_begin, new_capacity, new_capacity);
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
   }
 
@@ -725,12 +726,12 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void ring<T, Alloc>::DeallocateAndReassign(pointer new_begin, size_type new_size, size_type new_capacity)
+  inline void ring<T, Alloc>::DeallocateAndReassign(pointer new_begin, pointer new_end, size_type new_capacity)
   {
     DestroyAndDeallocate();
 
     mBegin.mPtr = new_begin;
-    mEnd.mPtr = mBegin.mPtr + new_size;
+    mEnd.mPtr = new_end;
 
     mBegin.mLeftBound = mEnd.mLeftBound = new_begin;
     mBegin.mRightBound = mEnd.mRightBound = new_begin + new_capacity;

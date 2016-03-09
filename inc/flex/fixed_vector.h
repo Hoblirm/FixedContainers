@@ -12,6 +12,7 @@ namespace flex
     using vector<T, Alloc>::mBegin;
     using vector<T, Alloc>::mEnd;
     using vector<T, Alloc>::mCapacity;
+    using vector<T, Alloc>::capacity;
 
     fixed_vector();
     explicit fixed_vector(size_t size, const T& val = T());
@@ -26,7 +27,7 @@ namespace flex
   };
 
   template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector() :
-      vector<T, Alloc>(N, mAry)
+      vector<T, Alloc>(N, 0, mAry)
   {
   }
 
@@ -76,7 +77,7 @@ namespace flex
 
   template<class T, size_t N, class Alloc> size_t fixed_vector<T, N, Alloc>::max_size() const
   {
-    return mCapacity;
+    return capacity();
   }
 
 } //namespace flex
