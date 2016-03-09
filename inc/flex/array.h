@@ -12,12 +12,16 @@ namespace flex
   {
   public:
     typedef T value_type;
+    typedef T* pointer;
+    typedef const T* const_pointer;
     typedef T& reference;
     typedef const T& const_reference;
     typedef T* iterator;
     typedef const T* const_iterator;
     typedef std::reverse_iterator<T*> reverse_iterator;
     typedef std::reverse_iterator<const T*> const_reverse_iterator;
+    typedef size_t size_type;
+    typedef std::ptrdiff_t difference_type;
 
     reference at(size_t n);
     const_reference at(size_t n) const;
@@ -59,18 +63,18 @@ namespace flex
     size_t size() const;
 
   protected:
-    explicit array_base(size_t size);
+    explicit array_base();
     array_base(size_t size, T* ptr);
 
-    size_t mSize;
-    T* mAryPtr;
+    pointer mBegin;
+    pointer mEnd;
   };
 
   template<class T> T& array_base<T>::at(size_t n)
   {
-    if (n < mSize)
+    if (n < size())
     {
-      return mAryPtr[n];
+      return mBegin[n];
     }
     else
     {
@@ -80,9 +84,9 @@ namespace flex
 
   template<class T> const T& array_base<T>::at(size_t n) const
   {
-    if (n < mSize)
+    if (n < size())
     {
-      return mAryPtr[n];
+      return mBegin[n];
     }
     else
     {
@@ -92,141 +96,141 @@ namespace flex
 
   template<class T> T& array_base<T>::back()
   {
-    return mAryPtr[mSize - 1];
+    return *(mEnd - 1);
   }
 
   template<class T> const T& array_base<T>::back() const
   {
-    return mAryPtr[mSize - 1];
+    return *(mEnd - 1);
   }
 
   template<class T> T* array_base<T>::begin()
   {
-    return mAryPtr;
+    return mBegin;
   }
 
   template<class T> const T* array_base<T>::begin() const
   {
-    return mAryPtr;
+    return mBegin;
   }
 
   template<class T> const T* array_base<T>::cbegin() const
   {
-    return mAryPtr;
+    return mBegin;
   }
 
   template<class T> const T* array_base<T>::cend() const
   {
-    return &mAryPtr[mSize];
+    return mEnd;
   }
 
   template<class T> typename array_base<T>::const_reverse_iterator array_base<T>::crbegin() const
   {
-    return const_reverse_iterator(&mAryPtr[mSize]);
+    return const_reverse_iterator(mEnd);
   }
 
   template<class T> typename array_base<T>::const_reverse_iterator array_base<T>::crend() const
   {
-    return const_reverse_iterator(&mAryPtr[0]);
+    return const_reverse_iterator(mBegin);
   }
 
   template<class T> T* array_base<T>::data()
   {
-    return mAryPtr;
+    return mBegin;
   }
 
   template<class T> const T* array_base<T>::data() const
   {
-    return mAryPtr;
+    return mBegin;
   }
 
   template<class T> bool array_base<T>::empty() const
   {
-    return (0 == mSize);
+    return (mBegin == mEnd);
   }
 
   template<class T> T* array_base<T>::end()
   {
-    return &mAryPtr[mSize];
+    return mEnd;
   }
 
   template<class T> const T* array_base<T>::end() const
   {
-    return &mAryPtr[mSize];
+    return mEnd;
   }
 
   template<class T> void array_base<T>::fill(const T& v)
   {
-    std::fill(mAryPtr, mAryPtr + mSize, v);
+    std::fill(mBegin, mEnd, v);
   }
 
   template<class T> T& array_base<T>::front()
   {
-    return mAryPtr[0];
+    return *mBegin;
   }
 
   template<class T> const T& array_base<T>::front() const
   {
-    return mAryPtr[0];
+    return *mBegin;
   }
 
   template<class T> size_t array_base<T>::max_size() const
   {
-    return mSize;
+    return mEnd - mBegin;
   }
 
   template<class T> array_base<T>& array_base<T>::operator=(const array_base<T>& obj)
   {
-    if (obj.size() != mSize)
+    if (obj.size() != size())
     {
       throw std::runtime_error("array: assignment operator's parameter size doesn't match");
     }
-    std::copy(obj.begin(), obj.end(), mAryPtr);
+    std::copy(obj.begin(), obj.end(), mBegin);
     return *this;
   }
 
   template<class T> T& array_base<T>::operator[](size_t n)
   {
-    return mAryPtr[n];
+    return mBegin[n];
   }
 
   template<class T> const T& array_base<T>::operator[](size_t n) const
   {
-    return mAryPtr[n];
+    return mBegin[n];
   }
 
   template<class T> typename array_base<T>::reverse_iterator array_base<T>::rbegin()
   {
-    return reverse_iterator(&mAryPtr[mSize]);
+    return reverse_iterator(mEnd);
   }
 
   template<class T> typename array_base<T>::const_reverse_iterator array_base<T>::rbegin() const
   {
-    return const_reverse_iterator(&mAryPtr[mSize]);
+    return const_reverse_iterator(mEnd);
   }
 
   template<class T> typename array_base<T>::reverse_iterator array_base<T>::rend()
   {
-    return reverse_iterator(&mAryPtr[0]);
+    return reverse_iterator(mBegin);
   }
 
   template<class T> typename array_base<T>::const_reverse_iterator array_base<T>::rend() const
   {
-    return const_reverse_iterator(&mAryPtr[0]);
+    return const_reverse_iterator(mBegin);
   }
 
   template<class T> size_t array_base<T>::size() const
   {
-    return mSize;
+    return mEnd - mBegin;
   }
 
-  template<class T> array_base<T>::array_base(size_t size) :
-      mSize(size), mAryPtr(NULL)
+  template<class T> array_base<T>::array_base() :
+      mBegin(NULL), mEnd(NULL)
   {
   }
 
   template<class T> array_base<T>::array_base(size_t size, T* ptr) :
-      mSize(size), mAryPtr(ptr)
+      mBegin(ptr), mEnd(mBegin + size)
   {
   }
 
@@ -312,8 +316,8 @@ namespace flex
   template<class T, size_t N = 0> class array: public array_base<T>
   {
   public:
-    using array_base<T>::mAryPtr;
-    using array_base<T>::mSize;
+    using array_base<T>::mBegin;
+    using array_base<T>::mEnd;
 
     array();
     array(const array<T, N> & obj);
@@ -332,12 +336,12 @@ namespace flex
   template<class T, size_t N> array<T, N>::array(const array<T, N> & obj) :
       array_base<T>(obj.size(), mAry)
   {
-    std::copy(obj.begin(),obj.end(),mAryPtr);
+    std::copy(obj.begin(), obj.end(), mBegin);
   }
 
   template<class T, size_t N> array<T, N>& array<T, N>::operator=(const array<T, N> & obj)
   {
-    std::copy(obj.begin(),obj.end(),mAryPtr);
+    std::copy(obj.begin(), obj.end(), mBegin);
     return *this;
   }
 
@@ -348,7 +352,7 @@ namespace flex
 
   template<class T, size_t N> void array<T, N>::swap(array<T, N>& obj)
   {
-    std::swap_ranges(mAryPtr,mAryPtr+mSize,obj.begin());
+    std::swap_ranges(mBegin, mEnd, obj.begin());
   }
 
 } //namespace flex

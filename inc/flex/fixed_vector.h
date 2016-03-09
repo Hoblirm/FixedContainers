@@ -9,8 +9,8 @@ namespace flex
   template<class T, size_t N, class Alloc = allocator<T> > class fixed_vector: public vector<T, Alloc>
   {
   public:
-    using vector<T, Alloc>::mAryPtr;
-    using vector<T, Alloc>::mSize;
+    using vector<T, Alloc>::mBegin;
+    using vector<T, Alloc>::mEnd;
     using vector<T, Alloc>::mCapacity;
 
     fixed_vector();
@@ -62,8 +62,8 @@ namespace flex
   template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(
       const fixed_vector<T, N, Alloc>& obj)
   {
-    std::copy(obj.begin(), obj.end(), mAryPtr);
-    mSize = obj.size();
+    std::copy(obj.begin(), obj.end(), mBegin);
+    mEnd = mBegin + obj.size();
     return *this;
   }
 

@@ -657,13 +657,33 @@ public:
       TS_ASSERT_EQUALS(a.front(), INT_DATA[0]);
     } //for: SIZE_COUNT
   }
-
   void test_front_const(void)
   {
     for (unsigned s = 1; s < SIZE_COUNT; ++s)
     {
       const ring_int a(INT_DATA, INT_DATA + SIZES[s]);
       TS_ASSERT_EQUALS(a.front(), INT_DATA[0]);
+    } //for: SIZE_COUNT
+  }
+
+  void test_full(void)
+  {
+    /*
+     * Case1: Uninitialized container list
+     */
+    ring_int a;
+    //full() should return true whenever size is equal to capacity; even if they are both zero.
+    //This is necessary as it is used to determine if a reallocation will occur.
+    TS_ASSERT(a.full());
+
+    for (unsigned s = 1; s < SIZE_COUNT; ++s)
+    {
+      ring_int b(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT(b.full());
+      b.pop_back();
+      TS_ASSERT(!b.full());
+      b.push_front(0);
+      TS_ASSERT(b.full());
     } //for: SIZE_COUNT
   }
 

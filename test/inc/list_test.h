@@ -285,7 +285,7 @@ public:
   {
     /*
      * Case1: Verify assign can increase size.
-     */      
+     */
     list_int a;
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
@@ -715,6 +715,27 @@ public:
     {
       const list_int a(INT_DATA, INT_DATA + SIZES[s]);
       TS_ASSERT_EQUALS(a.front(), INT_DATA[0]);
+    } //for: SIZE_COUNT
+  }
+
+  void test_full(void)
+  {
+    /*
+     * Case1: Uninitialized container list
+     */
+    list_int a;
+    //full() should return true whenever size is equal to capacity; even if they are both zero.
+    //This is necessary as it is used to determine if a reallocation will occur.
+    TS_ASSERT(a.full());
+
+    for (unsigned s = 1; s < SIZE_COUNT; ++s)
+    {
+      list_int b(INT_DATA, INT_DATA + SIZES[s]);
+      TS_ASSERT(b.full());
+      b.pop_back();
+      TS_ASSERT(!b.full());
+      b.push_front(0);
+      TS_ASSERT(b.full());
     } //for: SIZE_COUNT
   }
 
@@ -1394,12 +1415,12 @@ public:
 
   struct is_less_than
   {
-     bool operator()(int a, int b)
-     {
-        return (a<b);
-     }
+    bool operator()(int a, int b)
+    {
+      return (a < b);
+    }
   };
-  
+
   void test_sort_compare(void)
   {
     list_int a;
@@ -1500,7 +1521,7 @@ public:
     TS_ASSERT_EQUALS(*(it++), 15);
     assert_list_validity(a);
   }
-  
+
   void test_splice_list(void)
   {
     list_int a;

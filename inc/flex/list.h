@@ -63,7 +63,7 @@ namespace flex
     reference front();
     allocator_type get_allocator() const;
     const_reference front() const;
-
+    bool full() const;
     iterator insert(iterator position, const_reference val);
     void insert(iterator position, size_type n, const_reference val);
     void insert(iterator position, int n, const_reference val);
@@ -387,6 +387,12 @@ namespace flex
   inline typename list<T, Alloc>::const_reference list<T, Alloc>::front() const
   {
     return static_cast<node_type*>(mAnchor.mNext)->mValue;
+  }
+
+  template<class T, class Alloc>
+  inline bool list<T, Alloc>::full() const
+  {
+    return (NULL == mNodePool);
   }
 
   template<class T, class Alloc>

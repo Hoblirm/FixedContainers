@@ -55,6 +55,7 @@ namespace flex
     bool fixed() const;
     reference front();
     const_reference front() const;
+    bool full() const;
     allocator_type get_allocator() const;
     iterator insert(iterator position, const value_type& val);
     void insert(iterator position, size_type n, const value_type& val);
@@ -379,6 +380,12 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline bool ring<T, Alloc>::full() const
+  {
+    return mBegin.mPtr == (mEnd + 1).mPtr;
+  }
+
+  template<class T, class Alloc>
   inline typename ring<T, Alloc>::allocator_type ring<T, Alloc>::get_allocator() const
   {
     return mAllocator;
@@ -387,7 +394,7 @@ namespace flex
   template<class T, class Alloc>
   inline typename ring<T, Alloc>::iterator ring<T, Alloc>::insert(iterator position, const value_type& val)
   {
-    if (size() == capacity())
+    if (full())
     {
       //Allocate memory with sufficient capacity.
       size_type new_size = size() + 1;
@@ -535,7 +542,7 @@ namespace flex
   template<class T, class Alloc>
   inline void ring<T, Alloc>::push_back(const value_type& val)
   {
-    if (size() == capacity())
+    if (full())
     {
       //Allocate memory with sufficient capacity.
       size_type new_size = size() + 1;
@@ -558,7 +565,7 @@ namespace flex
   template<class T, class Alloc>
   inline void ring<T, Alloc>::push_front(const T& val)
   {
-    if (size() == capacity())
+    if (full())
     {
       //Allocate memory with sufficient capacity.
       size_type new_size = size() + 1;

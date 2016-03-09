@@ -10,12 +10,12 @@ public:
 
   size_t Size()
   {
-    return this->mSize;
+    return this->mEnd - this->mBegin;
   }
 
   T* Array() const
   {
-    return this->mAryPtr;
+    return this->mBegin;
   }
 
 };
