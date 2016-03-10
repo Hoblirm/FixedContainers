@@ -144,42 +144,42 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list() :
-      mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
+      mSize(0), mFixed(false), mNodePool(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(size_type size, const T& val) :
-      mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
+      mSize(0), mFixed(false), mNodePool(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
-    list<T, Alloc>::assign(size, val);
+    insert(begin(), size, val);
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(int size, const T& val) :
-      mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
+      mSize(0), mFixed(false), mNodePool(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
-    list<T, Alloc>::assign((size_type) size, val);
+    insert(begin(), (size_type) size, val);
   }
 
   template<class T, class Alloc>
   template<typename InputIterator>
   inline list<T, Alloc>::list(InputIterator first, InputIterator last) :
-      mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
+      mSize(0), mFixed(false), mNodePool(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
-    list<T, Alloc>::assign(first, last);
+    insert(begin(), first, last);
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(const list<T, Alloc> & obj) :
-      mAnchor(), mSize(0), mFixed(false), mNodePool(NULL)
+      mSize(0), mFixed(false), mNodePool(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
-    list<T, Alloc>::assign(obj.cbegin(), obj.cend());
+    insert(begin(), obj.cbegin(), obj.cend());
   }
 
   template<class T, class Alloc>
