@@ -11,9 +11,28 @@ namespace flex
     list_node_base* mPrev;
     list_node_base* mNext;
 
+    void insert(list_node_base* position);
+    void remove();
     void splice(list_node_base* first, list_node_base* last);
     static void swap(list_node_base& a, list_node_base & b);
+    static void swap_not_empty(list_node_base& a, list_node_base & b);
   };
+
+  // Inserts a node into the list.  It assumes the inserted node is not contained in a list.
+  inline void list_node_base::insert(list_node_base* position)
+  {
+    mNext = position;
+    mPrev = position->mPrev;
+    position->mPrev->mNext = this;
+    position->mPrev = this;
+  }
+
+  // Removes this node from the list that it's in.
+  inline void list_node_base::remove()
+  {
+    mNext->mPrev = mPrev;
+    mPrev->mNext = mNext;
+  }
 
   inline void list_node_base::splice(list_node_base* first, list_node_base* last)
   {
@@ -33,8 +52,8 @@ namespace flex
     std::swap(a, b);
 
     /*
-     * The external nodes that pointed to the swapped nodes must be updated.
-     * We also must check for the special case in which the node pointed to itself.
+     * The external nodes that pointed to the swapped nodes must be updated. We also
+     * must check for the special case in which the node pointed to itself (empty list).
      */
     if (a.mNext == &b)
       a.mNext = a.mPrev = &a;
@@ -45,6 +64,20 @@ namespace flex
       b.mNext = b.mPrev = &b;
     else
       b.mNext->mPrev = b.mPrev->mNext = &b;
+  }
+
+  inline void list_node_base::swap_not_empty(list_node_base& a, list_node_base& b)
+  {
+    //Swap the internal contents of the nodes.
+    std::swap(a, b);
+
+    /*
+     * Since this method assumes the nodes arn't empty (ie pointing to self)
+     * no comparisons need to be performed.  Simply assign the external nodes to
+     * point to the "swapped" nodes.
+     */
+    a.mNext->mPrev = a.mPrev->mNext = &a;
+    b.mNext->mPrev = b.mPrev->mNext = &b;
   }
 
   template<class T> struct list_node: public list_node_base
