@@ -53,7 +53,7 @@ namespace flex
 
     size_t max_size() const;
 
-    array_base<T,Alloc>& operator=(const array_base<T,Alloc>& obj);
+    array_base<T, Alloc>& operator=(const array_base<T, Alloc>& obj);
     reference operator[](size_t n);
     const_reference operator[](size_t n) const;
 
@@ -66,7 +66,8 @@ namespace flex
 
   protected:
     array_base();
-    array_base(size_t size, T* ptr);
+    array_base(T* ptr);
+    array_base(T* ptr,size_type size);
 
     T* AllocateAndConstruct(size_t n);
 
@@ -76,7 +77,7 @@ namespace flex
   };
 
   template<class T, class Alloc>
-  inline array_base<T,Alloc>::array_base(size_type n)
+  inline array_base<T, Alloc>::array_base(size_type n)
   {
     mBegin = mAllocator.allocate(n);
     mEnd = mBegin + n;
@@ -86,7 +87,7 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> T& array_base<T,Alloc>::at(size_t n)
+  template<class T, class Alloc> T& array_base<T, Alloc>::at(size_t n)
   {
     if (n < size())
     {
@@ -98,7 +99,7 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> const T& array_base<T,Alloc>::at(size_t n) const
+  template<class T, class Alloc> const T& array_base<T, Alloc>::at(size_t n) const
   {
     if (n < size())
     {
@@ -110,92 +111,92 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> T& array_base<T,Alloc>::back()
+  template<class T, class Alloc> T& array_base<T, Alloc>::back()
   {
     return *(mEnd - 1);
   }
 
-  template<class T, class Alloc> const T& array_base<T,Alloc>::back() const
+  template<class T, class Alloc> const T& array_base<T, Alloc>::back() const
   {
     return *(mEnd - 1);
   }
 
-  template<class T, class Alloc> T* array_base<T,Alloc>::begin()
+  template<class T, class Alloc> T* array_base<T, Alloc>::begin()
   {
     return mBegin;
   }
 
-  template<class T, class Alloc> const T* array_base<T,Alloc>::begin() const
+  template<class T, class Alloc> const T* array_base<T, Alloc>::begin() const
   {
     return mBegin;
   }
 
-  template<class T, class Alloc> const T* array_base<T,Alloc>::cbegin() const
+  template<class T, class Alloc> const T* array_base<T, Alloc>::cbegin() const
   {
     return mBegin;
   }
 
-  template<class T, class Alloc> const T* array_base<T,Alloc>::cend() const
+  template<class T, class Alloc> const T* array_base<T, Alloc>::cend() const
   {
     return mEnd;
   }
 
-  template<class T, class Alloc> typename array_base<T,Alloc>::const_reverse_iterator array_base<T,Alloc>::crbegin() const
+  template<class T, class Alloc> typename array_base<T, Alloc>::const_reverse_iterator array_base<T, Alloc>::crbegin() const
   {
     return const_reverse_iterator(mEnd);
   }
 
-  template<class T, class Alloc> typename array_base<T,Alloc>::const_reverse_iterator array_base<T,Alloc>::crend() const
+  template<class T, class Alloc> typename array_base<T, Alloc>::const_reverse_iterator array_base<T, Alloc>::crend() const
   {
     return const_reverse_iterator(mBegin);
   }
 
-  template<class T, class Alloc> T* array_base<T,Alloc>::data()
+  template<class T, class Alloc> T* array_base<T, Alloc>::data()
   {
     return mBegin;
   }
 
-  template<class T, class Alloc> const T* array_base<T,Alloc>::data() const
+  template<class T, class Alloc> const T* array_base<T, Alloc>::data() const
   {
     return mBegin;
   }
 
-  template<class T, class Alloc> bool array_base<T,Alloc>::empty() const
+  template<class T, class Alloc> bool array_base<T, Alloc>::empty() const
   {
     return (mBegin == mEnd);
   }
 
-  template<class T, class Alloc> T* array_base<T,Alloc>::end()
+  template<class T, class Alloc> T* array_base<T, Alloc>::end()
   {
     return mEnd;
   }
 
-  template<class T, class Alloc> const T* array_base<T,Alloc>::end() const
+  template<class T, class Alloc> const T* array_base<T, Alloc>::end() const
   {
     return mEnd;
   }
 
-  template<class T, class Alloc> void array_base<T,Alloc>::fill(const T& v)
+  template<class T, class Alloc> void array_base<T, Alloc>::fill(const T& v)
   {
     std::fill(mBegin, mEnd, v);
   }
 
-  template<class T, class Alloc> T& array_base<T,Alloc>::front()
+  template<class T, class Alloc> T& array_base<T, Alloc>::front()
   {
     return *mBegin;
   }
 
-  template<class T, class Alloc> const T& array_base<T,Alloc>::front() const
+  template<class T, class Alloc> const T& array_base<T, Alloc>::front() const
   {
     return *mBegin;
   }
 
-  template<class T, class Alloc> size_t array_base<T,Alloc>::max_size() const
+  template<class T, class Alloc> size_t array_base<T, Alloc>::max_size() const
   {
     return mEnd - mBegin;
   }
 
-  template<class T, class Alloc> array_base<T,Alloc>& array_base<T,Alloc>::operator=(const array_base<T,Alloc>& obj)
+  template<class T, class Alloc> array_base<T, Alloc>& array_base<T, Alloc>::operator=(const array_base<T, Alloc>& obj)
   {
     if (obj.size() != size())
     {
@@ -205,48 +206,57 @@ namespace flex
     return *this;
   }
 
-  template<class T, class Alloc> T& array_base<T,Alloc>::operator[](size_t n)
+  template<class T, class Alloc> T& array_base<T, Alloc>::operator[](size_t n)
   {
     return mBegin[n];
   }
 
-  template<class T, class Alloc> const T& array_base<T,Alloc>::operator[](size_t n) const
+  template<class T, class Alloc> const T& array_base<T, Alloc>::operator[](size_t n) const
   {
     return mBegin[n];
   }
 
-  template<class T, class Alloc> typename array_base<T,Alloc>::reverse_iterator array_base<T,Alloc>::rbegin()
+  template<class T, class Alloc> typename array_base<T, Alloc>::reverse_iterator array_base<T, Alloc>::rbegin()
   {
     return reverse_iterator(mEnd);
   }
 
-  template<class T, class Alloc> typename array_base<T,Alloc>::const_reverse_iterator array_base<T,Alloc>::rbegin() const
+  template<class T, class Alloc> typename array_base<T, Alloc>::const_reverse_iterator array_base<T, Alloc>::rbegin() const
   {
     return const_reverse_iterator(mEnd);
   }
 
-  template<class T, class Alloc> typename array_base<T,Alloc>::reverse_iterator array_base<T,Alloc>::rend()
+  template<class T, class Alloc> typename array_base<T, Alloc>::reverse_iterator array_base<T, Alloc>::rend()
   {
     return reverse_iterator(mBegin);
   }
 
-  template<class T, class Alloc> typename array_base<T,Alloc>::const_reverse_iterator array_base<T,Alloc>::rend() const
+  template<class T, class Alloc> typename array_base<T, Alloc>::const_reverse_iterator array_base<T, Alloc>::rend() const
   {
     return const_reverse_iterator(mBegin);
   }
 
-  template<class T, class Alloc> size_t array_base<T,Alloc>::size() const
+  template<class T, class Alloc> size_t array_base<T, Alloc>::size() const
   {
     return mEnd - mBegin;
   }
 
-  template<class T, class Alloc> array_base<T,Alloc>::array_base() :
+  template<class T, class Alloc> array_base<T, Alloc>::array_base() :
       mBegin(NULL), mEnd(NULL)
   {
   }
 
-  template<class T, class Alloc> array_base<T,Alloc>::array_base(size_t size, T* ptr) :
-      mBegin(ptr), mEnd(mBegin + size)
+  /*
+   * This is the protected constructor used by vectors.  The vector sets the
+   * size internally, so this constructor doesn't need to set it.
+   */
+  template<class T, class Alloc> array_base<T, Alloc>::array_base(T* ptr) :
+      mBegin(ptr)
+  {
+  }
+
+  template<class T, class Alloc> array_base<T, Alloc>::array_base(T* ptr,size_type size) :
+      mBegin(ptr), mEnd(ptr + size)
   {
   }
 
@@ -261,7 +271,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  bool operator==(const array_base<T,Alloc>& lhs, const array_base<T,Alloc>& rhs)
+  bool operator==(const array_base<T, Alloc>& lhs, const array_base<T, Alloc>& rhs)
   {
     if (lhs.size() != rhs.size())
     {
@@ -281,7 +291,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  bool operator<(const array_base<T,Alloc>& lhs, const array_base<T,Alloc>& rhs)
+  bool operator<(const array_base<T, Alloc>& lhs, const array_base<T, Alloc>& rhs)
   {
     if (lhs.size() < rhs.size())
     {
@@ -316,34 +326,34 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  bool operator!=(const array_base<T,Alloc>& lhs, const array_base<T,Alloc>& rhs)
+  bool operator!=(const array_base<T, Alloc>& lhs, const array_base<T, Alloc>& rhs)
   {
     return !(lhs == rhs);
   }
 
   template<class T, class Alloc>
-  bool operator>(const array_base<T,Alloc>& lhs, const array_base<T,Alloc>& rhs)
+  bool operator>(const array_base<T, Alloc>& lhs, const array_base<T, Alloc>& rhs)
   {
     return rhs < lhs;
   }
 
   template<class T, class Alloc>
-  bool operator<=(const array_base<T,Alloc>& lhs, const array_base<T,Alloc>& rhs)
+  bool operator<=(const array_base<T, Alloc>& lhs, const array_base<T, Alloc>& rhs)
   {
     return !(rhs < lhs);
   }
 
   template<class T, class Alloc>
-  bool operator>=(const array_base<T,Alloc>& lhs, const array_base<T,Alloc>& rhs)
+  bool operator>=(const array_base<T, Alloc>& lhs, const array_base<T, Alloc>& rhs)
   {
     return !(lhs < rhs);
   }
 
-  template<class T, size_t N = 0, class Alloc = allocator<T> > class array: public array_base<T,Alloc>
+  template<class T, size_t N = 0, class Alloc = allocator<T> > class array: public array_base<T, Alloc>
   {
   public:
-    using array_base<T,Alloc>::mBegin;
-    using array_base<T,Alloc>::mEnd;
+    using array_base<T, Alloc>::mBegin;
+    using array_base<T, Alloc>::mEnd;
 
     array();
     array(const array<T, N, Alloc> & obj);
@@ -355,17 +365,18 @@ namespace flex
   };
 
   template<class T, size_t N, class Alloc> array<T, N, Alloc>::array() :
-      array_base<T,Alloc>(N, mAry)
+      array_base<T, Alloc>(mAry,N)
   {
   }
 
   template<class T, size_t N, class Alloc> array<T, N, Alloc>::array(const array<T, N, Alloc> & obj) :
-      array_base<T,Alloc>(obj.size(), mAry)
+      array_base<T, Alloc>(mAry,N)
   {
     std::copy(obj.begin(), obj.end(), mBegin);
   }
 
-  template<class T, size_t N, class Alloc> array<T, N, Alloc>& array<T, N, Alloc>::operator=(const array<T, N, Alloc> & obj)
+  template<class T, size_t N, class Alloc> array<T, N, Alloc>& array<T, N, Alloc>::operator=(
+      const array<T, N, Alloc> & obj)
   {
     std::copy(obj.begin(), obj.end(), mBegin);
     return *this;

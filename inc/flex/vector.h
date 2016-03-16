@@ -55,7 +55,6 @@ namespace flex
     bool mFixed;
 
     vector(size_t capacity, T* ptr);
-    vector(size_t capacity, size_t size, T* ptr);
 
   private:
     size_t GetNewCapacity(size_t min);
@@ -63,7 +62,7 @@ namespace flex
   };
 
   template<class T, class Alloc> vector<T, Alloc>::vector() :
-      mCapacity(NULL), mFixed(false)
+    array_base<T, Alloc>(), mCapacity(NULL), mFixed(false)
   {
   }
 
@@ -411,12 +410,12 @@ namespace flex
 
       if (size() < obj.size())
       {
-        typename array_base<T, Alloc>::iterator it = std::swap_ranges(mBegin, mEnd, obj.mBegin);
+        iterator it = std::swap_ranges(mBegin, mEnd, obj.mBegin);
         std::copy(it, obj.mEnd, mEnd);
       }
       else
       {
-        typename array_base<T, Alloc>::iterator it = std::swap_ranges(obj.mBegin, obj.mEnd, mBegin);
+        iterator it = std::swap_ranges(obj.mBegin, obj.mEnd, mBegin);
         std::copy(it, mEnd, obj.mEnd);
       }
       size_type tmp_size = size();
@@ -426,17 +425,8 @@ namespace flex
   }
 
   template<class T, class Alloc> vector<T, Alloc>::vector(size_t capacity, T* ptr) :
-      array_base<T, Alloc>(capacity, ptr), mCapacity(mEnd), mFixed(true)
+      array_base<T, Alloc>(ptr), mCapacity(ptr+capacity), mFixed(true)
   {
-  }
-
-  template<class T, class Alloc> vector<T, Alloc>::vector(size_t capacity, size_t size, T* ptr) :
-      array_base<T, Alloc>(size, ptr), mCapacity(ptr + capacity), mFixed(true)
-  {
-    if (size > capacity)
-    {
-      throw std::runtime_error("vector: constructor's parameter size exceeds capacity");
-    }
   }
 
   template<class T, class Alloc> size_t vector<T, Alloc>::GetNewCapacity(size_t min_size)

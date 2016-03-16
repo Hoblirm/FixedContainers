@@ -12,6 +12,7 @@ namespace flex
     using vector<T, Alloc>::mBegin;
     using vector<T, Alloc>::mEnd;
     using vector<T, Alloc>::mCapacity;
+    using vector<T, Alloc>::assign;
     using vector<T, Alloc>::capacity;
 
     fixed_vector();
@@ -27,22 +28,23 @@ namespace flex
   };
 
   template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector() :
-      vector<T, Alloc>(N, 0, mAry)
+      vector<T, Alloc>(N, mAry)
   {
+    mEnd = mBegin;
   }
 
   template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector(size_t size, const T& val) :
       vector<T, Alloc>(N, mAry)
   {
     //TODO: Write test cases when capacity and size don't match for constructor
-    vector<T, Alloc>::assign(size, val);
+   assign(size, val);
   }
 
   template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector(const T* first, const T* last) :
       vector<T, Alloc>(N, mAry)
   {
     //TODO: Write test cases when capacity and size don't match for constructor
-    vector<T, Alloc>::assign(first, last);
+    assign(first, last);
   }
 
   template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector(
@@ -50,14 +52,14 @@ namespace flex
       vector<T, Alloc>(N, mAry)
   {
     //TODO: Write test cases when capacity and size don't match for constructor
-    vector<T, Alloc>::assign(obj.begin(), obj.end());
+    assign(obj.begin(), obj.end());
   }
 
   template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>::fixed_vector(const vector<T, Alloc> & obj) :
       vector<T, Alloc>(N, mAry)
   {
     //TODO: Write test cases when capacity and size don't match for constructor
-    vector<T, Alloc>::assign(obj.begin(), obj.end());
+    assign(obj.begin(), obj.end());
   }
 
   template<class T, size_t N, class Alloc> fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(
