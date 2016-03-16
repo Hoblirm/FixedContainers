@@ -9,82 +9,95 @@ namespace flex
   class vector: public array_base<T, Alloc>
   {
   public:
-
     typedef array_base<T, Alloc> base_type;
-    typedef typename base_type::iterator iterator;
+    
+    typedef typename base_type::value_type value_type;
     typedef typename base_type::pointer pointer;
+    typedef typename base_type::const_pointer const_pointer;
+    typedef typename base_type::reference reference;
+    typedef typename base_type::const_reference const_reference;
+    typedef typename base_type::iterator iterator;
+    typedef typename base_type::const_iterator const_iterator;
+    typedef typename base_type::reverse_iterator reverse_iterator;
+    typedef typename base_type::const_reverse_iterator const_reverse_iterator;
     typedef typename base_type::size_type size_type;
+    typedef typename base_type::difference_type difference_type;
+    
     typedef Alloc allocator_type;
-
-    using array_base<T, Alloc>::mBegin;
-    using array_base<T, Alloc>::mEnd;
-    using array_base<T, Alloc>::mAllocator;
-    using array_base<T, Alloc>::size;
-    using array_base<T, Alloc>::AllocateAndConstruct;
+    
+    using base_type::mBegin;
+    using base_type::mEnd;
+    using base_type::mAllocator;
+    using base_type::size;
+    using base_type::AllocateAndConstruct;
 
     vector();
-    explicit vector(size_t size, const T& val = T());
+    explicit vector(size_type size, const value_type& val = value_type());
     vector(const T* first, const T* last);
     vector(const vector<T, Alloc> & obj);
     ~vector();
 
-    void assign(size_t size, const T& val);
+    void assign(size_type size, const T& val);
     //TODO: Get template to work with vector assign() to use multiple iterators.
     void assign(const T* first, const T* last);
 
-    size_t capacity() const;
+    size_type capacity() const;
     void clear();
-    bool empty();
-    T* erase(T* position);
-    T* erase(T* first, T* last);
+    iterator erase(iterator position);
+    iterator erase(iterator first, iterator last);
     bool fixed() const;
     allocator_type get_allocator() const;
-    T* insert(T* position, const T& val);
-    void insert(T* position, size_t n, const T& val);
+    iterator insert(iterator position, const value_type& val);
+    void insert(iterator position, size_type n, const value_type& val);
     //TODO: Get template to work with vector insert() to use multiple iterators.
-    void insert(T* position, const T* first, const T* last);
-    size_t max_size() const;
+    void insert(iterator position, const_iterator first, const_iterator last);
+    size_type max_size() const;
     vector<T, Alloc>& operator=(const vector<T, Alloc>& obj);
     void pop_back();
-    void push_back(const T& val);
-    void resize(size_t n, const T& val = T());
+    void push_back(const value_type& val);
+    void resize(size_type n, const value_type& val = value_type());
     void swap(vector<T, Alloc>& obj);
 
   protected:
     pointer mCapacity;
     bool mFixed;
 
-    vector(size_t capacity, T* ptr);
+    vector(size_type capacity, pointer ptr);
 
   private:
-    size_t GetNewCapacity(size_t min);
+    size_type GetNewCapacity(size_type min);
     void DestroyAndDeallocate();
   };
 
-  template<class T, class Alloc> vector<T, Alloc>::vector() :
+  template<class T, class Alloc>
+  inline vector<T, Alloc>::vector() :
     array_base<T, Alloc>(), mCapacity(NULL), mFixed(false)
   {
   }
 
-  template<class T, class Alloc> vector<T, Alloc>::vector(size_t size, const T& val) :
+  template<class T, class Alloc>
+  inline vector<T, Alloc>::vector(size_type size, const value_type& val) :
       array_base<T, Alloc>(size), mCapacity(mEnd), mFixed(false)
   {
     array_base<T, Alloc>::fill(val);
   }
 
-  template<class T, class Alloc> vector<T, Alloc>::vector(const T* first, const T* last) :
+  template<class T, class Alloc>
+  inline vector<T, Alloc>::vector(const T* first, const T* last) :
       array_base<T, Alloc>(last - first), mCapacity(mEnd), mFixed(false)
   {
     std::copy(first, last, mBegin);
   }
 
-  template<class T, class Alloc> vector<T, Alloc>::vector(const vector<T, Alloc> & obj) :
+  template<class T, class Alloc>
+  inline vector<T, Alloc>::vector(const vector<T, Alloc> & obj) :
       array_base<T, Alloc>(obj.size()), mCapacity(mEnd), mFixed(false)
   {
     std::copy(obj.begin(), obj.end(), mBegin);
   }
 
-  template<class T, class Alloc> vector<T, Alloc>::~vector()
+  template<class T, class Alloc>
+  inline vector<T, Alloc>::~vector()
   {
     if (!mFixed && (NULL != mBegin))
     {
@@ -92,7 +105,8 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::assign(size_t size, const T& val)
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::assign(size_type size, const T& val)
   {
     if (size > capacity())
     {
@@ -103,7 +117,7 @@ namespace flex
       else
       {
         //Allocate memory with sufficient capacity.
-        size_t new_capacity = GetNewCapacity(size);
+        size_type new_capacity = GetNewCapacity(size);
         T* new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
@@ -122,7 +136,8 @@ namespace flex
     mEnd = mBegin + size;
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::assign(const T* first, const T* last)
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::assign(const T* first, const T* last)
   {
     size_type size = last - first;
     if (size > capacity())
@@ -134,7 +149,7 @@ namespace flex
       else
       {
         //Allocate memory with sufficient capacity.
-        size_t new_capacity = GetNewCapacity(size);
+        size_type new_capacity = GetNewCapacity(size);
         T* new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values.
@@ -154,22 +169,20 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> size_t vector<T, Alloc>::capacity() const
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::size_type vector<T, Alloc>::capacity() const
   {
     return mCapacity - mBegin;
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::clear()
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::clear()
   {
     mEnd = mBegin;
   }
 
-  template<class T, class Alloc> bool vector<T, Alloc>::empty()
-  {
-    return (mBegin == mEnd);
-  }
-
-  template<class T, class Alloc> T* vector<T, Alloc>::erase(T* position)
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::iterator vector<T, Alloc>::erase(iterator position)
   {
     //This copy will simply shift everything after position over to the left by one.
     //This will effectively overwrite position, erasing it from the container.
@@ -178,7 +191,8 @@ namespace flex
     return position;
   }
 
-  template<class T, class Alloc> T* vector<T, Alloc>::erase(T* first, T* last)
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::iterator vector<T, Alloc>::erase(iterator first, iterator last)
   {
     //Move all the elements after the erased range to the front of the range.  This
     //will overwrite the erased elements, and the size will be set accordingly.
@@ -187,17 +201,20 @@ namespace flex
     return first;
   }
 
-  template<class T, class Alloc> bool vector<T, Alloc>::fixed() const
+  template<class T, class Alloc>
+  inline bool vector<T, Alloc>::fixed() const
   {
     return mFixed;
   }
 
-  template<class T, class Alloc> typename vector<T, Alloc>::allocator_type vector<T, Alloc>::get_allocator() const
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::allocator_type vector<T, Alloc>::get_allocator() const
   {
     return mAllocator;
   }
 
-  template<class T, class Alloc> T* vector<T, Alloc>::insert(T* position, const T& val)
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::iterator vector<T, Alloc>::insert(iterator position, const value_type& val)
   {
     if (mEnd == mCapacity)
     {
@@ -244,7 +261,8 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::insert(T* position, size_t n, const T& val)
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::insert(iterator position, size_type n, const value_type& val)
   {
     if ((mEnd + n) > mCapacity)
     {
@@ -256,7 +274,7 @@ namespace flex
       {
         //Allocate memory with sufficient capacity.
         size_type new_size = size() + n;
-        size_t new_capacity = GetNewCapacity(new_size);
+        size_type new_capacity = GetNewCapacity(new_size);
         T* new_begin = AllocateAndConstruct(new_capacity);
 
         //Copy all values to the left of position.
@@ -287,9 +305,10 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::insert(T* position, const T* first, const T* last)
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::insert(iterator position, const_iterator first, const_iterator last)
   {
-    size_t n = last - first;
+    size_type n = last - first;
     if ((mEnd + n) > mCapacity)
     {
       if (mFixed)
@@ -331,23 +350,27 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> size_t vector<T, Alloc>::max_size() const
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::size_type vector<T, Alloc>::max_size() const
   {
     return mAllocator.max_size();
   }
 
-  template<class T, class Alloc> vector<T, Alloc>& vector<T, Alloc>::operator=(const vector<T, Alloc>& obj)
+  template<class T, class Alloc>
+  inline vector<T, Alloc>& vector<T, Alloc>::operator=(const vector<T, Alloc>& obj)
   {
     assign(obj.begin(), obj.end());
     return *this;
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::pop_back()
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::pop_back()
   {
     --mEnd;
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::push_back(const T& val)
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::push_back(const value_type& val)
   {
     if (mEnd == mCapacity)
     {
@@ -381,7 +404,8 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::resize(size_t n, const T& val)
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::resize(size_type n, const value_type& val)
   {
     if (n < size())
     {
@@ -393,7 +417,8 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::swap(vector<T, Alloc>& obj)
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::swap(vector<T, Alloc>& obj)
   {
     if ((!mFixed) && (!obj.fixed()))
     {
@@ -424,15 +449,17 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> vector<T, Alloc>::vector(size_t capacity, T* ptr) :
+  template<class T, class Alloc>
+  inline vector<T, Alloc>::vector(size_type capacity, pointer ptr) :
       array_base<T, Alloc>(ptr), mCapacity(ptr+capacity), mFixed(true)
   {
   }
 
-  template<class T, class Alloc> size_t vector<T, Alloc>::GetNewCapacity(size_t min_size)
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::size_type vector<T, Alloc>::GetNewCapacity(size_type min_size)
   {
     // This needs to return a value of at least currentCapacity and at least 1.
-    size_t new_capacity = (capacity() > 0) ? (2 * capacity()) : 1;
+    size_type new_capacity = (capacity() > 0) ? (2 * capacity()) : 1;
 
     // If we are still less than the min_size, just set to the min_size.
     if (new_capacity < min_size)
@@ -445,7 +472,8 @@ namespace flex
     }
   }
 
-  template<class T, class Alloc> void vector<T, Alloc>::DestroyAndDeallocate()
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::DestroyAndDeallocate()
   {
     for (T* it = mBegin; it != mCapacity; ++it)
     {
