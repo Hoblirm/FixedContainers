@@ -146,6 +146,7 @@ namespace flex
   inline list<T, Alloc>::list() :
       mSize(0), mFixed(false), mNodePool(NULL)
   {
+    //Use initializer list.
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
   }
 

@@ -349,6 +349,19 @@ public:
     foo.push_back(100);
     foo.push_back(100);
     foo.push_back(100);
+
+    //Verify that swap will properly cause non-fixed containers to reallocate as necessary.
+    TS_ASSERT_EQUALS(bar.capacity(), 10);
+    bar.swap(foo);
+    TS_ASSERT_EQUALS(bar.capacity(), 20);
+
+    bar.push_back(100);
+    bar.push_back(100);
+    bar.push_back(100);
+    bar.push_back(100);
+    bar.push_back(100);
+    bar.push_back(100);
+
     TS_ASSERT_THROWS(bar.swap(foo), std::runtime_error);
   }
 
@@ -415,13 +428,13 @@ public:
     fixed_vector<int, 3> a(3, 0);
     for (int i = 0; i < a.size(); i++)
     {
-      a.data()[i] = i;
+      a[i] = i;
     }
 
     fixed_vector<int, 3> b(a);
     for (int i = 0; i < b.size(); i++)
     {
-      TS_ASSERT_EQUALS(b.data()[i], a.data()[i]);
+      TS_ASSERT_EQUALS(b[i], a[i]);
     }
   }
 

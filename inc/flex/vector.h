@@ -1,64 +1,99 @@
 #ifndef FLEX_VECTOR_H
 #define FLEX_VECTOR_H
 
-#include <flex/array.h>
+#include <algorithm>
+#include <iterator>
+
+#include <flex/allocator.h>
 
 namespace flex
 {
   template<class T, class Alloc = allocator<T> >
-  class vector: public array_base<T, Alloc>
+  class vector: public allocation_guard
   {
   public:
-    typedef array_base<T, Alloc> base_type;
-    
-    typedef typename base_type::value_type value_type;
-    typedef typename base_type::pointer pointer;
-    typedef typename base_type::const_pointer const_pointer;
-    typedef typename base_type::reference reference;
-    typedef typename base_type::const_reference const_reference;
-    typedef typename base_type::iterator iterator;
-    typedef typename base_type::const_iterator const_iterator;
-    typedef typename base_type::reverse_iterator reverse_iterator;
-    typedef typename base_type::const_reverse_iterator const_reverse_iterator;
-    typedef typename base_type::size_type size_type;
-    typedef typename base_type::difference_type difference_type;
-    
+    typedef T value_type;
+    typedef T* pointer;
+    typedef const T* const_pointer;
+    typedef T& reference;
+    typedef const T& const_reference;
+    typedef T* iterator;
+    typedef const T* const_iterator;
+    typedef std::reverse_iterator<T*> reverse_iterator;
+    typedef std::reverse_iterator<const T*> const_reverse_iterator;
+    typedef size_t size_type;
+    typedef std::ptrdiff_t difference_type;
+
     typedef Alloc allocator_type;
-    
-    using base_type::mBegin;
-    using base_type::mEnd;
-    using base_type::mAllocator;
-    using base_type::size;
-    using base_type::AllocateAndConstruct;
 
     vector();
     explicit vector(size_type size, const value_type& val = value_type());
-    vector(const T* first, const T* last);
+    vector(int size, const value_type& val);
+    template<typename InputIterator> vector(InputIterator first, InputIterator last);
     vector(const vector<T, Alloc> & obj);
     ~vector();
 
     void assign(size_type size, const T& val);
-    //TODO: Get template to work with vector assign() to use multiple iterators.
-    void assign(const T* first, const T* last);
+    void assign(int size, const T& val);
+    template<typename InputIterator>
+    void assign(InputIterator first, InputIterator last);
+
+    reference at(size_type n);
+    const_reference at(size_type n) const;
+
+    reference back();
+    const_reference back() const;
+
+    iterator begin();
+    const_iterator begin() const;
+    const_iterator cbegin() const;
+    const_iterator cend() const;
+    const_reverse_iterator crbegin() const;
+    const_reverse_iterator crend() const;
 
     size_type capacity() const;
     void clear();
+
+    bool empty() const;
+    iterator end();
+    const_iterator end() const;
+
     iterator erase(iterator position);
     iterator erase(iterator first, iterator last);
     bool fixed() const;
+
+    reference front();
+    const_reference front() const;
+
     allocator_type get_allocator() const;
     iterator insert(iterator position, const value_type& val);
     void insert(iterator position, size_type n, const value_type& val);
-    //TODO: Get template to work with vector insert() to use multiple iterators.
-    void insert(iterator position, const_iterator first, const_iterator last);
+    void insert(iterator position, int n, const value_type& val);
+    template<typename InputIterator> void insert(iterator position, InputIterator first, InputIterator last);
     size_type max_size() const;
     vector<T, Alloc>& operator=(const vector<T, Alloc>& obj);
+
+    reference operator[](size_type n);
+    const_reference operator[](size_type n) const;
+
     void pop_back();
     void push_back(const value_type& val);
+
+    reverse_iterator rbegin();
+    const_reverse_iterator rbegin() const;
+    reverse_iterator rend();
+    const_reverse_iterator rend() const;
+
     void resize(size_type n, const value_type& val = value_type());
+
+    size_type size() const;
+
     void swap(vector<T, Alloc>& obj);
 
   protected:
+    Alloc mAllocator;
+    iterator mBegin;
+    iterator mEnd;
     pointer mCapacity;
     bool mFixed;
 
@@ -66,34 +101,53 @@ namespace flex
 
   private:
     size_type GetNewCapacity(size_type min);
+    pointer AllocateAndConstruct(size_type n);
     void DestroyAndDeallocate();
   };
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector() :
-    array_base<T, Alloc>(), mCapacity(NULL), mFixed(false)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mFixed(false)
   {
   }
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(size_type size, const value_type& val) :
-      array_base<T, Alloc>(size), mCapacity(mEnd), mFixed(false)
+      mBegin(AllocateAndConstruct(size)), mEnd(mBegin + size), mCapacity(mEnd), mFixed(false)
   {
-    array_base<T, Alloc>::fill(val);
+    std::fill(mBegin, mEnd, val);
   }
 
   template<class T, class Alloc>
-  inline vector<T, Alloc>::vector(const T* first, const T* last) :
-      array_base<T, Alloc>(last - first), mCapacity(mEnd), mFixed(false)
+  inline vector<T, Alloc>::vector(int size, const value_type& val) :
+      mBegin(AllocateAndConstruct(size)), mEnd(mBegin + size), mCapacity(mEnd), mFixed(false)
   {
+    std::fill(mBegin, mEnd, val);
+  }
+
+  template<class T, class Alloc>
+  template<typename InputIterator>
+  inline vector<T, Alloc>::vector(InputIterator first, InputIterator last) :
+      mFixed(false)
+  {
+    //TODO: create vector_base to simplify.
+    size_type size = std::distance(first, last);
+    mBegin = AllocateAndConstruct(size);
+    mEnd = mBegin + size;
+    mCapacity = mEnd;
     std::copy(first, last, mBegin);
   }
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(const vector<T, Alloc> & obj) :
-      array_base<T, Alloc>(obj.size()), mCapacity(mEnd), mFixed(false)
+      mFixed(false)
   {
-    std::copy(obj.begin(), obj.end(), mBegin);
+    //TODO: create vector_base to simplify.
+    size_type size = std::distance(obj.mBegin, obj.mEnd);
+    mBegin = AllocateAndConstruct(size);
+    mEnd = mBegin + size;
+    mCapacity = mEnd;
+    std::copy(obj.mBegin, obj.mEnd, mBegin);
   }
 
   template<class T, class Alloc>
@@ -137,9 +191,16 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void vector<T, Alloc>::assign(const T* first, const T* last)
+  inline void vector<T, Alloc>::assign(int size, const T& val)
   {
-    size_type size = last - first;
+    assign((size_type) size, val);
+  }
+
+  template<class T, class Alloc>
+  template<typename InputIterator>
+  inline void vector<T, Alloc>::assign(InputIterator first, InputIterator last)
+  {
+    size_type size = std::distance(first, last);
     if (size > capacity())
     {
       if (mFixed)
@@ -170,6 +231,80 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline typename vector<T, Alloc>::reference vector<T, Alloc>::at(size_type n)
+  {
+    if (n < size())
+    {
+      return mBegin[n];
+    }
+    else
+    {
+      throw std::out_of_range("Fixed container called at() with out-of-bounds index.");
+    }
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_reference vector<T, Alloc>::at(size_type n) const
+  {
+    if (n < size())
+    {
+      return mBegin[n];
+    }
+    else
+    {
+      throw std::out_of_range("Fixed container called at() with out-of-bounds index.");
+    }
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::reference vector<T, Alloc>::back()
+  {
+    return *(mEnd - 1);
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_reference vector<T, Alloc>::back() const
+  {
+    return *(mEnd - 1);
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::iterator vector<T, Alloc>::begin()
+  {
+    return mBegin;
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_iterator vector<T, Alloc>::begin() const
+  {
+    return mBegin;
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_iterator vector<T, Alloc>::cbegin() const
+  {
+    return mBegin;
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_iterator vector<T, Alloc>::cend() const
+  {
+    return mEnd;
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::crbegin() const
+  {
+    return const_reverse_iterator(mEnd);
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::crend() const
+  {
+    return const_reverse_iterator(mBegin);
+  }
+
+  template<class T, class Alloc>
   inline typename vector<T, Alloc>::size_type vector<T, Alloc>::capacity() const
   {
     return mCapacity - mBegin;
@@ -179,6 +314,24 @@ namespace flex
   inline void vector<T, Alloc>::clear()
   {
     mEnd = mBegin;
+  }
+
+  template<class T, class Alloc>
+  inline bool vector<T, Alloc>::empty() const
+  {
+    return (mBegin == mEnd);
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::iterator vector<T, Alloc>::end()
+  {
+    return mEnd;
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_iterator vector<T, Alloc>::end() const
+  {
+    return mEnd;
   }
 
   template<class T, class Alloc>
@@ -205,6 +358,18 @@ namespace flex
   inline bool vector<T, Alloc>::fixed() const
   {
     return mFixed;
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::reference vector<T, Alloc>::front()
+  {
+    return *mBegin;
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_reference vector<T, Alloc>::front() const
+  {
+    return *mBegin;
   }
 
   template<class T, class Alloc>
@@ -306,9 +471,16 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void vector<T, Alloc>::insert(iterator position, const_iterator first, const_iterator last)
+  inline void vector<T, Alloc>::insert(iterator position, int n, const value_type& val)
   {
-    size_type n = last - first;
+    insert(position, (size_type) n, val);
+  }
+
+  template<class T, class Alloc>
+  template<typename InputIterator>
+  inline void vector<T, Alloc>::insert(iterator position, InputIterator first, InputIterator last)
+  {
+    size_type n = std::distance(first, last);
     if ((mEnd + n) > mCapacity)
     {
       if (mFixed)
@@ -364,6 +536,18 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline typename vector<T, Alloc>::reference vector<T, Alloc>::operator[](size_type n)
+  {
+    return mBegin[n];
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_reference vector<T, Alloc>::operator[](size_type n) const
+  {
+    return mBegin[n];
+  }
+
+  template<class T, class Alloc>
   inline void vector<T, Alloc>::pop_back()
   {
     --mEnd;
@@ -405,6 +589,30 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline typename vector<T, Alloc>::reverse_iterator vector<T, Alloc>::rbegin()
+  {
+    return reverse_iterator(mEnd);
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::rbegin() const
+  {
+    return const_reverse_iterator(mEnd);
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::reverse_iterator vector<T, Alloc>::rend()
+  {
+    return reverse_iterator(mBegin);
+  }
+
+  template<class T, class Alloc>
+  inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::rend() const
+  {
+    return const_reverse_iterator(mBegin);
+  }
+
+  template<class T, class Alloc>
   inline void vector<T, Alloc>::resize(size_type n, const value_type& val)
   {
     if (n < size())
@@ -418,6 +626,12 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline typename vector<T, Alloc>::size_type vector<T, Alloc>::size() const
+  {
+    return mEnd - mBegin;
+  }
+
+  template<class T, class Alloc>
   inline void vector<T, Alloc>::swap(vector<T, Alloc>& obj)
   {
     if ((!mFixed) && (!obj.fixed()))
@@ -428,31 +642,26 @@ namespace flex
     }
     else
     {
-      if ((obj.size() > capacity()) || (size() > obj.capacity()))
-      {
-        throw std::runtime_error("flex::vector - swap() parameters' size exceed capacity");
-      }
-
       if (size() < obj.size())
       {
         iterator it = std::swap_ranges(mBegin, mEnd, obj.mBegin);
-        std::copy(it, obj.mEnd, mEnd);
+        insert(mEnd, it, obj.mEnd);
+        obj.erase(it, obj.mEnd);
       }
       else
       {
         iterator it = std::swap_ranges(obj.mBegin, obj.mEnd, mBegin);
-        std::copy(it, mEnd, obj.mEnd);
+        obj.insert(obj.mEnd, it, mEnd);
+        erase(it, mEnd);
       }
-      size_type tmp_size = size();
-      mEnd = mBegin + obj.size();
-      obj.mEnd = obj.mBegin + tmp_size;
     }
   }
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(size_type capacity, pointer ptr) :
-      array_base<T, Alloc>(ptr), mCapacity(ptr+capacity), mFixed(true)
+      mBegin(ptr), mEnd(mBegin), mCapacity(ptr + capacity), mFixed(true)
   {
+    //TODO: Could optimize to set mEnd to correct value so it isn't reassigned in derived class.
   }
 
   template<class T, class Alloc>
@@ -473,6 +682,17 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline typename vector<T, Alloc>::pointer vector<T, Alloc>::AllocateAndConstruct(size_type n)
+  {
+    iterator new_begin = mAllocator.allocate(n);
+    for (T* it = new_begin; it != (new_begin + n); ++it)
+    {
+      mAllocator.construct(it, value_type());
+    }
+    return new_begin;
+  }
+
+  template<class T, class Alloc>
   inline void vector<T, Alloc>::DestroyAndDeallocate()
   {
     for (T* it = mBegin; it != mCapacity; ++it)
@@ -480,6 +700,42 @@ namespace flex
       mAllocator.destroy(it);
     }
     mAllocator.deallocate(mBegin, capacity());
+  }
+
+  template<class T, class Alloc>
+  inline bool operator==(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs)
+  {
+    return std::equal(lhs.begin(), lhs.end(), rhs.begin());
+  }
+
+  template<class T, class Alloc>
+  inline bool operator<(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs)
+  {
+    return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+  }
+
+  template<class T, class Alloc>
+  inline bool operator!=(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs)
+  {
+    return !(lhs == rhs);
+  }
+
+  template<class T, class Alloc>
+  inline bool operator>(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs)
+  {
+    return rhs < lhs;
+  }
+
+  template<class T, class Alloc>
+  inline bool operator<=(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs)
+  {
+    return !(rhs < lhs);
+  }
+
+  template<class T, class Alloc>
+  inline bool operator>=(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs)
+  {
+    return !(lhs < rhs);
   }
 
 }    //namespace flex

@@ -38,7 +38,7 @@ public:
     second.assign(it, first.end() - 1); // the 5 central values of first
 
     int myints[] = { 1776, 7, 4 };
-    third.assign(myints, myints + 3);   // assigning from array.
+    third.assign(myints, myints + 3);   // assigning from vector.
 
     TS_ASSERT_EQUALS(first.size(), 7);
     TS_ASSERT_EQUALS(first[0], 100);
@@ -60,6 +60,114 @@ public:
     TS_ASSERT_EQUALS(third[0], 1776);
     TS_ASSERT_EQUALS(third[1], 7);
     TS_ASSERT_EQUALS(third[2], 4);
+  }
+
+  void test_at(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 0, 0 };
+    vector<int> a(myints, myints + size);
+    TS_ASSERT_THROWS(a.at(-1), std::out_of_range);
+    for (int i = 0; i < size; i++)
+    {
+      a.at(i) = i;
+      TS_ASSERT_EQUALS(a.at(i), a[i]);
+    }
+    TS_ASSERT_THROWS(a.at(size), std::out_of_range);
+  }
+
+  void test_at_const(void)
+  {
+    size_t size = 3;
+    const vector<int> a(size, 7);
+    TS_ASSERT_THROWS(const int& v = a.at(-1), std::out_of_range);
+    for (int i = 0; i < size; i++)
+    {
+      const int& v = a.at(i);
+      TS_ASSERT_EQUALS(v, 7);
+    }
+    TS_ASSERT_THROWS(const int& v = a.at(size), std::out_of_range);
+  }
+
+  void test_back(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 1, 2 };
+    vector<int> a(myints, myints + size);
+    a[size - 1] = size - 1;
+    TS_ASSERT_EQUALS(a.back(), size - 1);
+  }
+
+  void test_back_const(void)
+  {
+    size_t size = 3;
+    const vector<int> a(size, 7);
+    TS_ASSERT_EQUALS(a.back(), 7);
+  }
+
+  void test_begin_and_end(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 1, 2 };
+    vector<int> a(myints, myints + size);
+    for (int i = 0; i < size; i++)
+    {
+      a[i] = i;
+    }
+
+    int i = 0;
+    for (vector<int>::iterator it = a.begin(); it < a.end(); ++it)
+    {
+      TS_ASSERT_EQUALS(*it, i);
+      *it = 0; //Ensure it is not const.
+      ++i;
+    }
+    TS_ASSERT_EQUALS(i, size);
+  }
+
+  void test_begin_and_end_const(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 1, 2 };
+    const vector<int> a(myints, myints + size);
+
+    int i = 0;
+    for (vector<int>::const_iterator it = a.begin(); it != a.end(); ++it)
+    {
+      TS_ASSERT_EQUALS(*it, i);
+      ++i;
+    }
+    TS_ASSERT_EQUALS(i, size);
+  }
+
+  void test_cbegin_and_cend(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 1, 2 };
+    const vector<int> a(myints, myints + size);
+
+    int i = 0;
+    for (vector<int>::const_iterator it = a.cbegin(); it < a.cend(); ++it)
+    {
+      TS_ASSERT_EQUALS(*it, i);
+      ++i;
+    }
+    TS_ASSERT_EQUALS(i, size);
+  }
+
+  void test_crbegin_and_crend(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 1, 2 };
+    const vector<int> a(myints, myints + size);
+
+    int i = size - 1;
+    for (vector<int>::const_reverse_iterator it = a.crbegin(); it < a.crend(); ++it)
+    {
+      TS_ASSERT_EQUALS(*it, i);
+      --i;
+    }
+    TS_ASSERT_EQUALS(i, -1);
   }
 
   void test_capacity(void)
@@ -131,6 +239,22 @@ public:
     TS_ASSERT_EQUALS(myvector[5], 10);
   }
 
+  void test_front(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 2, 1, 0 };
+    vector<int> a(myints, myints + size);
+    TS_ASSERT_EQUALS(a.front(), 2);
+  }
+
+  void test_front_const(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 2, 1, 0 };
+    const vector<int> a(myints, myints + size);
+    TS_ASSERT_EQUALS(a.front(), 2);
+  }
+
   void test_insert(void)
   {
     vec myvector(3, 100);
@@ -167,8 +291,8 @@ public:
     TS_ASSERT_EQUALS(myvector[6], 100);
     TS_ASSERT_EQUALS(myvector[7], 100);
 
-    int myarray[] = { 501, 502, 503, 12, 13, 14, 15, 16, 17 };
-    myvector.insert(myvector.begin(), myarray, myarray + 3);
+    int myints[] = { 501, 502, 503, 12, 13, 14, 15, 16, 17 };
+    myvector.insert(myvector.begin(), myints, myints + 3);
     TS_ASSERT_EQUALS(myvector.size(), 11);
     TS_ASSERT_EQUALS(myvector[0], 501);
     TS_ASSERT_EQUALS(myvector[1], 502);
@@ -211,7 +335,7 @@ public:
     TS_ASSERT_EQUALS(foo[1], 5);
     TS_ASSERT_EQUALS(foo[2], 17);
 
-    //We are setting foo to an empty array.  Size is zero, but the capacity is still eight.  Behavior-wise
+    //We are setting foo to an empty vector.  Size is zero, but the capacity is still eight.  Behavior-wise
     //it doesn't matter what the contents are since the size is zero.  However, we want to ensure that the
     //assignment operator doesn't perform extra work by resetting these values.  This happens if no assignment
     //operator is defined and a default one is used.
@@ -249,6 +373,30 @@ public:
     TS_ASSERT_EQUALS(foo[2], 17);
   }
 
+  void test_ary_operator(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 1, 2 };
+    vector<int> a(myints, myints + size);
+    for (int i = 0; i < size; i++)
+    {
+      TS_ASSERT_EQUALS(i, a[i]);
+    }
+  }
+
+  void test_ary_operator_const(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 1, 2 };
+    const vector<int> a(myints, myints + size);
+
+    for (int i = 0; i < size; i++)
+    {
+      const int& v = a[i];
+      TS_ASSERT_EQUALS(v, a[i]);
+    }
+  }
+
   void test_push_back_and_pop_back(void)
   {
     vec myvector;
@@ -274,6 +422,37 @@ public:
       TS_ASSERT_EQUALS(myvector.size(), size);
     }
     TS_ASSERT_EQUALS(sum, 600);
+  }
+
+  void test_rbegin_and_rend(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 1, 2 };
+    vector<int> a(myints, myints + size);
+
+    int i = size - 1;
+    for (vector<int>::reverse_iterator it = a.rbegin(); it < a.rend(); ++it)
+    {
+      TS_ASSERT_EQUALS(*it, i);
+      *it = 0; //Ensure it is not const.
+      --i;
+    }
+    TS_ASSERT_EQUALS(i, -1);
+  }
+
+  void test_rbegin_and_rend_const(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 1, 2 };
+    const vector<int> a(myints, myints + size);
+
+    int i = size - 1;
+    for (vector<int>::const_reverse_iterator it = a.rbegin(); it < a.rend(); ++it)
+    {
+      TS_ASSERT_EQUALS(*it, i);
+      --i;
+    }
+    TS_ASSERT_EQUALS(i, -1);
   }
 
   void test_resize(void)
@@ -313,6 +492,14 @@ public:
     TS_ASSERT_EQUALS(myvector[9], 0);
     TS_ASSERT_EQUALS(myvector[10], 0);
     TS_ASSERT_EQUALS(myvector[11], 0);
+  }
+
+  void test_size(void)
+  {
+    const size_t size = 3;
+    int myints[size] = { 0, 1, 2 };
+    vector<int> a(myints, myints + size);
+    TS_ASSERT_EQUALS(a.size(), size);
   }
 
   void test_swap(void)
@@ -403,7 +590,7 @@ public:
       TS_ASSERT_EQUALS(*it, 100);
     }
 
-    // the iterator constructor can also be used to construct from arrays:
+    // the iterator constructor can also be used to construct from vectors:
     int myints[] = { 16, 2, 77, 29 };
     vec third(myints, myints + sizeof(myints) / sizeof(int));
     TS_ASSERT_EQUALS(third.size(), 4);
@@ -418,7 +605,7 @@ public:
     vec a(3, 0);
     for (int i = 0; i < a.size(); i++)
     {
-      a.data()[i] = i;
+      a[i] = i;
     }
 
     flex::allocation_guard::enable();
@@ -428,12 +615,13 @@ public:
     vec b(a);
     for (int i = 0; i < b.size(); i++)
     {
-      TS_ASSERT_EQUALS(b.data()[i], a.data()[i]);
+      TS_ASSERT_EQUALS(b[i], a[i]);
     }
   }
 
   void test_relational_operators(void)
   {
+
     vec foo(3, 100);   // three ints with a value of 100
     vec bar(2, 200);   // two ints with a value of 200
 

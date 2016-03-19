@@ -109,6 +109,7 @@ namespace flex
   inline ring<T, Alloc>::ring(size_type capacity, const value_type& val) :
       mFixed(false)
   {
+    //TODO: Restructure to use initializer list.
     mBegin.mPtr = AllocateAndConstruct(capacity);
     mEnd.mPtr = mBegin.mPtr + capacity;
 
@@ -395,16 +396,16 @@ namespace flex
   inline typename ring<T, Alloc>::iterator ring<T, Alloc>::insert(iterator position, const value_type& val)
   {
     //Increment is performed first as it allows a much faster capacity check. The
-     //drawback is that the iterator needs to be reverted if reallocation occurs.
-     const iterator prev_end = mEnd;
-     ++mEnd;
-     
+    //drawback is that the iterator needs to be reverted if reallocation occurs.
+    const iterator prev_end = mEnd;
+    ++mEnd;
+
     if (mEnd.mPtr == mBegin.mPtr)
     {
-       //Capacity has been exceeded. Put container back in a valid
-       //state and reallocate.
-       mEnd.mPtr = prev_end.mPtr;
-       
+      //Capacity has been exceeded. Put container back in a valid
+      //state and reallocate.
+      mEnd.mPtr = prev_end.mPtr;
+
       //Allocate memory with sufficient capacity.
       size_type new_size = size() + 1;
       size_t new_capacity = GetNewCapacity(new_size);
@@ -549,17 +550,17 @@ namespace flex
   template<class T, class Alloc>
   inline void ring<T, Alloc>::push_back(const value_type& val)
   {
-     //Increment is performed first as it allows a much faster capacity check. The
-     //drawback is that the iterator needs to be reverted if reallocation occurs.
-     const pointer prev_end = mEnd.mPtr;
-     ++mEnd;
-     
+    //Increment is performed first as it allows a much faster capacity check. The
+    //drawback is that the iterator needs to be reverted if reallocation occurs.
+    const pointer prev_end = mEnd.mPtr;
+    ++mEnd;
+
     if (mEnd.mPtr == mBegin.mPtr)
     {
-       //Capacity has been exceeded. Put container back in a valid
-       //state and reallocate.
-       mEnd.mPtr = prev_end;
-       
+      //Capacity has been exceeded. Put container back in a valid
+      //state and reallocate.
+      mEnd.mPtr = prev_end;
+
       //Allocate memory with sufficient capacity.
       size_type new_size = size() + 1;
       size_type new_capacity = GetNewCapacity(new_size);
@@ -574,23 +575,23 @@ namespace flex
     }
     else
     {
-       *prev_end = val;
+      *prev_end = val;
     }
   }
 
   template<class T, class Alloc>
   inline void ring<T, Alloc>::push_front(const T& val)
   {
-     //Decrement is performed first as it allows a much faster capacity check. The
-     //drawback is that the iterator needs to be incremented if reallocation occurs.
-     --mBegin;
-     
+    //Decrement is performed first as it allows a much faster capacity check. The
+    //drawback is that the iterator needs to be incremented if reallocation occurs.
+    --mBegin;
+
     if (mBegin.mPtr == mEnd.mPtr)
     {
-       //Capacity has been exceeded. Put container back in a valid
-       //state and reallocate.
-       ++mBegin;
-       
+      //Capacity has been exceeded. Put container back in a valid
+      //state and reallocate.
+      ++mBegin;
+
       //Allocate memory with sufficient capacity.
       size_type new_size = size() + 1;
       size_type new_capacity = GetNewCapacity(new_size);
@@ -682,14 +683,14 @@ namespace flex
     {
       if (size() < obj.size())
       {
-        iterator it = std::swap_ranges(mBegin, mEnd, obj.begin());
-        insert(mEnd, it, obj.end());
-        obj.erase(it, obj.end());
+        iterator it = std::swap_ranges(mBegin, mEnd, obj.mBegin);
+        insert(mEnd, it, obj.mEnd);
+        obj.erase(it, obj.mEnd);
       }
       else
       {
-        iterator it = std::swap_ranges(obj.begin(), obj.end(), mBegin);
-        obj.insert(obj.end(), it, mEnd);
+        iterator it = std::swap_ranges(obj.mBegin, obj.mEnd, mBegin);
+        obj.insert(obj.mEnd, it, mEnd);
         erase(it, mEnd);
       }
     }

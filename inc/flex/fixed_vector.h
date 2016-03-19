@@ -90,7 +90,7 @@ namespace flex
   inline fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(
       const vector<T, Alloc>& obj)
   {
-    assign(obj.mBegin,obj.mEnd);
+    assign(obj.begin(),obj.end());
     return *this;
   }
 
