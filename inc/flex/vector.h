@@ -9,9 +9,8 @@
 namespace flex
 {
   template<class T, class Alloc = allocator<T> >
-  class vector: public allocation_guard
+  class vector_base: public allocation_guard
   {
-  public:
     typedef T value_type;
     typedef T* pointer;
     typedef const T* const_pointer;
@@ -25,6 +24,70 @@ namespace flex
     typedef std::ptrdiff_t difference_type;
 
     typedef Alloc allocator_type;
+
+  protected:
+    Alloc mAllocator;
+    iterator mBegin;
+    iterator mEnd;
+    pointer mCapacity;
+
+    vector_base() :
+        mBegin(NULL), mEnd(NULL), mCapacity(NULL)
+
+    {
+    }
+
+    vector_base(size_type n) :
+        mBegin(AllocateAndConstruct(n)), mEnd(mBegin + n), mCapacity(mEnd)
+
+    {
+    }
+
+    vector_base(pointer new_begin, size_type size, size_type capacity) :
+        mBegin(new_begin), mEnd(mBegin + size), mCapacity(mBegin + capacity)
+
+    {
+    }
+
+    pointer AllocateAndConstruct(size_type n);
+  };
+
+  template<class T, class Alloc>
+  inline typename vector_base<T, Alloc>::pointer vector_base<T, Alloc>::AllocateAndConstruct(size_type n)
+  {
+    iterator new_begin = mAllocator.allocate(n);
+    for (T* it = new_begin; it != (new_begin + n); ++it)
+    {
+      mAllocator.construct(it, value_type());
+    }
+    return new_begin;
+  }
+
+  template<class T, class Alloc = allocator<T> >
+  class vector: public vector_base<T, Alloc>
+  {
+    typedef vector_base<T, Alloc> base_type;
+    typedef vector<T, Alloc> this_type;
+
+  public:
+    typedef T value_type;
+    typedef T* pointer;
+    typedef const T* const_pointer;
+    typedef T& reference;
+    typedef const T& const_reference;
+    typedef T* iterator;
+    typedef const T* const_iterator;
+    typedef std::reverse_iterator<T*> reverse_iterator;
+    typedef std::reverse_iterator<const T*> const_reverse_iterator;
+    typedef size_t size_type;
+    typedef std::ptrdiff_t difference_type;
+    typedef Alloc allocator_type;
+
+    using base_type::mAllocator;
+    using base_type::mBegin;
+    using base_type::mEnd;
+    using base_type::mCapacity;
+    using base_type::AllocateAndConstruct;
 
     vector();
     explicit vector(size_type size, const value_type& val = value_type());
@@ -91,36 +154,32 @@ namespace flex
     void swap(vector<T, Alloc>& obj);
 
   protected:
-    Alloc mAllocator;
-    iterator mBegin;
-    iterator mEnd;
-    pointer mCapacity;
+
     bool mFixed;
 
     vector(size_type capacity, pointer ptr);
 
   private:
     size_type GetNewCapacity(size_type min);
-    pointer AllocateAndConstruct(size_type n);
     void DestroyAndDeallocate();
   };
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector() :
-      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mFixed(false)
+      base_type(), mFixed(false)
   {
   }
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(size_type size, const value_type& val) :
-      mBegin(AllocateAndConstruct(size)), mEnd(mBegin + size), mCapacity(mEnd), mFixed(false)
+      base_type(size), mFixed(false)
   {
     std::fill(mBegin, mEnd, val);
   }
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(int size, const value_type& val) :
-      mBegin(AllocateAndConstruct(size)), mEnd(mBegin + size), mCapacity(mEnd), mFixed(false)
+      base_type(size), mFixed(false)
   {
     std::fill(mBegin, mEnd, val);
   }
@@ -128,25 +187,15 @@ namespace flex
   template<class T, class Alloc>
   template<typename InputIterator>
   inline vector<T, Alloc>::vector(InputIterator first, InputIterator last) :
-      mFixed(false)
+      base_type(std::distance(first, last)), mFixed(false)
   {
-    //TODO: create vector_base to simplify.
-    size_type size = std::distance(first, last);
-    mBegin = AllocateAndConstruct(size);
-    mEnd = mBegin + size;
-    mCapacity = mEnd;
     std::copy(first, last, mBegin);
   }
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(const vector<T, Alloc> & obj) :
-      mFixed(false)
+      base_type(std::distance(obj.mBegin, obj.mEnd)), mFixed(false)
   {
-    //TODO: create vector_base to simplify.
-    size_type size = std::distance(obj.mBegin, obj.mEnd);
-    mBegin = AllocateAndConstruct(size);
-    mEnd = mBegin + size;
-    mCapacity = mEnd;
     std::copy(obj.mBegin, obj.mEnd, mBegin);
   }
 
@@ -659,7 +708,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(size_type capacity, pointer ptr) :
-      mBegin(ptr), mEnd(mBegin), mCapacity(ptr + capacity), mFixed(true)
+      base_type(ptr, 0, capacity), mFixed(true)
   {
     //TODO: Could optimize to set mEnd to correct value so it isn't reassigned in derived class.
   }
@@ -679,17 +728,6 @@ namespace flex
     {
       return new_capacity;
     }
-  }
-
-  template<class T, class Alloc>
-  inline typename vector<T, Alloc>::pointer vector<T, Alloc>::AllocateAndConstruct(size_type n)
-  {
-    iterator new_begin = mAllocator.allocate(n);
-    for (T* it = new_begin; it != (new_begin + n); ++it)
-    {
-      mAllocator.construct(it, value_type());
-    }
-    return new_begin;
   }
 
   template<class T, class Alloc>
