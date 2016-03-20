@@ -5,6 +5,8 @@
 #include <exception>
 #include <stdexcept>
 
+#include <flex/config.h>
+
 namespace flex
 {
 
@@ -17,7 +19,7 @@ namespace flex
 
     static void* operator new(std::size_t sz)
     {
-      if (allocation_guard::is_enabled())
+      if (FLEX_UNLIKELY(allocation_guard::is_enabled()))
       {
         throw std::runtime_error("allocation_guard: new operator called for child class.");
       }
@@ -29,7 +31,7 @@ namespace flex
 
     static void* operator new[](std::size_t sz)
     {
-      if (allocation_guard::is_enabled())
+      if (FLEX_UNLIKELY(allocation_guard::is_enabled()))
       {
         throw std::runtime_error("allocation_guard: new[] operator called for child class.");
       }

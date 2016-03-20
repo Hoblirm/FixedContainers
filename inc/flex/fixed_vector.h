@@ -9,8 +9,8 @@ namespace flex
   template<class T, size_t N, class Alloc = allocator<T> > class fixed_vector: public vector<T, Alloc>
   {
   public:
-      typedef vector<T, Alloc> base_type;
-    
+    typedef vector<T, Alloc> base_type;
+
     typedef typename base_type::value_type value_type;
     typedef typename base_type::pointer pointer;
     typedef typename base_type::const_pointer const_pointer;
@@ -22,82 +22,89 @@ namespace flex
     typedef typename base_type::const_reverse_iterator const_reverse_iterator;
     typedef typename base_type::size_type size_type;
     typedef typename base_type::difference_type difference_type;
-    
+
     using base_type::mBegin;
     using base_type::mEnd;
     using base_type::mCapacity;
     using base_type::assign;
-    using base_type::capacity;
 
     fixed_vector();
     explicit fixed_vector(size_type size, const value_type& val = value_type());
-    fixed_vector(const T* first, const T* last);
+    fixed_vector(int size, const value_type& val);
+    template<typename InputIterator> fixed_vector(InputIterator first, InputIterator last);
     fixed_vector(const fixed_vector<T, N, Alloc> & obj);
     fixed_vector(const vector<T, Alloc> & obj);
+
     fixed_vector<T, N, Alloc>& operator=(const fixed_vector<T, N, Alloc>& obj);
     fixed_vector<T, N, Alloc>& operator=(const vector<T, Alloc>& obj);
     size_type max_size() const;
+
   private:
-    T mAry[N];
+    T mBuffer[N];
   };
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector() :
-      vector<T, Alloc>(N, mAry)
+      vector<T, Alloc>(mBuffer, mBuffer, N)
   {
-    mEnd = mBegin;
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector(size_type size, const value_type& val) :
-      vector<T, Alloc>(N, mAry)
+      vector<T, Alloc>(mBuffer, mBuffer + size, N)
   {
-   assign(size, val);
+    std::fill(mBegin, mEnd, val);
   }
 
   template<class T, size_t N, class Alloc>
-  inline fixed_vector<T, N, Alloc>::fixed_vector(const T* first, const T* last) :
-      vector<T, Alloc>(N, mAry)
+  inline fixed_vector<T, N, Alloc>::fixed_vector(int size, const value_type& val) :
+      vector<T, Alloc>(mBuffer, mBuffer + size, N)
   {
-    assign(first, last);
+    std::fill(mBegin, mEnd, val);
+  }
+
+  template<class T, size_t N, class Alloc>
+  template<typename InputIterator>
+  inline fixed_vector<T, N, Alloc>::fixed_vector(InputIterator first, InputIterator last) :
+      vector<T, Alloc>(mBuffer, mBuffer + std::distance(first, last), N)
+  {
+    std::copy(first, last, mBegin);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector(const fixed_vector<T, N, Alloc> & obj) :
-      vector<T, Alloc>(N, mAry)
+      vector<T, Alloc>(mBuffer, mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
   {
-     std::copy(obj.mBegin, obj.mEnd, mBegin);
-    mEnd = mBegin + obj.size();
+    std::copy(obj.mBegin, obj.mEnd, mBegin);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector(const vector<T, Alloc> & obj) :
-      vector<T, Alloc>(N, mAry)
+      vector<T, Alloc>(mBuffer, mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
   {
-    assign(obj.mBegin, obj.mEnd);
+    std::copy(obj.mBegin, obj.mEnd, mBegin);
   }
 
   template<class T, size_t N, class Alloc>
-  inline fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(
-      const fixed_vector<T, N, Alloc>& obj)
+  inline fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(const fixed_vector<T, N, Alloc>& obj)
   {
+    //A bit more efficient than assign() as no capacity check is needed.
     std::copy(obj.mBegin, obj.mEnd, mBegin);
     mEnd = mBegin + obj.size();
     return *this;
   }
 
   template<class T, size_t N, class Alloc>
-  inline fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(
-      const vector<T, Alloc>& obj)
+  inline fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(const vector<T, Alloc>& obj)
   {
-    assign(obj.begin(),obj.end());
+    assign(obj.begin(), obj.end());
     return *this;
   }
 
   template<class T, size_t N, class Alloc>
   inline typename fixed_vector<T, N, Alloc>::size_type fixed_vector<T, N, Alloc>::max_size() const
   {
-    return capacity();
+    return N;
   }
 
 } //namespace flex

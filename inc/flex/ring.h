@@ -228,7 +228,7 @@ namespace flex
   template<class T, class Alloc>
   inline T& ring<T, Alloc>::at(size_t n)
   {
-    if (n < size())
+    if (FLEX_LIKELY(n < size()))
     {
       return operator[](n);
     }
@@ -241,7 +241,7 @@ namespace flex
   template<class T, class Alloc>
   inline const T& ring<T, Alloc>::at(size_t n) const
   {
-    if (n < size())
+    if (FLEX_LIKELY(n < size()))
     {
       return operator[](n);
     }
@@ -709,7 +709,7 @@ namespace flex
   template<class T, class Alloc>
   inline typename ring<T, Alloc>::pointer ring<T, Alloc>::AllocateAndConstruct(size_t capacity)
   {
-    if (mFixed)
+    if (FLEX_UNLIKELY(mFixed))
     {
       throw std::runtime_error("flex::fixed_ring - allocation performed");
       mFixed = false;

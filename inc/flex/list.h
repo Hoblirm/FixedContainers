@@ -144,42 +144,36 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list() :
-      mSize(0), mFixed(false), mNodePool(NULL)
+      mAnchor { &mAnchor, &mAnchor }, mSize(0), mFixed(false), mNodePool(NULL)
   {
-    //Use initializer list.
-    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(size_type size, const T& val) :
-      mSize(0), mFixed(false), mNodePool(NULL)
+      mAnchor { &mAnchor, &mAnchor }, mSize(0), mFixed(false), mNodePool(NULL)
   {
-    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), size, val);
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(int size, const T& val) :
-      mSize(0), mFixed(false), mNodePool(NULL)
+      mAnchor { &mAnchor, &mAnchor }, mSize(0), mFixed(false), mNodePool(NULL)
   {
-    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), (size_type) size, val);
   }
 
   template<class T, class Alloc>
   template<typename InputIterator>
   inline list<T, Alloc>::list(InputIterator first, InputIterator last) :
-      mSize(0), mFixed(false), mNodePool(NULL)
+      mAnchor { &mAnchor, &mAnchor }, mSize(0), mFixed(false), mNodePool(NULL)
   {
-    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), first, last);
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(const list<T, Alloc> & obj) :
-      mSize(0), mFixed(false), mNodePool(NULL)
+      mAnchor { &mAnchor, &mAnchor }, mSize(0), mFixed(false), mNodePool(NULL)
   {
-    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), obj.cbegin(), obj.cend());
   }
 
@@ -849,7 +843,7 @@ namespace flex
       // 1 2 3
       return first;
     } //end of case 3
-    default://merge sort for all larger sizes
+    default: //merge sort for all larger sizes
     {
       size_type new_size = n / 2;
       iterator mid(first);
@@ -1032,7 +1026,7 @@ namespace flex
     node_type* ptr;
     if (NULL == mNodePool)
     {
-      if (mFixed)
+      if (FLEX_UNLIKELY(mFixed))
       {
         throw std::runtime_error("flex::fixed_list - exceeded capacity");
       }
@@ -1041,7 +1035,6 @@ namespace flex
     }
     else
     {
-
       ptr = mNodePool;
       mNodePool = static_cast<node_type*>(mNodePool->mNext);
     }
