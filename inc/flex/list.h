@@ -125,6 +125,9 @@ namespace flex
     void PurgeNodePool();
     void DestroyAndDeallocateNode(node_type* ptr);
 
+    Alloc mAllocator;
+    bool mFixed;
+
     /*
      * The anchor node contains the head and tail pointers for the list.  It is type base_node_type, and doesn't take up
      * any space for a T value.  An anchor node provides various advantages over using a simple head and tail pointer.
@@ -132,11 +135,8 @@ namespace flex
      * also allows the implementation of an end() iterator that can be decremented.
      */
     base_node_type mAnchor;
-
     size_type mSize;
-    bool mFixed;
     node_type* mNodePool;
-    Alloc mAllocator;
 
   private:
 
@@ -144,20 +144,20 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list() :
-      mAnchor { &mAnchor, &mAnchor }, mSize(0), mFixed(false), mNodePool(NULL)
+      mFixed(false), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
   {
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(size_type size, const T& val) :
-      mAnchor { &mAnchor, &mAnchor }, mSize(0), mFixed(false), mNodePool(NULL)
+      mFixed(false), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
   {
     insert(begin(), size, val);
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(int size, const T& val) :
-      mAnchor { &mAnchor, &mAnchor }, mSize(0), mFixed(false), mNodePool(NULL)
+      mFixed(false), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
   {
     insert(begin(), (size_type) size, val);
   }
@@ -165,14 +165,14 @@ namespace flex
   template<class T, class Alloc>
   template<typename InputIterator>
   inline list<T, Alloc>::list(InputIterator first, InputIterator last) :
-      mAnchor { &mAnchor, &mAnchor }, mSize(0), mFixed(false), mNodePool(NULL)
+      mFixed(false), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
   {
     insert(begin(), first, last);
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(const list<T, Alloc> & obj) :
-      mAnchor { &mAnchor, &mAnchor }, mSize(0), mFixed(false), mNodePool(NULL)
+      mFixed(false), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
   {
     insert(begin(), obj.cbegin(), obj.cend());
   }
@@ -1015,7 +1015,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(size_t capacity, list_node<T>* contentPtr) :
-      mAnchor(), mSize(0), mNodePool(NULL), mFixed(true)
+      mFixed(true), mAnchor(), mSize(0), mNodePool(NULL)
   {
 
   }

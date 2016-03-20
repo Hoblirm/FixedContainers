@@ -280,7 +280,7 @@ namespace flex
    */
   template<class T, class Alloc>
   inline array_base<T, Alloc>::array_base(pointer ptr) :
-      mBegin(ptr)
+      mBegin(ptr), mEnd(mBegin)
   {
   }
 

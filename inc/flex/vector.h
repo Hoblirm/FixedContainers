@@ -224,7 +224,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(const vector<T, Alloc> & obj) :
-      base_type(std::distance(obj.mBegin, obj.mEnd))
+      base_type(obj.size())
   {
     std::copy(obj.mBegin, obj.mEnd, mBegin);
   }

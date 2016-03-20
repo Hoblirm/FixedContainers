@@ -20,6 +20,7 @@ namespace flex
     typedef Reference reference;
     typedef std::random_access_iterator_tag iterator_category; //Although this does not contain all methods of a random_access_iterator, we assign
                                                                //it this tag to ensure the operator-() method is called by std::distance().
+    typedef size_t size_type;
 
     pointer mPtr;
     pointer mLeftBound;
@@ -27,6 +28,7 @@ namespace flex
 
     ring_iterator();
     ring_iterator(T* ptr, T* left_bound, T* right_bound);
+    ring_iterator(T* ptr, size_type n);
     ring_iterator(const iterator& x);
 
     this_type& operator++();
@@ -53,6 +55,12 @@ namespace flex
   template<class T, class Pointer, class Reference>
   inline ring_iterator<T, Pointer, Reference>::ring_iterator(T* ptr, T* left_bound, T* right_bound) :
       mPtr(ptr), mLeftBound(left_bound), mRightBound(right_bound)
+  {
+  }
+
+  template<class T, class Pointer, class Reference>
+  inline ring_iterator<T, Pointer, Reference>::ring_iterator(T* ptr, size_type n) :
+      mPtr(ptr), mLeftBound(ptr), mRightBound(ptr + n)
   {
   }
 
@@ -191,13 +199,15 @@ namespace flex
 
   // Extra template parameters were put in to support comparisons between const and non-const iterators.
   template<typename T, typename PointerA, typename ReferenceA, typename PointerB, typename ReferenceB>
-  inline bool operator==(const ring_iterator<T, PointerA, ReferenceA>& a, const ring_iterator<T, PointerB, ReferenceB>& b)
+  inline bool operator==(const ring_iterator<T, PointerA, ReferenceA>& a,
+      const ring_iterator<T, PointerB, ReferenceB>& b)
   {
     return a.mPtr == b.mPtr;
   }
 
   template<typename T, typename PointerA, typename ReferenceA, typename PointerB, typename ReferenceB>
-  inline bool operator!=(const ring_iterator<T, PointerA, ReferenceA>& a, const ring_iterator<T, PointerB, ReferenceB>& b)
+  inline bool operator!=(const ring_iterator<T, PointerA, ReferenceA>& a,
+      const ring_iterator<T, PointerB, ReferenceB>& b)
   {
     return a.mPtr != b.mPtr;
   }

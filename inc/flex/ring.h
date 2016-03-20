@@ -8,7 +8,8 @@
 
 namespace flex
 {
-  template<class T, class Alloc = allocator<T> > class ring: public allocation_guard
+  template<class T, class Alloc = allocator<T> >
+  class ring_base: public allocation_guard
   {
   public:
     typedef T value_type;
@@ -24,19 +25,63 @@ namespace flex
     typedef std::ptrdiff_t difference_type;
     typedef Alloc allocator_type;
 
+  protected:
+    allocator_type mAllocator;
+    bool mFixed;
+
+    //Since a ring iterator contains a left and right-bound pointer, these values are duplicated between mBegin and mEnd.
+    //These two iterators could be replaced by four unique pointers, but it would make the code a bit more messy and would
+    //require additional iterator construction within the functions.
+    iterator mBegin;
+    iterator mEnd;
+
+    ring_base();
+    ring_base(size_type n);
+    ring_base(pointer new_begin, pointer new_end, pointer right_bound);
+    ~ring_base();
+
+    pointer AllocateAndConstruct(size_type n);
+    void DestroyAndDeallocate();
+  };
+
+  template<class T, class Alloc = allocator<T> > class ring: public ring_base<T, Alloc>
+  {
+    typedef ring_base<T, Alloc> base_type;
+    typedef ring<T, Alloc> this_type;
+
+  public:
+    typedef typename base_type::value_type value_type;
+    typedef typename base_type::pointer pointer;
+    typedef typename base_type::const_pointer const_pointer;
+    typedef typename base_type::reference reference;
+    typedef typename base_type::const_reference const_reference;
+    typedef typename base_type::iterator iterator;
+    typedef typename base_type::const_iterator const_iterator;
+    typedef typename base_type::reverse_iterator reverse_iterator;
+    typedef typename base_type::const_reverse_iterator const_reverse_iterator;
+    typedef typename base_type::size_type size_type;
+    typedef typename base_type::difference_type difference_type;
+    typedef typename base_type::allocator_type allocator_type;
+
+    using base_type::mAllocator;
+    using base_type::mBegin;
+    using base_type::mEnd;
+    using base_type::mFixed;
+    using base_type::AllocateAndConstruct;
+    using base_type::DestroyAndDeallocate;
+
     ring();
     explicit ring(size_type size, const value_type& val = value_type());
     ring(int size, const value_type& val);
     template<typename InputIterator> ring(InputIterator first, InputIterator last);
     ring(const ring<T, Alloc> & obj);
-    ~ring();
 
     void assign(size_type size, const value_type& val);
     void assign(int size, const value_type& val);
     template<typename InputIterator> void assign(InputIterator first, InputIterator last);
 
-    reference at(size_t n);
-    const_reference at(size_t n) const;
+    reference at(size_type n);
+    const_reference at(size_type n) const;
     reference back();
     const_reference back() const;
     iterator begin();
@@ -61,10 +106,10 @@ namespace flex
     void insert(iterator position, size_type n, const value_type& val);
     void insert(iterator position, int n, const value_type& val);
     template<typename InputIterator> void insert(iterator position, InputIterator first, InputIterator last);
-    size_t max_size() const;
+    size_type max_size() const;
     ring<T, Alloc>& operator=(const ring<T, Alloc>& obj);
-    reference operator[](size_t n);
-    const_reference operator[](size_t n) const;
+    reference operator[](size_type n);
+    const_reference operator[](size_type n) const;
     void pop_back();
     void pop_front();
     void push_back(const value_type& val);
@@ -74,62 +119,116 @@ namespace flex
     reverse_iterator rend();
     const_reverse_iterator rend() const;
     void reserve(size_type n);
-    void resize(size_t n, const value_type& val = value_type());
+    void resize(size_type n, const value_type& val = value_type());
     void shrink_to_fit();
-    size_t size() const;
+    size_type size() const;
     void swap(ring<T, Alloc>& obj);
 
   protected:
-    ring(size_t size, T* ptr);
-
-    allocator_type mAllocator;
-
-    //Since a ring iterator contains a left and right-bound pointer, these values are duplicated between mBegin and mEnd.
-    //These two iterators could be replaced by four unique pointers, but it would make the code a bit more messy and would
-    //require additional iterator construction within the functions.
-    iterator mBegin;
-    iterator mEnd;
-
-    bool mFixed;
-
-  private:
-    size_t GetNewCapacity(size_type min);
-    pointer AllocateAndConstruct(size_type capacity);
-    void DestroyAndDeallocate();
+    size_type GetNewCapacity(size_type min);
     void DeallocateAndReassign(pointer new_begin, pointer new_end, size_type new_capacity);
   };
 
+  /*
+   * ring_base
+   */
+  template<class T, class Alloc>
+  inline ring_base<T, Alloc>::ring_base() :
+      mFixed(false), mBegin(NULL, NULL, NULL), mEnd(NULL, NULL, NULL)
+
+  {
+  }
+
+  template<class T, class Alloc>
+  inline ring_base<T, Alloc>::ring_base(size_type n) :
+      mFixed(false), mBegin(AllocateAndConstruct(n), n), mEnd(mBegin.mRightBound, mBegin.mPtr, mBegin.mRightBound)
+
+  {
+  }
+
+  template<class T, class Alloc>
+  inline ring_base<T, Alloc>::ring_base(pointer new_begin, pointer new_end, pointer right_bound) :
+      mFixed(true), mBegin(new_begin, new_begin, right_bound), mEnd(new_end, new_begin, right_bound)
+
+  {
+    if (FLEX_UNLIKELY(new_end > right_bound))
+    {
+      throw std::runtime_error("flex::fixed_ring - constructor() size exceeds capacity");
+    }
+  }
+
+  template<class T, class Alloc>
+  inline ring_base<T, Alloc>::~ring_base()
+  {
+    if (!mFixed && (NULL != mBegin.mPtr))
+    {
+      DestroyAndDeallocate();
+    }
+  }
+
+  template<class T, class Alloc>
+  inline typename ring_base<T, Alloc>::pointer ring_base<T, Alloc>::AllocateAndConstruct(size_type capacity)
+  {
+    if (FLEX_UNLIKELY(mFixed))
+    {
+      throw std::runtime_error("flex::fixed_ring - allocation performed");
+      mFixed = false;
+    }
+
+    pointer new_begin;
+    //The size allocated is 1 more than the capacity.  This is do to the fact that we don't want begin() to equal end().
+    //Therefore there will always be one allocated element that is unused.
+    new_begin = mAllocator.allocate(capacity + 1);
+
+    for (pointer it = new_begin; it != (new_begin + capacity + 1); ++it)
+    {
+      mAllocator.construct(it, value_type());
+    }
+    return new_begin;
+  }
+
+  template<class T, class Alloc>
+  inline void ring_base<T, Alloc>::DestroyAndDeallocate()
+  {
+    for (pointer it = mBegin.mLeftBound; it != mBegin.mRightBound; ++it)
+    {
+      mAllocator.destroy(it);
+    }
+
+    //Due to the circular nature of the container, mRightBound points to the last element in the allocated space.  This
+    //is different than a typical end iterator which points to a place one beyond the last element.  Therefore, the above
+    //loop misses the last space.  We don't want to use (mRightBound+1) in the above loop because it doesn't work when
+    //both mLeftBound and mRightBound are NULL.  The best option is to simply handle the last element after the loop.
+    if (mBegin.mRightBound != NULL)
+    {
+      mAllocator.destroy(mBegin.mRightBound);
+    }
+
+    //Once again, the allocated size is one more than capacity.  Increment capacity by one when deallocating.
+    mAllocator.deallocate(mBegin.mLeftBound, (mBegin.mRightBound - mBegin.mLeftBound) + 1);
+  }
+
+  /*
+   * ring
+   */
   template<class T, class Alloc>
   inline ring<T, Alloc>::ring() :
-      mBegin(NULL, NULL, NULL), mEnd(NULL, NULL, NULL), mFixed(false)
+      base_type()
   {
   }
 
   template<class T, class Alloc>
   inline ring<T, Alloc>::ring(size_type capacity, const value_type& val) :
-      mFixed(false)
+      base_type(capacity)
   {
-    //TODO: Restructure to use initializer list.
-    mBegin.mPtr = AllocateAndConstruct(capacity);
-    mEnd.mPtr = mBegin.mPtr + capacity;
-
-    mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
-    mBegin.mRightBound = mEnd.mRightBound = mEnd.mPtr;
-
     //Using mPtr is a bit more efficient, as we know the the newly allocated data doesn't wrap.
     std::fill(mBegin.mPtr, mEnd.mPtr, val);
   }
 
   template<class T, class Alloc>
   inline ring<T, Alloc>::ring(int capacity, const value_type& val) :
-      mFixed(false)
+      base_type(capacity)
   {
-    mBegin.mPtr = AllocateAndConstruct(capacity);
-    mEnd.mPtr = mBegin.mPtr + capacity;
-
-    mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
-    mBegin.mRightBound = mEnd.mRightBound = mEnd.mPtr;
-
     //Using mPtr is a bit more efficient, as we know the the newly allocated data doesn't wrap.
     std::fill(mBegin.mPtr, mEnd.mPtr, val);
   }
@@ -137,42 +236,18 @@ namespace flex
   template<class T, class Alloc>
   template<typename InputIterator>
   inline ring<T, Alloc>::ring(InputIterator first, InputIterator last) :
-      mFixed(false)
+      base_type(std::distance(first, last))
   {
-    size_type new_size = std::distance(first, last);
-
-    mBegin.mPtr = AllocateAndConstruct(new_size);
-    mEnd.mPtr = mBegin.mPtr + new_size;
-
-    mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
-    mBegin.mRightBound = mEnd.mRightBound = mEnd.mPtr;
-
     //Using the mBegin.mPtr is a bit more efficient, as we know the newly allocated data doesn't wrap.
     std::copy(first, last, mBegin.mPtr);
   }
 
   template<class T, class Alloc>
   inline ring<T, Alloc>::ring(const ring<T, Alloc> & obj) :
-      mFixed(false)
+      base_type(obj.size())
   {
-    size_type new_size = obj.size();
-    mBegin.mPtr = AllocateAndConstruct(new_size);
-    mEnd.mPtr = mBegin.mPtr + new_size;
-
-    mBegin.mLeftBound = mEnd.mLeftBound = mBegin.mPtr;
-    mBegin.mRightBound = mEnd.mRightBound = mEnd.mPtr;
-
     //Using the mBegin.mPtr is a bit more efficient, as we know the newly allocated data doesn't wrap.
     std::copy(obj.begin(), obj.end(), mBegin.mPtr);
-  }
-
-  template<class T, class Alloc>
-  inline ring<T, Alloc>::~ring()
-  {
-    if (!mFixed && (NULL != mBegin.mPtr))
-    {
-      DestroyAndDeallocate();
-    }
   }
 
   template<class T, class Alloc>
@@ -226,7 +301,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline T& ring<T, Alloc>::at(size_t n)
+  inline typename ring<T, Alloc>::reference ring<T, Alloc>::at(size_type n)
   {
     if (FLEX_LIKELY(n < size()))
     {
@@ -239,7 +314,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline const T& ring<T, Alloc>::at(size_t n) const
+  inline typename ring<T, Alloc>::const_reference ring<T, Alloc>::at(size_type n) const
   {
     if (FLEX_LIKELY(n < size()))
     {
@@ -252,13 +327,13 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline T& ring<T, Alloc>::back()
+  inline typename ring<T, Alloc>::reference ring<T, Alloc>::back()
   {
     return *(mEnd - 1); //subtract 1 since mEnd points to one after the last element
   }
 
   template<class T, class Alloc>
-  inline const T& ring<T, Alloc>::back() const
+  inline typename ring<T, Alloc>::const_reference ring<T, Alloc>::back() const
   {
     return *(mEnd - 1); //subtract 1 since mEnd points to one after the last element
   }
@@ -300,7 +375,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void ring<T, Alloc>::resize(size_t n, const value_type& val)
+  inline void ring<T, Alloc>::resize(size_type n, const value_type& val)
   {
     if (n < size())
     {
@@ -511,7 +586,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline size_t ring<T, Alloc>::max_size() const
+  inline typename ring<T, Alloc>::size_type ring<T, Alloc>::max_size() const
   {
     return mAllocator.max_size();
   }
@@ -524,13 +599,13 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline typename ring<T, Alloc>::reference ring<T, Alloc>::operator[](size_t n)
+  inline typename ring<T, Alloc>::reference ring<T, Alloc>::operator[](size_type n)
   {
     return mBegin[n];
   }
 
   template<class T, class Alloc>
-  inline typename ring<T, Alloc>::const_reference ring<T, Alloc>::operator[](size_t n) const
+  inline typename ring<T, Alloc>::const_reference ring<T, Alloc>::operator[](size_type n) const
   {
     return mBegin[n];
   }
@@ -580,7 +655,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void ring<T, Alloc>::push_front(const T& val)
+  inline void ring<T, Alloc>::push_front(const value_type& val)
   {
     //Decrement is performed first as it allows a much faster capacity check. The
     //drawback is that the iterator needs to be incremented if reallocation occurs.
@@ -666,7 +741,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline size_t ring<T, Alloc>::size() const
+  inline typename ring<T, Alloc>::size_type ring<T, Alloc>::size() const
   {
     return (mEnd - mBegin);
   }
@@ -697,55 +772,13 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline typename ring<T, Alloc>::size_type ring<T, Alloc>::GetNewCapacity(size_t min_size)
+  inline typename ring<T, Alloc>::size_type ring<T, Alloc>::GetNewCapacity(size_type min_size)
   {
     // This needs to return a value of at least currentCapacity and at least 1.
-    size_t new_capacity = (capacity() > 0) ? (2 * capacity()) : 1;
+    size_type new_capacity = (capacity() > 0) ? (2 * capacity()) : 1;
 
     // If we are still less than the min_size, just return the min_size.
     return (new_capacity < min_size) ? min_size : new_capacity;
-  }
-
-  template<class T, class Alloc>
-  inline typename ring<T, Alloc>::pointer ring<T, Alloc>::AllocateAndConstruct(size_t capacity)
-  {
-    if (FLEX_UNLIKELY(mFixed))
-    {
-      throw std::runtime_error("flex::fixed_ring - allocation performed");
-      mFixed = false;
-    }
-
-    pointer new_begin;
-    //The size allocated is 1 more than the capacity.  This is do to the fact that we don't want begin() to equal end().
-    //Therefore there will always be one allocated element that is unused.
-    new_begin = mAllocator.allocate(capacity + 1);
-
-    for (pointer it = new_begin; it != (new_begin + capacity + 1); ++it)
-    {
-      mAllocator.construct(it, value_type());
-    }
-    return new_begin;
-  }
-
-  template<class T, class Alloc>
-  inline void ring<T, Alloc>::DestroyAndDeallocate()
-  {
-    for (pointer it = mBegin.mLeftBound; it != mBegin.mRightBound; ++it)
-    {
-      mAllocator.destroy(it);
-    }
-
-    //Due to the circular nature of the container, mRightBound points to the last element in the allocated space.  This
-    //is different than a typical end iterator which points to a place one beyond the last element.  Therefore, the above
-    //loop misses the last space.  We don't want to use (mRightBound+1) in the above loop because it doesn't work when
-    //both mLeftBound and mRightBound are NULL.  The best option is to simply handle the last element after the loop.
-    if (mBegin.mRightBound != NULL)
-    {
-      mAllocator.destroy(mBegin.mRightBound);
-    }
-
-    //Once again, the allocated size is one more than capacity.  Increment capacity by one when deallocating.
-    mAllocator.deallocate(mBegin.mLeftBound, capacity() + 1);
   }
 
   template<class T, class Alloc>
