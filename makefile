@@ -1,7 +1,7 @@
 TEST_FILES=$(wildcard test/inc/*.h)
 
 all:
-	g++ -w -O2 -o ./bin/run main.cpp -I./inc -lrt
+	g++ -w -O2 -o run main.cpp -I./inc -lrt
 aix:
 	xlC_r -w -O2 -o ./bin/aix_run main.cpp -I./inc
 cxx:

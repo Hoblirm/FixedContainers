@@ -125,6 +125,8 @@ namespace flex
     void swap(ring<T, Alloc>& obj);
 
   protected:
+    ring(pointer new_begin, pointer new_end, pointer right_bound);
+
     size_type GetNewCapacity(size_type min);
     void DeallocateAndReassign(pointer new_begin, pointer new_end, size_type new_capacity);
   };
@@ -588,7 +590,14 @@ namespace flex
   template<class T, class Alloc>
   inline typename ring<T, Alloc>::size_type ring<T, Alloc>::max_size() const
   {
-    return mAllocator.max_size();
+    if (mFixed)
+    {
+      return capacity();
+    }
+    else
+    {
+      return mAllocator.max_size();
+    }
   }
 
   template<class T, class Alloc>
@@ -769,6 +778,13 @@ namespace flex
         erase(it, mEnd);
       }
     }
+  }
+
+  template<class T, class Alloc>
+  inline ring<T, Alloc>::ring(pointer new_begin, pointer new_end, pointer right_bound) :
+      base_type(new_begin, new_end, right_bound)
+
+  {
   }
 
   template<class T, class Alloc>

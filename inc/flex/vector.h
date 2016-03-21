@@ -114,6 +114,7 @@ namespace flex
     const_reverse_iterator rbegin() const;
     reverse_iterator rend();
     const_reverse_iterator rend() const;
+    void reserve(size_type n);
     void resize(size_type n, const value_type& val = value_type());
     size_type size() const;
     void swap(vector<T, Alloc>& obj);
@@ -638,6 +639,27 @@ namespace flex
   inline typename vector<T, Alloc>::const_reverse_iterator vector<T, Alloc>::rend() const
   {
     return const_reverse_iterator(mBegin);
+  }
+
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::reserve(size_type n)
+  {
+    //TODO: See if optimizing this method makes it closer in performance to std::vector.
+    if (n > capacity())
+    {
+      //Allocate memory with sufficient capacity.
+      size_type new_capacity = GetNewCapacity(n);
+      pointer new_begin = AllocateAndConstruct(new_capacity);
+
+      //Copy all current values.
+      pointer new_end = std::copy(mBegin, mEnd, new_begin);
+
+      //Deallocate and reassign.
+      DestroyAndDeallocate();
+      mBegin = new_begin;
+      mEnd = new_end;
+      mCapacity = mBegin + new_capacity;
+    }
   }
 
   template<class T, class Alloc>
