@@ -37,7 +37,7 @@ namespace flex
     vector_base(pointer new_begin, pointer new_end, size_type capacity);
     ~vector_base();
 
-    pointer AllocateAndConstruct(size_type n);
+    pointer Allocate(size_type n);
     void DestroyAndDeallocate();
   };
 
@@ -66,7 +66,7 @@ namespace flex
     using base_type::mEnd;
     using base_type::mCapacity;
     using base_type::mFixed;
-    using base_type::AllocateAndConstruct;
+    using base_type::Allocate;
     using base_type::DestroyAndDeallocate;
 
     vector();
@@ -139,7 +139,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline vector_base<T, Alloc>::vector_base(size_type n) :
-      mFixed(false), mBegin(AllocateAndConstruct(n)), mEnd(mBegin + n), mCapacity(mEnd)
+      mFixed(false), mBegin(Allocate(n)), mEnd(mBegin + n), mCapacity(mEnd)
 
   {
   }
@@ -165,7 +165,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline typename vector_base<T, Alloc>::pointer vector_base<T, Alloc>::AllocateAndConstruct(size_type n)
+  inline typename vector_base<T, Alloc>::pointer vector_base<T, Alloc>::Allocate(size_type n)
   {
     if (FLEX_UNLIKELY(mFixed))
     {
@@ -173,19 +173,13 @@ namespace flex
       mFixed = false;
     }
 
-    iterator new_begin = mAllocator.allocate(n);
-    for (T* it = new_begin; it != (new_begin + n); ++it)
-    {
-      mAllocator.construct(it, value_type());
-    }
-
-    return new_begin;
+    return mAllocator.allocate(n);
   }
 
   template<class T, class Alloc>
   inline void vector_base<T, Alloc>::DestroyAndDeallocate()
   {
-    for (T* it = mBegin; it != mCapacity; ++it)
+    for (T* it = mBegin; it != mEnd; ++it)
     {
       mAllocator.destroy(it);
     }
@@ -205,14 +199,14 @@ namespace flex
   inline vector<T, Alloc>::vector(size_type size, const value_type& val) :
       base_type(size)
   {
-    std::fill(mBegin, mEnd, val);
+    std::uninitialized_fill(mBegin, mEnd, val);
   }
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(int size, const value_type& val) :
       base_type(size)
   {
-    std::fill(mBegin, mEnd, val);
+    std::uninitialized_fill(mBegin, mEnd, val);
   }
 
   template<class T, class Alloc>
@@ -220,14 +214,14 @@ namespace flex
   inline vector<T, Alloc>::vector(InputIterator first, InputIterator last) :
       base_type(std::distance(first, last))
   {
-    std::copy(first, last, mBegin);
+    std::uninitialized_copy(first, last, mBegin);
   }
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(const vector<T, Alloc> & obj) :
       base_type(obj.size())
   {
-    std::copy(obj.mBegin, obj.mEnd, mBegin);
+    std::uninitialized_copy(obj.mBegin, obj.mEnd, mBegin);
   }
 
   template<class T, class Alloc>
@@ -237,10 +231,10 @@ namespace flex
     {
       //Allocate memory with sufficient capacity.
       size_type new_capacity = GetNewCapacity(size);
-      T* new_begin = AllocateAndConstruct(new_capacity);
+      T* new_begin = Allocate(new_capacity);
 
       //Copy all values.
-      std::fill_n(new_begin, size, val);
+      std::uninitialized_fill_n(new_begin, size, val);
 
       DestroyAndDeallocate();
 
@@ -249,6 +243,7 @@ namespace flex
     }
     else
     {
+      //TODO:
       std::fill_n(mBegin, size, val);
     }
     mEnd = mBegin + size;
@@ -269,10 +264,10 @@ namespace flex
     {
       //Allocate memory with sufficient capacity.
       size_type new_capacity = GetNewCapacity(size);
-      T* new_begin = AllocateAndConstruct(new_capacity);
+      T* new_begin = Allocate(new_capacity);
 
       //Copy all values.
-      pointer new_end = std::copy(first, last, new_begin);
+      pointer new_end = std::uninitialized_copy(first, last, new_begin);
 
       DestroyAndDeallocate();
 
@@ -282,6 +277,7 @@ namespace flex
     }
     else
     {
+      //TODO:
       std::copy(first, last, mBegin);
       mEnd = mBegin + size;
     }
@@ -370,7 +366,10 @@ namespace flex
   template<class T, class Alloc>
   inline void vector<T, Alloc>::clear()
   {
-    mEnd = mBegin;
+    while (mEnd != mBegin)
+    {
+      (--mEnd)->~T();
+    }
   }
 
   template<class T, class Alloc>
@@ -397,17 +396,25 @@ namespace flex
     //This copy will simply shift everything after position over to the left by one.
     //This will effectively overwrite position, erasing it from the container.
     std::copy(position + 1, mEnd, position);
-    --mEnd;
+    (--mEnd)->~T();
     return position;
   }
 
   template<class T, class Alloc>
   inline typename vector<T, Alloc>::iterator vector<T, Alloc>::erase(iterator first, iterator last)
   {
-    //Move all the elements after the erased range to the front of the range.  This
-    //will overwrite the erased elements, and the size will be set accordingly.
-    std::copy(last, mEnd, first);
-    mEnd -= (last - first);
+    if (first != last)
+    {
+      //Move all the elements after the erased range to the front of the range.  This
+      //will overwrite the erased elements, and the size will be set accordingly.
+      std::copy(last, mEnd, first);
+      difference_type n = last - first;
+      do
+      {
+        (--mEnd)->~T();
+      }
+      while (--n);
+    }
     return first;
   }
 
@@ -443,17 +450,17 @@ namespace flex
       //Allocate memory with sufficient capacity.
       size_type new_size = size() + 1;
       size_type new_capacity = GetNewCapacity(new_size);
-      T* new_begin = AllocateAndConstruct(new_capacity);
+      T* new_begin = Allocate(new_capacity);
 
       //Copy all values to the left of position.
-      T* new_end = std::copy(mBegin, position, new_begin);
+      T* new_end = std::uninitialized_copy(mBegin, position, new_begin);
 
       //Copy the inserted parameter val.
       T* new_position = new_end;
-      *new_end = val;
+      new ((void*) new_end) T(val);
 
       //Copy all values that come after position.
-      new_end = std::copy(position, mEnd, ++new_end);
+      new_end = std::uninitialized_copy(position, mEnd, ++new_end);
 
       DestroyAndDeallocate();
 
@@ -467,7 +474,8 @@ namespace flex
       //This copy backwards will shift all the elements after position to the right
       //by one space.  This is valid since the capacity check above ensures we have
       //at least one spot available after the end.
-      std::copy_backward(position, mEnd, mEnd + 1);
+      new ((void*) mEnd) T(*(mEnd - 1));
+      std::copy_backward(position, mEnd - 1, mEnd);
 
       *position = val;
       ++mEnd;
@@ -484,16 +492,16 @@ namespace flex
       //Allocate memory with sufficient capacity.
       size_type new_size = size() + n;
       size_type new_capacity = GetNewCapacity(new_size);
-      T* new_begin = AllocateAndConstruct(new_capacity);
+      T* new_begin = Allocate(new_capacity);
 
       //Copy all values to the left of position.
-      T* new_end = std::copy(mBegin, position, new_begin);
+      T* new_end = std::uninitialized_copy(mBegin, position, new_begin);
 
       //Fill the parameter val.
-      std::fill_n(new_end, n, val);
+      std::uninitialized_fill_n(new_end, n, val);
 
       //Copy all values that come after position.
-      new_end = std::copy(position, mEnd, new_end + n);
+      new_end = std::uninitialized_copy(position, mEnd, new_end + n);
 
       DestroyAndDeallocate();
 
@@ -504,6 +512,7 @@ namespace flex
     else
     {
       //Slide everything to the right 'n' spaces to make room for the new elements.
+      //TODO
       std::copy_backward(position, mEnd, mEnd + n);
 
       //Insert the new elements into the available space.
@@ -529,16 +538,16 @@ namespace flex
       //Allocate memory with sufficient capacity.
       size_type new_size = size() + n;
       size_type new_capacity = GetNewCapacity(new_size);
-      T* new_begin = AllocateAndConstruct(new_capacity);
+      T* new_begin = Allocate(new_capacity);
 
       //Copy all values to the left of position.
-      T* new_end = std::copy(mBegin, position, new_begin);
+      T* new_end = std::uninitialized_copy(mBegin, position, new_begin);
 
       //Copy the inserted parameter val.
-      new_end = std::copy(first, last, new_end);
+      new_end = std::uninitialized_copy(first, last, new_end);
 
       //Copy all values that come after position.
-      new_end = std::copy(position, mEnd, new_end);
+      new_end = std::uninitialized_copy(position, mEnd, new_end);
 
       //Deallocate and reassign
       DestroyAndDeallocate();
@@ -548,6 +557,7 @@ namespace flex
     }
     else
     {
+      //TODO:
       //Slide everything to the right 'n' spaces to make room for the new elements.
       std::copy_backward(position, mEnd, mEnd + n);
 
@@ -586,7 +596,7 @@ namespace flex
   template<class T, class Alloc>
   inline void vector<T, Alloc>::pop_back()
   {
-    --mEnd;
+    (--mEnd)->~T();
   }
 
   template<class T, class Alloc>
@@ -597,11 +607,11 @@ namespace flex
       //Allocate memory with sufficient capacity.
       size_type new_size = size() + 1;
       size_type new_capacity = GetNewCapacity(new_size);
-      T* new_begin = AllocateAndConstruct(new_capacity);
+      T* new_begin = Allocate(new_capacity);
 
       //Copy all values.
-      T* new_end = std::copy(mBegin, mEnd, new_begin);
-      *new_end = val;
+      T* new_end = std::uninitialized_copy(mBegin, mEnd, new_begin);
+      new ((void*) new_end) T(val);
       ++new_end;
 
       //Deallocate and reassign.
@@ -612,7 +622,7 @@ namespace flex
     }
     else
     {
-      *mEnd = val;
+      new ((void*) mEnd) T(val);
       ++mEnd;
     }
   }
@@ -644,15 +654,14 @@ namespace flex
   template<class T, class Alloc>
   inline void vector<T, Alloc>::reserve(size_type n)
   {
-    //TODO: See if optimizing this method makes it closer in performance to std::vector.
     if (n > capacity())
     {
       //Allocate memory with sufficient capacity.
       size_type new_capacity = GetNewCapacity(n);
-      pointer new_begin = AllocateAndConstruct(new_capacity);
+      pointer new_begin = Allocate(new_capacity);
 
       //Copy all current values.
-      pointer new_end = std::copy(mBegin, mEnd, new_begin);
+      pointer new_end = std::uninitialized_copy(mBegin, mEnd, new_begin);
 
       //Deallocate and reassign.
       DestroyAndDeallocate();
@@ -667,7 +676,12 @@ namespace flex
   {
     if (n < size())
     {
-      mEnd = mBegin + n;
+      size_type diff = size() - n;
+      do
+      {
+        (--mEnd)->~T();
+      }
+      while (--diff);
     }
     else if (n > size())
     {
