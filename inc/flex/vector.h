@@ -512,6 +512,8 @@ namespace flex
   template<class T, class Alloc>
   inline void vector<T, Alloc>::insert(iterator position, size_type n, const value_type& val)
   {
+     if(n > 0)
+    	{
     if ((mEnd + n) > mCapacity)
     {
       //Allocate memory with sufficient capacity.
@@ -536,34 +538,31 @@ namespace flex
     }
     else
     {
-    	if(n > 0)
-    	{
+    	
     		const size_type rhs_n = static_cast<size_type>(mEnd - position);
 
     		if(n < rhs_n)
     		{
     			std::uninitialized_copy(mEnd - n, mEnd, mEnd);
-    			std::copy_backward(position, mEnd - n, mEnd); // We need copy_backward because of potential overlap issues.
+    			std::copy_backward(position, mEnd - n, mEnd); 
     			std::fill(position, position + n, val);
     		}
     		else
     		{
+                                                            //Shift existing values to the right.
+                                                            std::uninitialized_copy(position, mEnd, mEnd + n - rhs_n);
+                                                            
+                                                            //Fill in the values that go into uninitialized data.
     			std::uninitialized_fill_n(mEnd, n - rhs_n, val);
-    			std::uninitialized_copy(position, mEnd, mEnd + n - rhs_n);
+                        
+                                                            //Insert values in initialized data.
     			std::fill(position, mEnd, val);
     		}
     		mEnd += n;
-    	}
-
-//      //Slide everything to the right 'n' spaces to make room for the new elements.
-//      //TODO
-//      std::copy_backward(position, mEnd, mEnd + n);
-//
-//      //Insert the new elements into the available space.
-//      std::fill_n(position, n, val);
-//
-//      mEnd += n;
+    	
     }
+    }
+
   }
 
   template<class T, class Alloc>
@@ -576,6 +575,8 @@ namespace flex
   template<typename InputIterator>
   inline void vector<T, Alloc>::insert(iterator position, InputIterator first, InputIterator last)
   {
+     if (first != last)
+     {
     size_type n = std::distance(first, last);
     if ((mEnd + n) > mCapacity)
     {
@@ -601,15 +602,26 @@ namespace flex
     }
     else
     {
-      //TODO:
-      //Slide everything to the right 'n' spaces to make room for the new elements.
-      std::copy_backward(position, mEnd, mEnd + n);
-
-      //Insert the new elements into the available space.
-      std::copy(first, last, position);
-
-      mEnd += n;
+       const size_type rhs_n = static_cast<size_type>(mEnd - position);
+       
+       if(n < rhs_n)
+       {
+          std::uninitialized_copy(mEnd - n, mEnd, mEnd);
+          std::copy_backward(position, mEnd - n, mEnd); 
+          std::copy(first,last,position);
+          mEnd += n;
+       }
+       else
+       {
+          InputIterator it = first;
+          std::advance(it, rhs_n);
+          std::uninitialized_copy(it, last, mEnd);
+          mEnd = std::uninitialized_copy(position, mEnd, mEnd + n - rhs_n);
+          std::copy(first, it, position);
+       }
+       
     }
+     }
   }
 
   template<class T, class Alloc>
