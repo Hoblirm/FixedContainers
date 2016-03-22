@@ -23,7 +23,7 @@ class vector_test: public CxxTest::TestSuite
 
     ~object()
     {
-      val = init = 0;
+      init = 0;
     }
 
     object& operator=(const object& o)
@@ -80,7 +80,6 @@ public:
     {
       if (v[i].init != object::INIT_KEY)
       {
-        printf("NOT INIT\n");
         return false;
       }
     }
@@ -88,7 +87,6 @@ public:
     {
       if (v[i].init == object::INIT_KEY)
       {
-        printf("UNINIT = INIT\n");
         return false;
       }
     }
@@ -492,7 +490,6 @@ public:
     vec myvector;
     int size = 0;
     TS_ASSERT_EQUALS(myvector.size(), size);
-    TS_ASSERT(is_container_valid(myvector));
     int sum(0);
     myvector.push_back(100);
     TS_ASSERT(is_container_valid(myvector));
@@ -505,11 +502,6 @@ public:
     myvector.push_back(300);
     ++size;
     TS_ASSERT_EQUALS(myvector.size(), size);
-
-    for (int i=0;i<4;++i)
-    {
-      printf("%d %d\n",myvector[i].val,myvector[i].init);
-    }
     TS_ASSERT(is_container_valid(myvector));
 
     while (!myvector.empty())

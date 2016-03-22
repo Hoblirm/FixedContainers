@@ -179,10 +179,10 @@ namespace flex
   template<class T, class Alloc>
   inline void vector_base<T, Alloc>::DestroyAndDeallocate()
   {
-    for (T* it = mBegin; it != mEnd; ++it)
-    {
-      mAllocator.destroy(it);
-    }
+	  while (mEnd != mBegin)
+	  {
+		  (--mEnd)->~T();
+	  }
     mAllocator.deallocate(mBegin, mCapacity - mBegin);
   }
 
@@ -225,28 +225,42 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline void vector<T, Alloc>::assign(size_type size, const T& val)
+  inline void vector<T, Alloc>::assign(size_type n, const T& val)
   {
-    if (size > capacity())
+    if (n > capacity())
     {
       //Allocate memory with sufficient capacity.
-      size_type new_capacity = GetNewCapacity(size);
+      size_type new_capacity = GetNewCapacity(n);
       T* new_begin = Allocate(new_capacity);
 
       //Copy all values.
-      std::uninitialized_fill_n(new_begin, size, val);
+      std::uninitialized_fill_n(new_begin, n, val);
 
       DestroyAndDeallocate();
 
       mBegin = new_begin;
+      mEnd = mBegin + n;
       mCapacity = mBegin + new_capacity;
     }
     else
     {
-      //TODO:
-      std::fill_n(mBegin, size, val);
+      if (n < size())
+      {
+    	  iterator new_end = mBegin + n;
+    	  std::fill_n(mBegin, n, val);
+    	  while (mEnd != new_end)
+    	  {
+    		  (--mEnd)->~T();
+    	  }
+      }
+      else
+      {
+    	  iterator new_end = mBegin + n;
+    	  std::fill(mBegin, mEnd, val);
+    	  std::uninitialized_fill(mEnd,new_end,val);
+    	  mEnd = new_end;
+      }
     }
-    mEnd = mBegin + size;
   }
 
   template<class T, class Alloc>
@@ -259,11 +273,11 @@ namespace flex
   template<typename InputIterator>
   inline void vector<T, Alloc>::assign(InputIterator first, InputIterator last)
   {
-    size_type size = std::distance(first, last);
-    if (size > capacity())
+    size_type n = std::distance(first, last);
+    if (n > capacity())
     {
       //Allocate memory with sufficient capacity.
-      size_type new_capacity = GetNewCapacity(size);
+      size_type new_capacity = GetNewCapacity(n);
       T* new_begin = Allocate(new_capacity);
 
       //Copy all values.
@@ -277,9 +291,21 @@ namespace flex
     }
     else
     {
-      //TODO:
-      std::copy(first, last, mBegin);
-      mEnd = mBegin + size;
+    	if (n < size())
+    	{
+    		iterator new_end = std::copy(first, last, mBegin);
+    		while (mEnd != new_end)
+    		{
+    			(--mEnd)->~T();
+    		}
+    	}
+    	else
+    	{
+    		InputIterator it(first);
+    		std::advance(it, size());
+    		std::copy(first, it, mBegin);
+    		mEnd = std::uninitialized_copy(it,last,mEnd);
+    	}
     }
   }
 
@@ -408,12 +434,11 @@ namespace flex
       //Move all the elements after the erased range to the front of the range.  This
       //will overwrite the erased elements, and the size will be set accordingly.
       std::copy(last, mEnd, first);
-      difference_type n = last - first;
-      do
+      iterator new_end = mEnd - (last - first);
+      while (mEnd != new_end)
       {
         (--mEnd)->~T();
       }
-      while (--n);
     }
     return first;
   }
@@ -511,14 +536,33 @@ namespace flex
     }
     else
     {
-      //Slide everything to the right 'n' spaces to make room for the new elements.
-      //TODO
-      std::copy_backward(position, mEnd, mEnd + n);
+    	if(n > 0)
+    	{
+    		const size_type rhs_n = static_cast<size_type>(mEnd - position);
 
-      //Insert the new elements into the available space.
-      std::fill_n(position, n, val);
+    		if(n < rhs_n)
+    		{
+    			std::uninitialized_copy(mEnd - n, mEnd, mEnd);
+    			std::copy_backward(position, mEnd - n, mEnd); // We need copy_backward because of potential overlap issues.
+    			std::fill(position, position + n, val);
+    		}
+    		else
+    		{
+    			std::uninitialized_fill_n(mEnd, n - rhs_n, val);
+    			std::uninitialized_copy(position, mEnd, mEnd + n - rhs_n);
+    			std::fill(position, mEnd, val);
+    		}
+    		mEnd += n;
+    	}
 
-      mEnd += n;
+//      //Slide everything to the right 'n' spaces to make room for the new elements.
+//      //TODO
+//      std::copy_backward(position, mEnd, mEnd + n);
+//
+//      //Insert the new elements into the available space.
+//      std::fill_n(position, n, val);
+//
+//      mEnd += n;
     }
   }
 
@@ -677,11 +721,11 @@ namespace flex
     if (n < size())
     {
       size_type diff = size() - n;
-      do
+      iterator new_end = mBegin + n;
+      while (mEnd != new_end)
       {
         (--mEnd)->~T();
       }
-      while (--diff);
     }
     else if (n > size())
     {
