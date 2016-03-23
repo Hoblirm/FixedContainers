@@ -1,18 +1,12 @@
 #ifndef FLEX_FIXED_VECTOR_H
 #define FLEX_FIXED_VECTOR_H
 
+#include <stdint.h>
 #include <flex/vector.h>
 
 namespace flex
 {
 
-   //TODO: Put this in the proper place.  Maybe fixed pool.
-   template<size_t N>
-   struct aligned_buffer
-   {
-      char mBuffer[N];
-   };
-   
   template<class T, size_t N, class Alloc = allocator<T> > class fixed_vector: public vector<T, Alloc>
   {
   public:
@@ -47,25 +41,32 @@ namespace flex
     size_type max_size() const;
 
   private:
-    aligned_buffer<N * sizeof(T)> mBuffer;
+    //This union is the simplest approach to enforce alignment prior to C++11.
+    //If C++11 support is added, replace with:
+    //typename std::aligned_storage<sizeof(T), alignof(T)>::type mBuffer[N];
+    union
+    {
+      char mBuffer[N * sizeof(T)];
+      uint64_t dummy;
+    };
   };
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector() :
-      vector<T, Alloc>((pointer)(&mBuffer), (pointer)(&mBuffer), N)
+      vector<T, Alloc>((pointer)mBuffer, (pointer)mBuffer, N)
   {
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector(size_type size, const value_type& val) :
-      vector<T, Alloc>((pointer)(&mBuffer), (pointer)(&mBuffer) + size, N)
+      vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + size, N)
   {
     std::fill(mBegin, mEnd, val);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector(int size, const value_type& val) :
-      vector<T, Alloc>((pointer)(&mBuffer), (pointer)(&mBuffer) + size, N)
+      vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + size, N)
   {
     std::fill(mBegin, mEnd, val);
   }
@@ -73,21 +74,21 @@ namespace flex
   template<class T, size_t N, class Alloc>
   template<typename InputIterator>
   inline fixed_vector<T, N, Alloc>::fixed_vector(InputIterator first, InputIterator last) :
-      vector<T, Alloc>((pointer)(&mBuffer), (pointer)(&mBuffer) + std::distance(first, last), N)
+      vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(first, last), N)
   {
     std::copy(first, last, mBegin);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector(const fixed_vector<T, N, Alloc> & obj) :
-      vector<T, Alloc>((pointer)(&mBuffer), (pointer)(&mBuffer) + std::distance(obj.mBegin, obj.mEnd), N)
+      vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
   {
     std::copy(obj.mBegin, obj.mEnd, mBegin);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector(const vector<T, Alloc> & obj) :
-      vector<T, Alloc>((pointer)(&mBuffer), (pointer)(&mBuffer) + std::distance(obj.mBegin, obj.mEnd), N)
+      vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
   {
     std::copy(obj.mBegin, obj.mEnd, mBegin);
   }
