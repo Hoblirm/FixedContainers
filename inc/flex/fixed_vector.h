@@ -37,7 +37,6 @@ namespace flex
 
     fixed_vector<T, N, Alloc>& operator=(const fixed_vector<T, N, Alloc>& obj);
     fixed_vector<T, N, Alloc>& operator=(const vector<T, Alloc>& obj);
-    size_type max_size() const;
 
   private:
 #ifdef FLEX_HAS_CXX11
@@ -105,12 +104,6 @@ namespace flex
   {
     assign(obj.begin(), obj.end());
     return *this;
-  }
-
-  template<class T, size_t N, class Alloc>
-  inline typename fixed_vector<T, N, Alloc>::size_type fixed_vector<T, N, Alloc>::max_size() const
-  {
-    return N;
   }
 
 } //namespace flex
