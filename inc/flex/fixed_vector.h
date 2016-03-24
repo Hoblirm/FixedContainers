@@ -61,14 +61,14 @@ namespace flex
   inline fixed_vector<T, N, Alloc>::fixed_vector(size_type size, const value_type& val) :
       vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + size, N)
   {
-    std::fill(mBegin, mEnd, val);
+    std::uninitialized_fill(mBegin, mEnd, val);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector(int size, const value_type& val) :
       vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + size, N)
   {
-    std::fill(mBegin, mEnd, val);
+    std::uninitialized_fill(mBegin, mEnd, val);
   }
 
   template<class T, size_t N, class Alloc>
@@ -76,29 +76,27 @@ namespace flex
   inline fixed_vector<T, N, Alloc>::fixed_vector(InputIterator first, InputIterator last) :
       vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(first, last), N)
   {
-    std::copy(first, last, mBegin);
+    std::uninitialized_copy(first, last, mBegin);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector(const fixed_vector<T, N, Alloc> & obj) :
       vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
   {
-    std::copy(obj.mBegin, obj.mEnd, mBegin);
+    std::uninitialized_copy(obj.mBegin, obj.mEnd, mBegin);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector(const vector<T, Alloc> & obj) :
       vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
   {
-    std::copy(obj.mBegin, obj.mEnd, mBegin);
+    std::uninitialized_copy(obj.mBegin, obj.mEnd, mBegin);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(const fixed_vector<T, N, Alloc>& obj)
   {
-    //A bit more efficient than assign() as no capacity check is needed.
-    std::copy(obj.mBegin, obj.mEnd, mBegin);
-    mEnd = mBegin + obj.size();
+    assign(obj.begin(), obj.end());
     return *this;
   }
 

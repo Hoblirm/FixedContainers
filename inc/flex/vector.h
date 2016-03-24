@@ -158,9 +158,10 @@ namespace flex
   template<class T, class Alloc>
   inline vector_base<T, Alloc>::~vector_base()
   {
+     flex::destruct_range(mBegin,mEnd);
     if (!mFixed && (NULL != mBegin))
     {
-      DestroyAndDeallocate();
+      mAllocator.deallocate(mBegin, mCapacity - mBegin);
     }
   }
 

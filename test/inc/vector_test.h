@@ -41,7 +41,7 @@ class vector_test: public CxxTest::TestSuite
     int init;
   };
 
-  typedef flex::vector<object/*, flex::allocator_debug<object>*/> vec;
+  typedef flex::vector<object, flex::allocator_debug<object> > vec;
 
   const object OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
       -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
