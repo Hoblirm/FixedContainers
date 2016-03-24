@@ -41,19 +41,20 @@ namespace flex
     size_type max_size() const;
 
   private:
-    //This union is the simplest approach to enforce alignment prior to C++11.
-    //If C++11 support is added, replace with:
-    //typename std::aligned_storage<sizeof(T), alignof(T)>::type mBuffer[N];
+#ifdef FLEX_HAS_CXX11
+    typename std::aligned_storage<sizeof(T), alignof(T)>::type mBuffer[N];
+#else
     union
     {
       char mBuffer[N * sizeof(T)];
       uint64_t dummy;
     };
+#endif
   };
 
   template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>::fixed_vector() :
-      vector<T, Alloc>((pointer)mBuffer, (pointer)mBuffer, N)
+      vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer, N)
   {
   }
 
