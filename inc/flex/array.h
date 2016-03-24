@@ -8,7 +8,7 @@
 
 namespace flex
 {
-  template<class T, class Alloc = allocator<T> > class array_base: public allocation_guard
+  template<class T, class Alloc = allocator<T> > class array_base: public guarded_object
   {
   public:
     typedef T value_type;

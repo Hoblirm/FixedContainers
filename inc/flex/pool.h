@@ -6,7 +6,7 @@
 namespace flex
 {
 
-  template<class T> class pool: allocation_guard
+  template<class T> class pool: guarded_object
   {
   public:
     explicit pool(size_t capacity);
@@ -33,7 +33,7 @@ namespace flex
   template<class T> pool<T>::pool(size_t capacity) :
       mIndex(0), mCapacity(capacity), mFixed(false)
   {
-    if (allocation_guard::is_enabled())
+    if (FLEX_UNLIKELY(sAllocationGuardEnabled))
     {
       throw std::runtime_error("allocation_guard: pool performed allocation.");
     }
@@ -70,7 +70,7 @@ namespace flex
 
   template<class T> T* pool<T>::allocate()
   {
-    if (mIndex == mCapacity)
+    if (FLEX_UNLIKELY(mIndex == mCapacity))
     {
       throw std::runtime_error("fixed_pool: allocate() exceeded capacity.");
     }

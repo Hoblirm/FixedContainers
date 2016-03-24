@@ -10,62 +10,62 @@
 namespace flex
 {
 
-  class allocation_guard
-  {
-  public:
-    static void enable();
-    static void disable();
-    static bool is_enabled();
-
-    static void* operator new(std::size_t sz)
-    {
-      if (FLEX_UNLIKELY(allocation_guard::is_enabled()))
+   struct guarded_object
+   {
+      inline static void* operator new(std::size_t sz)
       {
-        throw std::runtime_error("allocation_guard: new operator called for child class.");
+         if (FLEX_UNLIKELY(sAllocationGuardEnabled))
+         {
+            throw std::runtime_error("guarded_object: new operator called for child class.");
+         }
+         else
+         {
+            return ::operator new(sz);
+         }
       }
-      else
+
+      inline static void* operator new[](std::size_t sz)
       {
-        return ::operator new(sz);
+         if (FLEX_UNLIKELY(sAllocationGuardEnabled))
+         {
+            throw std::runtime_error("guarded_object: new[] operator called for child class.");
+         }
+         else
+         {
+            return ::operator new(sz);
+         }
       }
-    }
+   protected:
+      static bool sAllocationGuardEnabled;
+   };
 
-    static void* operator new[](std::size_t sz)
-    {
-      if (FLEX_UNLIKELY(allocation_guard::is_enabled()))
+   bool guarded_object::sAllocationGuardEnabled = false;
+
+   class allocation_guard : public guarded_object
+   {
+   public:
+
+      inline static void enable()
       {
-        throw std::runtime_error("allocation_guard: new[] operator called for child class.");
+         sAllocationGuardEnabled = true;
       }
-      else
+
+      inline static void disable()
       {
-        return ::operator new(sz);
+         sAllocationGuardEnabled = false;
       }
-    }
-  protected:
-    allocation_guard();
-  private:
-    static bool sEnabled;
-  };
 
-  bool allocation_guard::sEnabled = false;
+      inline static bool is_enabled()
+      {
+         return sAllocationGuardEnabled;
+      }
 
-  allocation_guard::allocation_guard()
-  {
-  }
+   private:
+      allocation_guard()
+      {
+      }
 
-  void allocation_guard::enable()
-  {
-    sEnabled = true;
-  }
-
-  void allocation_guard::disable()
-  {
-    sEnabled = false;
-  }
-
-  bool allocation_guard::is_enabled()
-  {
-    return sEnabled;
-  }
+   };
 }
 
 #endif /* FLEX_ALLOCATION_GUARD_H */

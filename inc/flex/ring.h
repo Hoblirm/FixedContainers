@@ -9,7 +9,7 @@
 namespace flex
 {
   template<class T, class Alloc = allocator<T> >
-  class ring_base: public allocation_guard
+  class ring_base: public guarded_object
   {
   public:
     typedef T value_type;

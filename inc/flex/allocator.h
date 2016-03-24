@@ -7,7 +7,7 @@
 
 namespace flex
 {
-  template<class T> class allocator: public allocation_guard
+  template<class T> class allocator: public guarded_object
   {
   public:
     // type definitions
@@ -65,7 +65,7 @@ namespace flex
     // allocate but don't initialize num elements of type T
     inline pointer allocate(size_type num, typename std::allocator<void>::const_pointer = 0)
     {
-      if (FLEX_UNLIKELY(allocation_guard::is_enabled()))
+      if (FLEX_UNLIKELY(sAllocationGuardEnabled))
       {
         throw std::runtime_error("allocation_guard: allocator performed runtime allocation");
       }

@@ -4,7 +4,7 @@
 #include <string>
 
 using namespace flex;
-struct guarded_class: public allocation_guard
+struct guarded_class: public guarded_object
 {
   char data[256];
 };

@@ -1,14 +1,13 @@
 #ifndef FLEX_LIST_H
 #define FLEX_LIST_H
 
-#include <flex/allocation_guard.h>
 #include <flex/list_iterator.h>
 #include <flex/allocator.h>
 
 namespace flex
 {
 
-  template<class T, class Alloc = allocator<list_node<T> > > class list: public allocation_guard
+  template<class T, class Alloc = allocator<list_node<T> > > class list: public guarded_object
   {
   public:
     typedef list<T, Alloc> this_type;
