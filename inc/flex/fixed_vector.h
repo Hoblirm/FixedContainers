@@ -1,7 +1,6 @@
 #ifndef FLEX_FIXED_VECTOR_H
 #define FLEX_FIXED_VECTOR_H
 
-#include <stdint.h>
 #include <flex/vector.h>
 
 namespace flex

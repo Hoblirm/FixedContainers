@@ -179,10 +179,7 @@ namespace flex
   template<class T, class Alloc>
   inline void vector_base<T, Alloc>::DestroyAndDeallocate()
   {
-	  while (mEnd != mBegin)
-	  {
-		  (--mEnd)->~T();
-	  }
+    flex::destruct_range(mBegin,mEnd);
     mAllocator.deallocate(mBegin, mCapacity - mBegin);
   }
 
@@ -248,10 +245,8 @@ namespace flex
       {
     	  iterator new_end = mBegin + n;
     	  std::fill_n(mBegin, n, val);
-    	  while (mEnd != new_end)
-    	  {
-    		  (--mEnd)->~T();
-    	  }
+          flex::destruct_range(new_end,mEnd);
+          mEnd = new_end;
       }
       else
       {
@@ -294,10 +289,8 @@ namespace flex
     	if (n < size())
     	{
     		iterator new_end = std::copy(first, last, mBegin);
-    		while (mEnd != new_end)
-    		{
-    			(--mEnd)->~T();
-    		}
+                flex::destruct_range(new_end,mEnd);
+          mEnd = new_end;
     	}
     	else
     	{
@@ -392,10 +385,8 @@ namespace flex
   template<class T, class Alloc>
   inline void vector<T, Alloc>::clear()
   {
-    while (mEnd != mBegin)
-    {
-      (--mEnd)->~T();
-    }
+     flex::destruct_range(mBegin,mEnd);
+     mEnd = mBegin;
   }
 
   template<class T, class Alloc>
@@ -435,10 +426,8 @@ namespace flex
       //will overwrite the erased elements, and the size will be set accordingly.
       std::copy(last, mEnd, first);
       iterator new_end = mEnd - (last - first);
-      while (mEnd != new_end)
-      {
-        (--mEnd)->~T();
-      }
+      flex::destruct_range(new_end,mEnd);
+      mEnd = new_end;      
     }
     return first;
   }
@@ -734,10 +723,8 @@ namespace flex
     {
       size_type diff = size() - n;
       iterator new_end = mBegin + n;
-      while (mEnd != new_end)
-      {
-        (--mEnd)->~T();
-      }
+      flex::destruct_range(new_end,mEnd);
+      mEnd = new_end;      
     }
     else if (n > size())
     {
