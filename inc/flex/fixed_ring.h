@@ -38,57 +38,65 @@ namespace flex
     fixed_ring<T, N, Alloc>& operator=(const ring<T, Alloc>& obj);
 
   private:
-    T mBuffer[N + 1]; //Need to add one as a full ring buffer has one element that is unused.
+
+#ifdef FLEX_HAS_CXX11
+    //Need to add one to N, as a full ring buffer has one element that is unused.
+    typename std::aligned_storage<sizeof(T), alignof(T)>::type mBuffer[N+1];
+#else
+    union
+    {
+      char mBuffer[(N + 1) * sizeof(T)];
+      uint64_t dummy;
+    };
+#endif
   };
 
   template<class T, size_t N, class Alloc>
   inline fixed_ring<T, N, Alloc>::fixed_ring() :
-      ring<T, Alloc>(mBuffer, mBuffer, mBuffer + N)
+      ring<T, Alloc>((pointer) mBuffer, (pointer) mBuffer, (pointer) mBuffer + N)
   {
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_ring<T, N, Alloc>::fixed_ring(size_type size, const value_type& val) :
-      ring<T, Alloc>(mBuffer, mBuffer + size, mBuffer + N)
+      ring<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + size, (pointer) mBuffer + N)
   {
-    std::fill(mBegin.mPtr, mEnd.mPtr, val);
+    std::uninitialized_fill(mBegin.mPtr, mEnd.mPtr, val);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_ring<T, N, Alloc>::fixed_ring(int size, const value_type& val) :
-      ring<T, Alloc>(mBuffer, mBuffer + size, mBuffer + N)
+      ring<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + size, (pointer) mBuffer + N)
   {
-    std::fill(mBegin.mPtr, mEnd.mPtr, val);
+    std::uninitialized_fill(mBegin.mPtr, mEnd.mPtr, val);
   }
 
   template<class T, size_t N, class Alloc>
   template<typename InputIterator>
   inline fixed_ring<T, N, Alloc>::fixed_ring(InputIterator first, InputIterator last) :
-      ring<T, Alloc>(mBuffer, mBuffer + std::distance(first, last), mBuffer + N)
+      ring<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(first, last), (pointer) mBuffer + N)
   {
-    std::copy(first, last, mBegin.mPtr);
+    std::uninitialized_copy(first, last, mBegin.mPtr);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_ring<T, N, Alloc>::fixed_ring(const fixed_ring<T, N, Alloc> & obj) :
-      ring<T, Alloc>(mBuffer, mBuffer + std::distance(obj.mBegin, obj.mEnd), mBuffer + N)
+      ring<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), (pointer) mBuffer + N)
   {
-    std::copy(obj.mBegin, obj.mEnd, mBegin.mPtr);
+    std::uninitialized_copy(obj.mBegin, obj.mEnd, mBegin.mPtr);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_ring<T, N, Alloc>::fixed_ring(const ring<T, Alloc> & obj) :
-      ring<T, Alloc>(mBuffer, mBuffer + std::distance(obj.mBegin, obj.mEnd), mBuffer + N)
+      ring<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), (pointer) mBuffer + N)
   {
-    std::copy(obj.mBegin, obj.mEnd, mBegin.mPtr);
+    std::uninitialized_copy(obj.mBegin, obj.mEnd, mBegin.mPtr);
   }
 
   template<class T, size_t N, class Alloc>
   inline fixed_ring<T, N, Alloc>& fixed_ring<T, N, Alloc>::operator=(const fixed_ring<T, N, Alloc>& obj)
   {
-    //A bit more efficient than assign() as no capacity check is needed.
-    std::copy(obj.mBegin, obj.mEnd, mBegin);
-    mEnd = mBegin + obj.size();
+    assign(obj.begin(), obj.end());
     return *this;
   }
 
