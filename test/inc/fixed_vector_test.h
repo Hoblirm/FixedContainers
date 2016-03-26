@@ -3,60 +3,59 @@
 #include <flex/fixed_vector.h>
 
 struct obj
+{
+  static const int DEFAULT_VAL = 1;
+  static const int INIT_KEY = 858599509;
+
+  obj() :
+      val(DEFAULT_VAL), init(INIT_KEY)
   {
-    static const int DEFAULT_VAL = 1;
-    static const int INIT_KEY = 858599509;
+  }
 
-    obj() :
-        val(DEFAULT_VAL), init(INIT_KEY)
-    {
-    }
+  obj(int i) :
+      val(i), init(INIT_KEY)
+  {
+  }
 
-    obj(int i) :
-        val(i), init(INIT_KEY)
-    {
-    }
+  ~obj()
+  {
+    init = 0;
+  }
 
-    ~obj()
-    {
-      init = 0;
-    }
+  obj& operator=(const obj& o)
+  {
+    val = o.val;
+    return *this;
+  }
 
-    obj& operator=(const obj& o)
-    {
-      val = o.val;
-      return *this;
-    }
+  operator int() const
+  {
+    return val;
+  }
 
-    operator int() const
-    {
-      return val;
-    }
+  int val;
+  int init;
+};
 
-    int val;
-    int init;
-  };
-
-  const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
-      -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
-      414986917, -1084506988, -1274438196, -407784340, -1476797751, 952482371, 1659351065, -1840296979, 1174260466,
-      -830555035, 1187249412, -1439716735, -606656096, 1968778085, -468774603, -741213671, -1792595459, -1043591241,
-      -399781674, 1441797965, -539577554, -1712941906, 893437261, 1243708130, -276655685, 169167272, 1548266128,
-      2134938409, -165983522, 65335344, 777222631, -1975346548, 1736737965, -1297235370, -1778585082, -445115751,
-      77287795, -904742465, 1566979049, -1276550055, -1523151595, -1877472326, -1965521838, 309774311, 285638537,
-      1694499811, 395062486, -599472639, -562348494, 622523556, 1991792880, 1485225099, -26143183, 1213635789,
-      -1867261885, 1401932595, 1643956672, 1152265615, -206296253, -1341812088, -928119996, 1335888378, -2127839732,
-      -805081880, -461979923, 258594093, 1322814281, -1856950276, 763906168, -110775798, 29138078, -728231554,
-      -1738124420, -1130024844, 2112808498, -2147190929, -46681067, -1746560845, -1931350352, -2121713887, -2077836858,
-      -68560373, 542144249, -964249373, 672765407, 1240222082, -170251308, 573136605, 522427348, -1842488270,
-      -803442179, 1214800559, -439290856, -850489475, -371113959, -528653948, -1466750983, -299654597, -1095361209,
-      912904732 };
+const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
+    -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
+    414986917, -1084506988, -1274438196, -407784340, -1476797751, 952482371, 1659351065, -1840296979, 1174260466,
+    -830555035, 1187249412, -1439716735, -606656096, 1968778085, -468774603, -741213671, -1792595459, -1043591241,
+    -399781674, 1441797965, -539577554, -1712941906, 893437261, 1243708130, -276655685, 169167272, 1548266128,
+    2134938409, -165983522, 65335344, 777222631, -1975346548, 1736737965, -1297235370, -1778585082, -445115751,
+    77287795, -904742465, 1566979049, -1276550055, -1523151595, -1877472326, -1965521838, 309774311, 285638537,
+    1694499811, 395062486, -599472639, -562348494, 622523556, 1991792880, 1485225099, -26143183, 1213635789,
+    -1867261885, 1401932595, 1643956672, 1152265615, -206296253, -1341812088, -928119996, 1335888378, -2127839732,
+    -805081880, -461979923, 258594093, 1322814281, -1856950276, 763906168, -110775798, 29138078, -728231554,
+    -1738124420, -1130024844, 2112808498, -2147190929, -46681067, -1746560845, -1931350352, -2121713887, -2077836858,
+    -68560373, 542144249, -964249373, 672765407, 1240222082, -170251308, 573136605, 522427348, -1842488270, -803442179,
+    1214800559, -439290856, -850489475, -371113959, -528653948, -1466750983, -299654597, -1095361209, 912904732 };
 
 class fixed_vector_test: public CxxTest::TestSuite
 {
 public:
 
-    void setUp()
+  void setUp()
   {
     flex::allocation_guard::enable();
   }
@@ -65,51 +64,51 @@ public:
   {
     flex::allocation_guard::disable();
   }
-  
-  bool is_container_valid(const flex::vector<obj>& v)
+
+  bool is_container_valid(const flex::vector<obj>& c)
   {
-    for (int i = 0; i < v.size(); ++i)
+    for (int i = 0; i < c.size(); ++i)
     {
-      if (v[i].init != obj::INIT_KEY)
+      if (c[i].init != obj::INIT_KEY)
       {
-         printf("val[%d].init == %d != INIT_KEY\n",i,v[i].init);
+        printf("Error: Expected (c[%d] == object::INIT_KEY), found (%d != %d)\n", i, c[i].init, obj::INIT_KEY);
         return false;
       }
     }
-    for (int i = v.size(); i < v.capacity(); ++i)
+    for (int i = c.size(); i < c.capacity(); ++i)
     {
-      if (v[i].init == obj::INIT_KEY)
+      if (c[i].init == obj::INIT_KEY)
       {
-        printf("val[%d].init == INIT_KEY\n",i);
+        printf("Error: Expected (c[%d] != object::INIT_KEY), found (%d == %d)\n", i, c[i].init, obj::INIT_KEY);
         return false;
       }
     }
     return true;
   }
-  
+
   void test_assign(void)
   {
     fixed_vector<obj, 7> first;
     fixed_vector<obj, 5> second;
     vector<obj> third;
 
-    TS_ASSERT_THROWS(first.assign(8, (obj)100), std::runtime_error);
-    first.assign(7, (obj)100);             // 7 ints with a value of 100
+    TS_ASSERT_THROWS(first.assign(8, (obj )100), std::runtime_error);
+    first.assign(7, (obj) 100);             // 7 ints with a value of 100
     TS_ASSERT(is_container_valid(first));
-    
+
     fixed_vector<obj, 7>::iterator it;
     it = first.begin() + 1;
 
     TS_ASSERT_THROWS(second.assign(it, first.end()), std::runtime_error);
     second.assign(it, first.end() - 1); // the 5 central values of first
     TS_ASSERT(is_container_valid(second));
-    
+
     int myints[] = { 1776, 7, 4 };
     flex::allocation_guard::disable();
     third.assign(myints, myints + 3);   // assigning from array.
     flex::allocation_guard::enable();
     TS_ASSERT(is_container_valid(third));
-    
+
     TS_ASSERT_EQUALS(first.size(), 7);
     TS_ASSERT_EQUALS(first[0], 100);
     TS_ASSERT_EQUALS(first[1], 100);
@@ -208,8 +207,8 @@ public:
   void test_insert(void)
   {
     fixed_vector<obj, 1> emptyvec;
-    TS_ASSERT_THROWS(emptyvec.insert(emptyvec.begin(), 2, (obj)2), std::runtime_error);
-    fixed_vector<obj, 16> myvector(3, (obj)100);
+    TS_ASSERT_THROWS(emptyvec.insert(emptyvec.begin(), 2, (obj )2), std::runtime_error);
+    fixed_vector<obj, 16> myvector(3, (obj) 100);
     TS_ASSERT(is_container_valid(myvector));
     fixed_vector<obj, 16>::iterator it;
 
@@ -222,8 +221,8 @@ public:
     TS_ASSERT_EQUALS(myvector[2], 100);
     TS_ASSERT_EQUALS(myvector[3], 100);
 
-    TS_ASSERT_THROWS(myvector.insert(it, 13, (obj)300), std::runtime_error);
-    myvector.insert(it, 2, (obj)300);
+    TS_ASSERT_THROWS(myvector.insert(it, 13, (obj )300), std::runtime_error);
+    myvector.insert(it, 2, (obj) 300);
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(myvector.size(), 6);
     TS_ASSERT_EQUALS(myvector[0], 300);
@@ -235,7 +234,7 @@ public:
 
     // "it" no longer valid, get a new one:
     it = myvector.begin();
-    fixed_vector<obj, 16> anothervector(2, (obj)400);
+    fixed_vector<obj, 16> anothervector(2, (obj) 400);
     myvector.insert(it + 2, anothervector.begin(), anothervector.end());
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(myvector.size(), 8);
@@ -279,7 +278,7 @@ public:
     foo[1] = 5;
     foo[2] = 17;
 
-    fixed_vector<obj, 8> bar(5, (obj)2);
+    fixed_vector<obj, 8> bar(5, (obj) 2);
 
     bar = foo;
     TS_ASSERT(is_container_valid(bar));
@@ -289,7 +288,7 @@ public:
     TS_ASSERT_EQUALS(bar[2], 17);
 
     //Ensure assignments on bar doens't impact foo.
-    bar.assign(0, (obj)3);
+    bar.assign(0, (obj) 3);
     TS_ASSERT(is_container_valid(bar));
     TS_ASSERT_EQUALS(foo.size(), 3);
     TS_ASSERT_EQUALS(foo[0], 1);
@@ -309,7 +308,7 @@ public:
 
     //Same thing as above, but we want to ensure that the cast operator allows assignment of vectors
     //with different capacities.
-    foo = fixed_vector<obj, 16>(1, (obj)19);
+    foo = fixed_vector<obj, 16>(1, (obj) 19);
     TS_ASSERT(is_container_valid(foo));
     TS_ASSERT_EQUALS(foo.size(), 1);
     TS_ASSERT_EQUALS(foo[0], 19);
@@ -319,13 +318,13 @@ public:
     fixed_vector<obj, 16> larger(16);
     TS_ASSERT_THROWS(foo = larger, std::runtime_error);
 
-    foo.assign(3, (obj)0);
+    foo.assign(3, (obj) 0);
     foo[0] = 1;
     foo[1] = 5;
     foo[2] = 17;
-    
+
     flex::allocation_guard::disable();
-    vector<obj> bar2(5, (obj)2);
+    vector<obj> bar2(5, (obj) 2);
     bar2 = foo;
     TS_ASSERT(is_container_valid(bar2));
     flex::allocation_guard::enable();
@@ -335,7 +334,7 @@ public:
     TS_ASSERT_EQUALS(bar2[2], 17);
 
     //Ensure assignments on bar doens't impact foo.
-    bar2.assign(0, (obj)3);
+    bar2.assign(0, (obj) 3);
     TS_ASSERT(is_container_valid(bar2));
     TS_ASSERT_EQUALS(foo.size(), 3);
     TS_ASSERT_EQUALS(foo[0], 1);
@@ -360,7 +359,7 @@ public:
     ++size;
     TS_ASSERT_EQUALS(myvector.size(), size);
     TS_ASSERT(is_container_valid(myvector));
-    
+
     while (!myvector.empty())
     {
       sum += myvector.back();
@@ -387,7 +386,7 @@ public:
     TS_ASSERT_EQUALS(myvector[3], 4);
     TS_ASSERT_EQUALS(myvector[4], 5);
 
-    myvector.resize(8, (obj)100);
+    myvector.resize(8, (obj) 100);
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(myvector[0], 1);
     TS_ASSERT_EQUALS(myvector[1], 2);
@@ -416,10 +415,10 @@ public:
 
   void test_swap(void)
   {
-    fixed_vector<obj, 16> foo(3, (obj)100);   // three ints with a value of 100
-     flex::allocation_guard::disable();
-    vector<obj> bar(5, (obj)200);   // five ints with a value of 200
- flex::allocation_guard::enable();
+    fixed_vector<obj, 16> foo(3, (obj) 100);   // three ints with a value of 100
+    flex::allocation_guard::disable();
+    vector<obj> bar(5, (obj) 200);   // five ints with a value of 200
+    flex::allocation_guard::enable();
     foo.swap(bar);
     TS_ASSERT(is_container_valid(foo));
     TS_ASSERT(is_container_valid(bar));
@@ -469,7 +468,7 @@ public:
     TS_ASSERT_EQUALS(bar.capacity(), 20);
     TS_ASSERT(is_container_valid(foo));
     TS_ASSERT(is_container_valid(bar));
-    
+
     bar.push_back(100);
     bar.push_back(100);
     bar.push_back(100);
@@ -510,7 +509,7 @@ public:
 
   void test_fill_constructor(void)
   {
-    fixed_vector<obj, 3> a(2, (obj)7);
+    fixed_vector<obj, 3> a(2, (obj) 7);
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 2);
     TS_ASSERT_EQUALS(a.capacity(), 3);
@@ -520,7 +519,7 @@ public:
 
   void test_range_constructor(void)
   {
-    fixed_vector<obj, 4> first(4, (obj)100);
+    fixed_vector<obj, 4> first(4, (obj) 100);
     TS_ASSERT(is_container_valid(first));
     fixed_vector<obj, 4> second(first.begin(), first.end());  // iterating through first
     TS_ASSERT(is_container_valid(second));
@@ -543,7 +542,7 @@ public:
 
   void test_copy_constructor(void)
   {
-    fixed_vector<obj, 3> a(3, (obj)0);
+    fixed_vector<obj, 3> a(3, (obj) 0);
     for (int i = 0; i < a.size(); i++)
     {
       a[i] = i;
@@ -583,7 +582,7 @@ public:
 
   void test_cast_operator(void)
   {
-    fixed_vector<obj, 8> a(8, (obj)0);
+    fixed_vector<obj, 8> a(8, (obj) 0);
     assignment_method(a);
     read_method(a);
     TS_ASSERT_THROWS(copy_method(a), std::runtime_error);
@@ -594,8 +593,8 @@ public:
 
   void test_relational_operators(void)
   {
-    fixed_vector<obj, 8> foo(3, (obj)100);   // three ints with a value of 100
-    fixed_vector<obj, 8> bar(2, (obj)200);   // two ints with a value of 200
+    fixed_vector<obj, 8> foo(3, (obj) 100);   // three ints with a value of 100
+    fixed_vector<obj, 8> bar(2, (obj) 200);   // two ints with a value of 200
 
     TS_ASSERT(!(foo == bar));
     TS_ASSERT(foo != bar);

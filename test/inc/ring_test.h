@@ -6,27 +6,27 @@
 class ring_test: public CxxTest::TestSuite
 {
 
-  struct object
+  struct obj
   {
     static const int DEFAULT_VAL = 1;
     static const int INIT_KEY = 858599509;
 
-    object() :
+    obj() :
         val(DEFAULT_VAL), init(INIT_KEY)
     {
     }
 
-    object(int i) :
+    obj(int i) :
         val(i), init(INIT_KEY)
     {
     }
 
-    ~object()
+    ~obj()
     {
       init = 0;
     }
 
-    object& operator=(const object& o)
+    obj& operator=(const obj& o)
     {
       val = o.val;
       return *this;
@@ -41,9 +41,9 @@ class ring_test: public CxxTest::TestSuite
     int init;
   };
 
-  typedef flex::ring<object, flex::allocator_debug<object> > ring_obj;
+  typedef flex::ring<obj, flex::allocator_debug<obj> > ring_obj;
 
-  const object OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
+  const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
       -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
       414986917, -1084506988, -1274438196, -407784340, -1476797751, 952482371, 1659351065, -1840296979, 1174260466,
       -830555035, 1187249412, -1439716735, -606656096, 1968778085, -468774603, -741213671, -1792595459, -1043591241,
@@ -66,35 +66,35 @@ public:
   void setUp()
   {
     flex::allocator_debug<int>::clear();
-    flex::allocator_debug<object>::clear();
+    flex::allocator_debug<obj>::clear();
   }
 
   void tearDown()
   {
-    //This ensures that all objects constructed by the container have their destructors called.
+    //This ensures that all objs constructed by the container have their destructors called.
     TS_ASSERT(flex::allocator_debug<int>::mConstructedPointers.empty());
-    TS_ASSERT(flex::allocator_debug<object>::mConstructedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<obj>::mConstructedPointers.empty());
 
     //This ensures that all memory allocated by the container is properly freed.
     TS_ASSERT(flex::allocator_debug<int>::mAllocatedPointers.empty());
-    TS_ASSERT(flex::allocator_debug<object>::mAllocatedPointers.empty());
+    TS_ASSERT(flex::allocator_debug<obj>::mAllocatedPointers.empty());
   }
 
   bool is_container_valid(const ring_obj& c)
   {
     for (int i = 0; i < c.size(); ++i)
     {
-      if (c[i].init != object::INIT_KEY)
+      if (c[i].init != obj::INIT_KEY)
       {
-        printf("Error: Expected (c[%d] == object::INIT_KEY), found (%d != %d)\n", i, c[i].init, object::INIT_KEY);
+        printf("Error: Expected (c[%d] == obj::INIT_KEY), found (%d != %d)\n", i, c[i].init, obj::INIT_KEY);
         return false;
       }
     }
     for (int i = c.size(); i < c.capacity(); ++i)
     {
-      if (c[i].init == object::INIT_KEY)
+      if (c[i].init == obj::INIT_KEY)
       {
-        printf("Error: Expected (c[%d] != object::INIT_KEY), found (%d == %d)\n", i, c[i].init, object::INIT_KEY);
+        printf("Error: Expected (c[%d] != obj::INIT_KEY), found (%d == %d)\n", i, c[i].init, obj::INIT_KEY);
         return false;
       }
     }
@@ -130,11 +130,11 @@ public:
        */
       ring_obj a(SIZES[s]);
       TS_ASSERT(is_container_valid(a));
-      TS_ASSERT_EQUALS(a.size(), (object )SIZES[s]);
+      TS_ASSERT_EQUALS(a.size(), (obj )SIZES[s]);
       TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
       for (int i = 0; i < a.size(); ++i)
       {
-        TS_ASSERT_EQUALS(a[i], object::DEFAULT_VAL);
+        TS_ASSERT_EQUALS(a[i], obj::DEFAULT_VAL);
       }
 
     } //for: SIZE_COUNT
@@ -144,7 +144,7 @@ public:
   {
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      const object fill_val = OBJ_DATA[SIZES[s] - 1];
+      const obj fill_val = OBJ_DATA[SIZES[s] - 1];
 
       /*
        * Case1: Verify fill constructor assigns value parameter for primitives.
@@ -232,7 +232,7 @@ public:
     ring_obj a;
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      const object fill_val = OBJ_DATA[SIZES[s] - 1];
+      const obj fill_val = OBJ_DATA[SIZES[s] - 1];
       a.assign(SIZES[s], fill_val);
       TS_ASSERT(is_container_valid(a));
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
@@ -249,7 +249,7 @@ public:
      */
     for (int s = SIZE_COUNT - 1; s != -1; --s)
     {
-      const object fill_val = OBJ_DATA[SIZES[s] - 1];
+      const obj fill_val = OBJ_DATA[SIZES[s] - 1];
       const size_t prev_capacity = a.capacity();
       a.assign(SIZES[s], fill_val);
       TS_ASSERT(is_container_valid(a));
@@ -328,7 +328,7 @@ public:
        */
       for (int i = 0; i < SIZES[s]; i++)
       {
-        const object val = -i;
+        const obj val = -i;
         a.at(i) = val;
         TS_ASSERT_EQUALS(a.at(i), val);
       }
@@ -660,7 +660,7 @@ public:
     {
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
       size_t current_size = a.size();
-      const object val = 19;
+      const obj val = 19;
 
       /*
        * Case1: Test insert at end
@@ -722,7 +722,7 @@ public:
     {
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
       size_t current_size = a.size();
-      const object val = 19;
+      const obj val = 19;
 
       /*
        * Case1: Test insert at end
@@ -869,7 +869,7 @@ public:
     const ring_obj a(size, 7);
     for (int i = 0; i < size; i++)
     {
-      const object& v = a[i];
+      const obj& v = a[i];
       TS_ASSERT_EQUALS(v, a[i]);
     }
   }
@@ -922,7 +922,7 @@ public:
   void test_resize(void)
   {
     ring_obj a;
-    const object val = 19;
+    const obj val = 19;
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
       /*
