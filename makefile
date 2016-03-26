@@ -2,6 +2,8 @@ TEST_FILES=$(wildcard test/inc/*.h)
 
 all:
 	g++ -w -O2 -o run main.cpp -I./inc -lrt
+all11:
+	g++ -w -std=c++11 -DFLEX_HAS_CXX11 -O2 -o run main.cpp -I./inc -lrt
 aix:
 	xlC_r -w -O2 -o ./bin/aix_run main.cpp -I./inc
 cxx:
