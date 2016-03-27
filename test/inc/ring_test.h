@@ -65,18 +65,15 @@ public:
 
   void setUp()
   {
-    flex::allocator_debug<int>::clear();
     flex::allocator_debug<obj>::clear();
   }
 
   void tearDown()
   {
     //This ensures that all objs constructed by the container have their destructors called.
-    TS_ASSERT(flex::allocator_debug<int>::mConstructedPointers.empty());
     TS_ASSERT(flex::allocator_debug<obj>::mConstructedPointers.empty());
 
     //This ensures that all memory allocated by the container is properly freed.
-    TS_ASSERT(flex::allocator_debug<int>::mAllocatedPointers.empty());
     TS_ASSERT(flex::allocator_debug<obj>::mAllocatedPointers.empty());
   }
 
