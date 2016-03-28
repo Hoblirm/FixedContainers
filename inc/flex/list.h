@@ -108,7 +108,8 @@ namespace flex
     template<typename BinaryPredicate> void unique(BinaryPredicate binary_pred);
 
   protected:
-    list(size_t capacity, list_node<T>* contentPtr);
+
+    list(node_type* first, node_type* last);
 
     /*
      * Internal methods used by the public sort() method.
@@ -118,10 +119,12 @@ namespace flex
     template<typename Compare> iterator sort(iterator first, iterator last, size_type n, Compare comp);
     void splice(iterator position, iterator first, iterator last);
 
+    node_type* AllocateNode();
     node_type* RetrieveNode(const value_type& val);
     size_type GetNodePoolSize();
     void FillNodePool(size_type n);
     void PushToNodePool(node_type* ptr);
+    void PushRangeToNodePool(iterator first, iterator last);
     void PurgeNodePool();
 
     Alloc mAllocator;
@@ -342,20 +345,14 @@ namespace flex
   template<class T, class Alloc>
   inline typename list<T, Alloc>::iterator list<T, Alloc>::erase(iterator first, iterator last)
   {
-    //The erased range is [first,last).  Reassign the pointers of nodes (first-1) and last
-    //to point to each other.
-    first.mNode->mPrev->mNext = last.mNode;
-    last.mNode->mPrev = first.mNode->mPrev;
-
-    //The list no longer points to the range, now it is safe to erase it.
-    for (iterator it = first; it != last;)
+    if (first != last)
     {
-      //Pushing the node to the pool invalidates the iterator.  Therefore, we must store
-      //a temp pointer and increment the iterator BEFORE adding the node to the pool.
-      node_type* ptr = it.mNode;
-      ++it;
-      PushToNodePool(ptr);
-      --mSize;
+      PushRangeToNodePool(first, last);
+
+      //The erased range is [first,last).  Reassign the pointers of nodes (first-1) and last
+      //to point to each other.
+      first.mNode->mPrev->mNext = last.mNode;
+      last.mNode->mPrev = first.mNode->mPrev;
     }
 
     return last;
@@ -411,11 +408,39 @@ namespace flex
   inline void list<T, Alloc>::insert(iterator position, size_type n, const_reference val)
   {
     node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
+
+    const size_type new_size = mSize + n;
+
+    //Iterate through the node pool and insert nodes until the pool is
+    //empty, or n nodes have been inserted.
+    if (mNodePool != NULL)
+    {
+      lhs->mNext = mNodePool;
+      for (; ((n > 0) && (mNodePool != NULL)); --n)
+      {
+        node_type* new_node = mNodePool;
+        new ((void*) &new_node->mValue) value_type(val);
+        mNodePool = static_cast<node_type*>(mNodePool->mNext);
+        new_node->mPrev = lhs;
+
+        //Note: lhs->mNext does not need to be assigned in this loop
+        //as all pool nodes are linked by lhs->next.  This would change
+        //if the implementation of the node pool was altered.
+        lhs = new_node;
+      }
+    }
+
+    //If n is not zero, the node pool was exhausted.  Continue inserting
+    //nodes by performing memory allocations.
     for (; n > 0; --n)
     {
-      node_type* new_node = RetrieveNode(val);
-      ++mSize;
+      //Put the list in a valid state in case an the allocation throws. Without
+      //these two lines, a throw can result in a seg fault.
+      lhs->mNext = position.mNode;
+      position.mNode->mPrev = lhs;
 
+      node_type* new_node = AllocateNode();
+      new ((void*) &new_node->mValue) value_type(val);
       new_node->mPrev = lhs;
 
       lhs->mNext = new_node;
@@ -423,6 +448,7 @@ namespace flex
     }
     lhs->mNext = position.mNode;
     position.mNode->mPrev = lhs;
+    mSize = new_size;
   }
 
   template<class T, class Alloc>
@@ -439,9 +465,42 @@ namespace flex
   inline void list<T, Alloc>::insert(iterator position, InputIterator first, InputIterator last)
   {
     node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
+
+    //Iterate through the node pool and insert nodes until the pool is
+    //empty, or n nodes have been inserted.  Prior to starting the loop
+    //we assign lhs->mNext to the first node in the pool, as it doesn't
+    //get assigned in the loop.  If it turns out the pool is empty,
+    //lhs->mNext will be reassigned in the second loop.
+    lhs->mNext = mNodePool;
+    for (; ((first != last) && (mNodePool != NULL)); ++first)
+    {
+      //node_type* new_node = RetrieveNode(*first);
+      node_type* new_node = mNodePool;
+      new ((void*) &new_node->mValue) value_type(*first);
+      mNodePool = static_cast<node_type*>(mNodePool->mNext);
+      new_node->mPrev = lhs;
+
+      ++mSize;
+
+      new_node->mPrev = lhs;
+
+      //Note: lhs->mNext does not need to be assigned in this loop
+      //as all pool nodes are linked by lhs->next.  This would change
+      //if the implementation of the node pool was altered.
+      lhs = new_node;
+    }
+
+    //If n is not zero, the node pool was exhausted.  Continue inserting
+    //nodes by performing memory allocations.
     for (; first != last; ++first)
     {
-      node_type* new_node = RetrieveNode(*first);
+      //Put the list in a valid state in case an the allocation throws. Without
+      //these two lines, a throw can result in a seg fault.
+      lhs->mNext = position.mNode;
+      position.mNode->mPrev = lhs;
+
+      node_type* new_node = AllocateNode();
+      new ((void*) &new_node->mValue) value_type(*first);
       ++mSize;
 
       new_node->mPrev = lhs;
@@ -707,7 +766,7 @@ namespace flex
     size_type current_capacity = capacity();
     if (n > current_capacity)
     {
-      FillNodePool(n-current_capacity);
+      FillNodePool(n - current_capacity);
     }
   }
 
@@ -746,7 +805,10 @@ namespace flex
   template<class T, class Alloc>
   inline void list<T, Alloc>::shrink_to_fit()
   {
-    PurgeNodePool();
+    if (FLEX_LIKELY(!mFixed))
+    {
+      PurgeNodePool();
+    }
   }
 
   template<class T, class Alloc>
@@ -1004,10 +1066,31 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline list<T, Alloc>::list(size_t capacity, list_node<T>* contentPtr) :
-      mFixed(true), mAnchor(), mSize(0), mNodePool(NULL)
+  inline list<T, Alloc>::list(node_type* first, node_type* last) :
+      mFixed(true), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
   {
+    if (first != last)
+    {
+      mNodePool = first;
+      node_type* prev = first;
+      ++first;
+      for (; first != last; ++first)
+      {
+        prev->mNext = first;
+        prev = first;
+      }
+      prev->mNext = NULL;
+    }
+  }
 
+  template<class T, class Alloc>
+  inline typename list<T, Alloc>::node_type* list<T, Alloc>::AllocateNode()
+  {
+    if (FLEX_UNLIKELY(mFixed))
+    {
+      throw std::runtime_error("flex::fixed_list - exceeded capacity");
+    }
+    return mAllocator.allocate(1);
   }
 
   template<class T, class Alloc>
@@ -1016,11 +1099,7 @@ namespace flex
     node_type* ptr;
     if (NULL == mNodePool)
     {
-      if (FLEX_UNLIKELY(mFixed))
-      {
-        throw std::runtime_error("flex::fixed_list - exceeded capacity");
-      }
-      ptr = mAllocator.allocate(1);
+      ptr = AllocateNode();
       new ((void*) &ptr->mValue) value_type(val);
     }
     else
@@ -1039,7 +1118,6 @@ namespace flex
     node_type* node_ptr = mNodePool;
     while (node_ptr != NULL)
     {
-
       node_ptr = static_cast<node_type*>(node_ptr->mNext);
       ++n;
     }
@@ -1063,6 +1141,24 @@ namespace flex
     ptr->mValue.~value_type();
     ptr->mNext = mNodePool;
     mNodePool = ptr;
+  }
+
+  template<class T, class Alloc>
+  inline void list<T, Alloc>::PushRangeToNodePool(iterator first, iterator last)
+  {
+    //It is worth mentioning that this routine will put the list in an invalid
+    //state if first==last.  It is expected that this method is only called in
+    //a context in which first and last have been checked to not be equal.  The
+    //check is omitted in this function as it is most efficient for the check
+    //to be done at a higher level.
+    iterator it = first;
+    for (; it != last; ++it)
+    {
+      it.mNode->mValue.~value_type();
+      --mSize;
+    }
+    last.mNode->mPrev->mNext = mNodePool;
+    mNodePool = first.mNode;
   }
 
   template<class T, class Alloc>

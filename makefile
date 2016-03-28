@@ -3,7 +3,7 @@ TEST_FILES=$(wildcard test/inc/*.h)
 all:
 	g++ -w -O2 -o run main.cpp -I./inc -lrt
 all11:
-	g++ -w -std=c++11 -DFLEX_HAS_CXX11 -O2 -o run main.cpp -I./inc -lrt
+	g++ -w -std=c++11 -O2 -o run main.cpp -I./inc -lrt
 aix:
 	xlC_r -w -O2 -o ./bin/aix_run main.cpp -I./inc
 cxx:
@@ -12,7 +12,7 @@ cxx:
 	./test/bin/test_bin
 cxx11:
 	${CXXTEST_HOME}/bin/cxxtestgen --error-printer -o ./test/src/test.cpp ${TEST_FILES}
-	g++ -std=c++11 -g -w -Wall -DFLEX_HAS_CXX11 -o ./test/bin/test_bin ./test/src/test.cpp -I./inc -I./ -I./test/inc -I${CXXTEST_HOME}
+	g++ -std=c++11 -g -w -Wall -o ./test/bin/test_bin ./test/src/test.cpp -I./inc -I./ -I./test/inc -I${CXXTEST_HOME}
 	./test/bin/test_bin
 cxx_all:
 	${CXXTEST_HOME}/bin/cxxtestgen --error-printer -o ./test/src/test.cpp ${TEST_FILES} 

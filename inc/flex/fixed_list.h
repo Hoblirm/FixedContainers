@@ -9,63 +9,107 @@ namespace flex
   template<class T, size_t N, class Alloc = allocator<list_node<T> > > class fixed_list: public list<T, Alloc>
   {
   public:
+    typedef list<T, Alloc> base_type;
+
+    typedef typename base_type::value_type value_type;
+    typedef typename base_type::pointer pointer;
+    typedef typename base_type::const_pointer const_pointer;
+    typedef typename base_type::reference reference;
+    typedef typename base_type::const_reference const_reference;
+    typedef typename base_type::node_type node_type;
+    typedef typename base_type::base_node_type base_node_type;
+    typedef typename base_type::iterator iterator;
+    typedef typename base_type::const_iterator const_iterator;
+    typedef typename base_type::reverse_iterator reverse_iterator;
+    typedef typename base_type::const_reverse_iterator const_reverse_iterator;
+    typedef typename base_type::size_type size_type;
+    typedef typename base_type::difference_type difference_type;
+
+    using base_type::mAnchor;
+    using base_type::mNodePool;
+    using base_type::assign;
+    using base_type::begin;
+    using base_type::end;
+    using base_type::insert;
+
     fixed_list();
-    explicit fixed_list(size_t size, const T& val = T());
-    fixed_list(const T* first, const T* last);
+    explicit fixed_list(size_type size, const value_type& val = value_type());
+    fixed_list(int size, const value_type& val);
+    template<typename InputIterator> fixed_list(InputIterator first, InputIterator last);
     fixed_list(const fixed_list<T, N, Alloc> & obj);
     fixed_list(const list<T, Alloc> & obj);
+
     fixed_list<T, N, Alloc>& operator=(const fixed_list<T, N, Alloc>& obj);
     fixed_list<T, N, Alloc>& operator=(const list<T, Alloc>& obj);
-    operator const fixed_list<T,0,Alloc>&() const;
-    operator fixed_list<T,0,Alloc>&();
+
   private:
-    list_node<T> mContentAry[N];
-    list_node<T>* mPtrAry[N];
+#ifdef FLEX_HAS_CXX11
+    typename std::aligned_storage<sizeof(node_type), alignof(node_type)>::type mBuffer[N];
+#else
+    union
+    {
+      char mBuffer[N * sizeof(node_type)];
+      uint64_t dummy;
+    };
+#endif
   };
 
-  template<class T, size_t N, class Alloc> fixed_list<T, N, Alloc>::fixed_list() :
-      list<T, Alloc>(N, mContentAry, mPtrAry)
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>::fixed_list() :
+      list<T, Alloc>((node_type*) mBuffer, ((node_type*) mBuffer) + N)
   {
   }
 
-  template<class T, size_t N, class Alloc> fixed_list<T, N, Alloc>::fixed_list(size_t size, const T& val) :
-      list<T, Alloc>(N, mContentAry, mPtrAry)
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>::fixed_list(size_type size, const value_type& val) :
+      list<T, Alloc>((node_type*) mBuffer, ((node_type*) mBuffer) + N)
   {
-    //TODO: Added test case if size != capacity.
-    list<T, Alloc>::assign(size, val);
+    insert(begin(), size, val);
   }
 
-  template<class T, size_t N, class Alloc> fixed_list<T, N, Alloc>::fixed_list(const T* first, const T* last) :
-      list<T, Alloc>(N, mContentAry, mPtrAry)
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>::fixed_list(int size, const value_type& val) :
+      list<T, Alloc>((node_type*) mBuffer, ((node_type*) mBuffer) + N)
   {
-    list<T, Alloc>::assign(first, last);
+    insert(begin(), (size_type) size, val);
   }
 
-  template<class T, size_t N, class Alloc> fixed_list<T, N, Alloc>::fixed_list(const fixed_list<T, N, Alloc> & obj) :
-      list<T, Alloc>(N, mContentAry, mPtrAry)
+  template<class T, size_t N, class Alloc>
+  template<typename InputIterator>
+  inline fixed_list<T, N, Alloc>::fixed_list(InputIterator first, InputIterator last) :
+      list<T, Alloc>((node_type*) mBuffer, ((node_type*) mBuffer) + N)
   {
-    list<T, Alloc>::assign(obj.begin(), obj.end());
+    insert(begin(), first, last);
   }
 
-  template<class T, size_t N, class Alloc> fixed_list<T, N, Alloc>::fixed_list(const list<T, Alloc> & obj) :
-      list<T, Alloc>(N, mContentAry, mPtrAry)
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>::fixed_list(const fixed_list<T, N, Alloc> & obj) :
+      list<T, Alloc>((node_type*) mBuffer, ((node_type*) mBuffer) + N)
   {
-    list<T, Alloc>::assign(obj.begin(), obj.end());
+    insert(begin(), obj.cbegin(), obj.cend());
   }
 
-  template<class T, size_t N, class Alloc> fixed_list<T, N, Alloc>& fixed_list<T, N, Alloc>::operator=(
-      const fixed_list<T, N, Alloc>& obj)
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>::fixed_list(const list<T, Alloc> & obj) :
+      list<T, Alloc>((node_type*) mBuffer, ((node_type*) mBuffer) + N)
   {
-    list<T, Alloc>::assign(obj.begin(), obj.end());
+    insert(begin(), obj.cbegin(), obj.cend());
+  }
+
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>& fixed_list<T, N, Alloc>::operator=(const fixed_list<T, N, Alloc>& obj)
+  {
+    assign(obj.begin(), obj.end());
     return *this;
   }
 
-  template<class T, size_t N, class Alloc> fixed_list<T, N, Alloc>& fixed_list<T, N, Alloc>::operator=(
-      const list<T, Alloc>& obj)
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>& fixed_list<T, N, Alloc>::operator=(const list<T, Alloc>& obj)
   {
-    list<T, Alloc>::assign(obj.begin(), obj.end());
+    assign(obj.begin(), obj.end());
     return *this;
   }
 
 } //namespace flex
+
 #endif /* FLEX_FIXED_LIST_H */
