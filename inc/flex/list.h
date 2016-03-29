@@ -434,12 +434,21 @@ namespace flex
     //nodes by performing memory allocations.
     for (; n > 0; --n)
     {
-      //Put the list in a valid state in case an the allocation throws. Without
-      //these two lines, a throw can result in a seg fault.
-      lhs->mNext = position.mNode;
-      position.mNode->mPrev = lhs;
+      //The list is currently in an invalid state, so we must catch the
+      //allocation if it throws.
+      node_type* new_node;
+      try
+      {
+        new_node = AllocateNode();
+      }
+      catch (...)
+      {
+        //Put the list back in a valid state.
+        lhs->mNext = position.mNode;
+        position.mNode->mPrev = lhs;
+        throw;
+      }
 
-      node_type* new_node = AllocateNode();
       new ((void*) &new_node->mValue) value_type(val);
       new_node->mPrev = lhs;
 
@@ -474,7 +483,6 @@ namespace flex
     lhs->mNext = mNodePool;
     for (; ((first != last) && (mNodePool != NULL)); ++first)
     {
-      //node_type* new_node = RetrieveNode(*first);
       node_type* new_node = mNodePool;
       new ((void*) &new_node->mValue) value_type(*first);
       mNodePool = static_cast<node_type*>(mNodePool->mNext);
@@ -494,12 +502,21 @@ namespace flex
     //nodes by performing memory allocations.
     for (; first != last; ++first)
     {
-      //Put the list in a valid state in case an the allocation throws. Without
-      //these two lines, a throw can result in a seg fault.
-      lhs->mNext = position.mNode;
-      position.mNode->mPrev = lhs;
+      //The list is currently in an invalid state, so we must catch the
+      //allocation if it throws.
+      node_type* new_node;
+      try
+      {
+        new_node = AllocateNode();
+      }
+      catch (...)
+      {
+        //Put the list back in a valid state.
+        lhs->mNext = position.mNode;
+        position.mNode->mPrev = lhs;
+        throw;
+      }
 
-      node_type* new_node = AllocateNode();
       new ((void*) &new_node->mValue) value_type(*first);
       ++mSize;
 

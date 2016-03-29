@@ -55,7 +55,7 @@ namespace flex
 #else
     while (first != last)
     {
-    //  first->~value_t();
+      first->~value_t();
       ++first;
     }
 #endif
