@@ -40,6 +40,12 @@ public:
       return val;
     }
 
+    //The pool uses the first eight bytes of each object to link all its available memory with pointers.
+    //We create a placeholder here so the remaining data is not overwritten.  This allows us to read the object
+    //after calling the pool's deallocate method.  Reading objects after they are returned to the pool is
+    //useful for testing the pool's validity.
+    void* link_ptr;
+
     int val;
     int init;
   };
@@ -48,14 +54,18 @@ public:
   {
     bool is_valid = true;
     flex::fixed_vector<void*, 128> v;
+    size_t n = 0;
     while (!c.empty())
     {
       void* ptr = c.allocate();
       if (((obj*) ptr)->init == obj::INIT_KEY)
       {
+        printf("Error: Expected (((obj*) ptr)->init == obj::INIT_KEY) when n=%zu,found (%d == %d)\n", n,
+            ((obj*) ptr)->init, obj::INIT_KEY);
         is_valid = false;
       }
       v.push_back(ptr);
+      ++n;
     }
     while (!v.empty())
     {
@@ -63,6 +73,19 @@ public:
       v.pop_back();
     }
     return is_valid;
+  }
+
+  void test_pool_node_size()
+  {
+    /*
+     * Case1: Object size is larger than link.
+     */
+    TS_ASSERT_EQUALS(FLEX_POOL_NODE_SIZE(obj),sizeof(obj));
+
+    /*
+     * Case2: Object size is smaller than link.
+     */
+    TS_ASSERT_EQUALS(FLEX_POOL_NODE_SIZE(char),sizeof(pool_link));
   }
 
   void test_default_constructor()
@@ -131,6 +154,7 @@ public:
     TS_ASSERT_EQUALS(a.size(), 0);
     new ((void*) ptr) obj(7);
     TS_ASSERT_EQUALS(ptr->val, 7);
+    ptr->~obj();
     a.deallocate((void*) ptr);
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 1);
@@ -145,6 +169,7 @@ public:
     TS_ASSERT_EQUALS(b.size(), 15);
     new ((void*) ptr) obj(7);
     TS_ASSERT_EQUALS(ptr->val, 7);
+    ptr->~obj();
     b.deallocate((void*) ptr);
     TS_ASSERT(is_container_valid(b));
     TS_ASSERT_EQUALS(b.size(), 16);
@@ -153,7 +178,35 @@ public:
 
   void test_deallocate()
   {
+    /*
+     * Case1: It maintains for multiple allocates/deallocates.
+     */
+    fixed_vector<void*, 16> v;
+    pool<obj> a(8);
 
+    for (int i = 0; i < 16; ++i)
+    {
+      v.push_back(a.allocate());
+    }
+    TS_ASSERT(is_container_valid(a));
+
+    for (int i = 15; i >= 0; --i)
+    {
+      a.deallocate(v[i]);
+    }
+    TS_ASSERT(is_container_valid(a));
+
+    for (int i = 0; i < 16; ++i)
+    {
+      TS_ASSERT_EQUALS(v[i], a.allocate());
+    }
+    TS_ASSERT(is_container_valid(a));
+
+    //Just for the sake of preventing memory leaks.
+    for (int i = 15; i >= 0; --i)
+    {
+      a.deallocate(v[i]);
+    }
   }
 
   void test_construct()

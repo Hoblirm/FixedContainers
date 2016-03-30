@@ -63,6 +63,10 @@ namespace flex
     }
 
     // allocate but don't initialize num elements of type T
+    //TODO: May want to consider changing this method to use void*.  This is most accurate
+    //since it returns uninitialized data. For the flex::pool class, it actually wants a
+    //void* returned.  Since this method casts to pointer, flex::pool must cast back to
+    //void*.  Would be cleanest to change this method and update other containers.
     inline pointer allocate(size_type num, typename std::allocator<void>::const_pointer = 0)
     {
       if (FLEX_UNLIKELY(sAllocationGuardEnabled))
@@ -87,10 +91,18 @@ namespace flex
     }
 
     // deallocate storage p of deleted elements
+    //TODO: May want to consider removing this method in favor of void*.  It prevents
+    //a double cast in cases where void* is being deallocated.
     inline void deallocate(pointer p, size_type num)
     {
       ::operator delete((void*) p);
     }
+
+    inline void deallocate(void* p, size_type num)
+    {
+      ::operator delete(p);
+    }
+
   };
 
   // return that all specializations of this allocator are interchangeable

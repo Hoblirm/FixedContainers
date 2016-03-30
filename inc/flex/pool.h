@@ -6,18 +6,32 @@
 namespace flex
 {
 
-  struct Link
+  //The method in which the pool organizes its memory is a bit of an optimization hack.  Objects that
+  //are stored in the pool are uninitialized.  Therefore, it is valid to use this uninitialized data
+  //for other purposes.  The pool container takes advantage of this by storing a linked list of pointers
+  //over-top of the uninitialized objects.  This linked list keeps track of which objects are available
+  //to be retrieved from the pool.  Each uninitialized object has a single pointer stored on top of it
+  //that points to the next available object.  The last object stores a NULL pointer.  This implementation
+  //saves memory as no pointers need to be allocated, and caching performance may be a bit better (more so
+  //for fixed_pool) as the pointers are stored in the same location as the objects.  The pool_link
+  //struct is the data type used by the pool to create this linked list.
+  struct pool_link
   {
-    Link* mNext;
+    pool_link* mNext;
   };
 
+  //Since the pool_link is stored over-top of the objects, the node size cannot be smaller than pool_link.
+#define FLEX_POOL_NODE_SIZE(a) (sizeof(a) < sizeof(pool_link)) ? sizeof(pool_link) : sizeof(a)
+
+  //Define a generic object that has the same size as a pool object node.  This is only needed
+  //so we have an object to pass to the allocator.
   template<size_t N>
-  struct PoolNode
+  struct pool_node
   {
     char data[N];
   };
 
-  template<class T/*, class Alloc = flex::allocator<PoolNode<(sizeof(T) < sizeof(Link)) ? sizeof(Link) : sizeof(T)>  >*/> class pool: guarded_object
+  template<class T, class Alloc = flex::allocator<pool_node<FLEX_POOL_NODE_SIZE(T)> > > class pool: guarded_object
   {
   public:
     typedef T value_type;
@@ -42,126 +56,136 @@ namespace flex
     size_type size() const;
 
   protected:
-    Link* mHead;
-    size_t mObjectSize;
+    Alloc mAllocator;
+    pool_link* mHead;
     bool mFixed;
   };
 
-  template<class T>
-  inline pool<T>::pool() :
-      mHead(NULL), mObjectSize((sizeof(T) < sizeof(Link)) ? sizeof(Link) : sizeof(T)), mFixed(false)
+  template<class T, class Alloc>
+  inline pool<T, Alloc>::pool() :
+      mHead(NULL), mFixed(false)
   {
   }
 
-  template<class T>
-  inline pool<T>::pool(size_t n) :
-      mHead(NULL), mObjectSize((sizeof(T) < sizeof(Link)) ? sizeof(Link) : sizeof(T)), mFixed(false)
+  template<class T, class Alloc>
+  inline pool<T, Alloc>::pool(size_t n) :
+      mHead(NULL), mFixed(false)
   {
     reserve(n);
   }
 
-  template<class T>
-  inline pool<T>::~pool()
+  template<class T, class Alloc>
+  inline pool<T, Alloc>::~pool()
   {
     if (!mFixed)
     {
-      //Only want to retrieve pointers when mHead is set.  Otherwise the pool will internally
-      //allocate new objects.
+      //Only want to retrieve pointers when mHead is set (aka !empty()).
+      //Otherwise the pool will internally allocate new objects.
       while (mHead)
       {
-        //Allocate retrieves an available pointer in the pool which we will then delete.
-        void* ptr = allocate();
-        ::operator delete(ptr);
+        //Do not confuse the mAllocator allocate/deallocate methods with the pool methods.  The pool's
+        //allocate() method is called to remove a pointer from the pool.  This is then deleted
+        //by mAllocator.  Think of the allocate() method as pool.pop_front().
+        mAllocator.deallocate(allocate(), 1);
       }
     }
   }
 
-  template<class T>
-  inline void* pool<T>::allocate()
+  template<class T, class Alloc>
+  inline void* pool<T, Alloc>::allocate()
   {
+    //Retrieve a pointer from the pool.  mHead points to the first available location.
     if (mHead)
     {
-      Link* ptr = mHead;
+      //Remember, a link to the next object is stored over-top of the uninitialized object.
+      //Set head to the new link, and return the object pointer.
+      pool_link* ptr = mHead;
       mHead = ptr->mNext;
       return ptr;
     }
     else
     {
-      if (FLEX_UNLIKELY(mFixed || sAllocationGuardEnabled))
+      //Head is NULL which means the list is empty.  Attempt to allocate a new object.
+      if (FLEX_UNLIKELY(mFixed))
       {
-        throw std::runtime_error("pool: performed runtime allocation");
+        throw std::runtime_error("fixed_pool: performed runtime allocation");
       }
-      return ::operator new(mObjectSize);
+      return mAllocator.allocate(1);
     }
   }
 
-  template<class T>
-  inline typename pool<T>::pointer pool<T>::construct()
+  template<class T, class Alloc>
+  inline typename pool<T, Alloc>::pointer pool<T, Alloc>::construct()
   {
     void* ptr = allocate();
     new (ptr) value_type();
     return (pointer) ptr;
   }
 
-  template<class T>
-  inline typename pool<T>::pointer pool<T>::construct(const value_type& val)
+  template<class T, class Alloc>
+  inline typename pool<T, Alloc>::pointer pool<T, Alloc>::construct(const value_type& val)
   {
     void* ptr = allocate();
     new (ptr) value_type(val);
     return (pointer) ptr;
   }
 
-  template<class T>
-  inline void pool<T>::deallocate(void* ptr)
+  template<class T, class Alloc>
+  inline void pool<T, Alloc>::deallocate(void* ptr)
   {
-    ((Link*) ptr)->mNext = mHead;
-    mHead = ((Link*) ptr);
+    //Return the object pointer to the pool.  The object data should already be uninitialized.
+    //Write the pool's front node pointer, aka mHead, over top of the object.
+    ((pool_link*) ptr)->mNext = mHead;
+
+    //Now set the head of the pool to the returned object pointer.
+    mHead = ((pool_link*) ptr);
   }
 
-  template<class T>
-  inline void pool<T>::destruct(pointer ptr)
+  template<class T, class Alloc>
+  inline void pool<T, Alloc>::destruct(pointer ptr)
   {
     ptr->~value_type();
     deallocate(ptr);
   }
 
-  template<class T>
-  inline bool pool<T>::empty() const
+  template<class T, class Alloc>
+  inline bool pool<T, Alloc>::empty() const
   {
     return (mHead == NULL);
   }
 
-  template<class T>
-  inline typename pool<T>::size_type pool<T>::size() const
+  template<class T, class Alloc>
+  inline typename pool<T, Alloc>::size_type pool<T, Alloc>::size() const
   {
     size_type n = 0;
-    for (Link* it = mHead; it; it = it->mNext)
+    for (pool_link* it = mHead; it; it = it->mNext)
     {
       ++n;
     }
     return n;
   }
 
-  template<class T>
-  inline pool<T>& pool<T>::operator=(const pool&)
+  template<class T, class Alloc>
+  inline pool<T, Alloc>& pool<T, Alloc>::operator=(const pool&)
   {
     return *this;
   }
 
-  template<class T>
-  inline void pool<T>::reserve(size_type n)
+  template<class T, class Alloc>
+  inline void pool<T, Alloc>::reserve(size_type n)
   {
     for (; n; --n)
     {
-      if (FLEX_UNLIKELY(mFixed || sAllocationGuardEnabled))
+      if (FLEX_UNLIKELY(mFixed))
       {
-        throw std::runtime_error("pool: performed runtime allocation");
+        throw std::runtime_error("fixed_pool: performed runtime allocation");
       }
 
       //The pool's deallocate method simply adds a new pointer to the pool. Despite the
-      //name, it doesn't perform an actual deallocation.  In this method, it is treated like
-      //a push_front() method.  We simply allocate a new object, and push the pointer to the pool.
-      deallocate(::operator new(mObjectSize));
+      //name, it doesn't perform an actual deallocation.  Think of the deallocate method
+      //as pool.push_front().
+      deallocate((void*) mAllocator.allocate(1));
+      //TODO: void* cast can be removed once allocator is updated.
     }
   }
 

@@ -102,7 +102,7 @@ public:
 
       if (it->init != obj::INIT_KEY)
       {
-        printf("Error: Expected (it->init == object::INIT_KEY), found (%d == %d)\n", it->init, obj::INIT_KEY);
+        printf("Error: Expected (it->init == obj::INIT_KEY), found (%d == %d)\n", it->init, obj::INIT_KEY);
         return false;
       }
 
