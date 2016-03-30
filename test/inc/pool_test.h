@@ -50,7 +50,23 @@ public:
     int init;
   };
 
-  bool is_container_valid(pool<obj>& c)
+  typedef flex::pool<obj, flex::allocator_debug<flex::pool<obj>::node_type> > pool_obj;
+  
+   void setUp()
+  {
+    flex::allocator_debug<flex::pool<obj>::node_type>::clear();
+  }
+
+  void tearDown()
+  {
+    //This ensures that all objs constructed by the container have their destructors called.
+    TS_ASSERT(flex::allocator_debug<flex::pool<obj>::node_type>::mConstructedPointers.empty());
+
+    //This ensures that all memory allocated by the container is properly freed.
+    TS_ASSERT(flex::allocator_debug<flex::pool<obj>::node_type>::mAllocatedPointers.empty());
+  }
+  
+  bool is_container_valid(pool_obj& c)
   {
     bool is_valid = true;
     flex::fixed_vector<void*, 128> v;
@@ -94,7 +110,7 @@ public:
      * Case1: Ensure it doesn't allocate memory.
      */
     flex::allocation_guard::enable();
-    pool<obj> a;
+    pool_obj a;
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 0);
     flex::allocation_guard::disable();
@@ -105,7 +121,7 @@ public:
     /*
      * Case1: Ensure it reserves memory.
      */
-    pool<obj> a(16);
+    pool_obj a(16);
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 16);
 
@@ -113,7 +129,7 @@ public:
      * Case2: Ensure it throws if allocation guard is enabled.
      */
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(pool<obj> b(16), std::runtime_error)
+    TS_ASSERT_THROWS(pool_obj b(16), std::runtime_error)
     flex::allocation_guard::disable();
   }
 
@@ -122,14 +138,14 @@ public:
     /*
      * Case1: Ensure it works on empty container.
      */
-    pool<obj> a;
+    pool_obj a;
     a.~pool();
     TS_ASSERT(is_container_valid(a));
 
     /*
      * Case2: Ensure it cleans a populated container
      */
-    pool<obj> b(16);
+    pool_obj b(16);
     b.~pool();
     TS_ASSERT(is_container_valid(b));
     TS_ASSERT_EQUALS(b.size(), 0);
@@ -140,7 +156,7 @@ public:
     /*
      * Case1: Ensure throw keeps container in valid state:
      */
-    pool<obj> a;
+    pool_obj a;
     flex::allocation_guard::enable();
     TS_ASSERT_THROWS(a.allocate(), std::runtime_error)
     flex::allocation_guard::disable();
@@ -162,7 +178,7 @@ public:
     /*
      * Case2: Ensure it works on populated container
      */
-    pool<obj> b(16);
+    pool_obj b(16);
     flex::allocation_guard::enable();
     ptr = (obj*) b.allocate();
     TS_ASSERT(is_container_valid(b));
@@ -182,7 +198,7 @@ public:
      * Case1: It maintains for multiple allocates/deallocates.
      */
     fixed_vector<void*, 16> v;
-    pool<obj> a(8);
+    pool_obj a(8);
 
     for (int i = 0; i < 16; ++i)
     {
@@ -214,7 +230,7 @@ public:
     /*
      * Case1: Ensure it works on empty container.
      */
-    pool<obj> a;
+    pool_obj a;
     obj* ptr = a.construct();
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 0);
@@ -226,7 +242,7 @@ public:
     /*
      * Case2: Ensure it works on populated container
      */
-    pool<obj> b(16);
+    pool_obj b(16);
     flex::allocation_guard::enable();
     ptr = b.construct();
     TS_ASSERT(is_container_valid(b));
@@ -243,7 +259,7 @@ public:
     /*
      * Case1: Ensure it works on empty container.
      */
-    pool<obj> a;
+    pool_obj a;
     obj* ptr = a.construct(7);
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 0);
@@ -255,7 +271,7 @@ public:
     /*
      * Case2: Ensure it works on populated container
      */
-    pool<obj> b(16);
+    pool_obj b(16);
     flex::allocation_guard::enable();
     ptr = b.construct(7);
     TS_ASSERT(is_container_valid(b));
@@ -272,8 +288,8 @@ public:
     /*
      * Case1: Ensure assignment operator is no-op
      */
-    pool<obj> a;
-    pool<obj> b(16);
+    pool_obj a;
+    pool_obj b(16);
     a = b;
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 0);
@@ -284,7 +300,7 @@ public:
     /*
      * Case1: Ensure throw keeps container in valid state:
      */
-    pool<obj> a;
+    pool_obj a;
     flex::allocation_guard::enable();
     TS_ASSERT_THROWS(a.reserve(16), std::runtime_error)
     flex::allocation_guard::disable();

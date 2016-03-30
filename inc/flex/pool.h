@@ -39,6 +39,7 @@ namespace flex
     typedef const T* const_pointer;
     typedef T& reference;
     typedef const T& const_reference;
+    typedef  pool_node<FLEX_POOL_NODE_SIZE(T)> node_type;
     typedef size_t size_type;
 
     pool();
