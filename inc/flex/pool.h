@@ -60,6 +60,8 @@ namespace flex
     Alloc mAllocator;
     pool_link* mHead;
     bool mFixed;
+    
+    void* AllocateNewObject();
   };
 
   template<class T, class Alloc>
@@ -98,20 +100,16 @@ namespace flex
     //Retrieve a pointer from the pool.  mHead points to the first available location.
     if (mHead)
     {
-      //Remember, a link to the next object is stored over-top of the uninitialized object.
-      //Set head to the new link, and return the object pointer.
+      //Remember, a link to the next object is stored over-top of the uninitialized object
+      //that we are about to return.  Set head to the new link, and return the object pointer.
       pool_link* ptr = mHead;
-      mHead = ptr->mNext;
+      mHead = mHead->mNext;
       return ptr;
     }
     else
     {
       //Head is NULL which means the list is empty.  Attempt to allocate a new object.
-      if (FLEX_UNLIKELY(mFixed))
-      {
-        throw std::runtime_error("fixed_pool: performed runtime allocation");
-      }
-      return mAllocator.allocate(1);
+      return AllocateNewObject();
     }
   }
 
@@ -177,18 +175,24 @@ namespace flex
   {
     for (; n; --n)
     {
+      //The pool's deallocate method simply adds a new pointer to the pool. Despite the
+      //name, it doesn't perform an actual deallocation.  Think of the deallocate method
+      //as pool.push_front() for the purpose it serves here.
+      deallocate(AllocateNewObject());
+    }
+  }
+
+  template<class T, class Alloc>
+  inline void* pool<T, Alloc>::AllocateNewObject()
+  {
       if (FLEX_UNLIKELY(mFixed))
       {
         throw std::runtime_error("fixed_pool: performed runtime allocation");
       }
 
-      //The pool's deallocate method simply adds a new pointer to the pool. Despite the
-      //name, it doesn't perform an actual deallocation.  Think of the deallocate method
-      //as pool.push_front().
-      deallocate((void*) mAllocator.allocate(1));
-      //TODO: void* cast can be removed once allocator is updated.
-    }
+      return mAllocator.allocate(1);
   }
-
+  
+  
 } //namespace flex
 #endif /* FLEX_POOL_H */
