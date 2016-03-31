@@ -1,7 +1,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "flex/pool.h"
-#include "flex/vector.h"
+#include "flex/fixed_vector.h"
 
 using namespace flex;
 
@@ -15,12 +15,12 @@ public:
     static const int INIT_KEY = 858599509;
 
     obj() :
-        val(DEFAULT_VAL), init(INIT_KEY)
+        link_ptr(NULL), val(DEFAULT_VAL), init(INIT_KEY)
     {
     }
 
     obj(int i) :
-        val(i), init(INIT_KEY)
+        link_ptr(NULL), val(i), init(INIT_KEY)
     {
     }
 
@@ -51,8 +51,8 @@ public:
   };
 
   typedef flex::pool<obj, flex::allocator_debug<flex::pool<obj>::node_type> > pool_obj;
-  
-   void setUp()
+
+  void setUp()
   {
     flex::allocator_debug<flex::pool<obj>::node_type>::clear();
   }
@@ -65,7 +65,7 @@ public:
     //This ensures that all memory allocated by the container is properly freed.
     TS_ASSERT(flex::allocator_debug<flex::pool<obj>::node_type>::mAllocatedPointers.empty());
   }
-  
+
   bool is_container_valid(pool_obj& c)
   {
     bool is_valid = true;
@@ -96,12 +96,12 @@ public:
     /*
      * Case1: Object size is larger than link.
      */
-    TS_ASSERT_EQUALS(FLEX_POOL_NODE_SIZE(obj),sizeof(obj));
+    TS_ASSERT_EQUALS(FLEX_POOL_NODE_SIZE(obj), sizeof(obj));
 
     /*
      * Case2: Object size is smaller than link.
      */
-    TS_ASSERT_EQUALS(FLEX_POOL_NODE_SIZE(char),sizeof(pool_link));
+    TS_ASSERT_EQUALS(FLEX_POOL_NODE_SIZE(char), sizeof(pool_link));
   }
 
   void test_default_constructor()
@@ -195,7 +195,7 @@ public:
   void test_deallocate()
   {
     /*
-     * Case1: It maintains for multiple allocates/deallocates.
+     * Case1: It maintains order for multiple allocates/deallocates.
      */
     fixed_vector<void*, 16> v;
     pool_obj a(8);

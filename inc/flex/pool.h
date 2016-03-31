@@ -39,7 +39,7 @@ namespace flex
     typedef const T* const_pointer;
     typedef T& reference;
     typedef const T& const_reference;
-    typedef  pool_node<FLEX_POOL_NODE_SIZE(T)> node_type;
+    typedef pool_node<FLEX_POOL_NODE_SIZE(T)> node_type;
     typedef size_t size_type;
 
     pool();
@@ -60,7 +60,9 @@ namespace flex
     Alloc mAllocator;
     pool_link* mHead;
     bool mFixed;
-    
+
+    pool(node_type* first, node_type* last);
+
     void* AllocateNewObject();
   };
 
@@ -71,7 +73,7 @@ namespace flex
   }
 
   template<class T, class Alloc>
-  inline pool<T, Alloc>::pool(size_t n) :
+  inline pool<T, Alloc>::pool(size_type n) :
       mHead(NULL), mFixed(false)
   {
     reserve(n);
@@ -183,16 +185,26 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline pool<T, Alloc>::pool(node_type* first, node_type* last) :
+      mHead(NULL), mFixed(true)
+  {
+    for (node_type* it = first; it != last; ++it)
+    {
+      //Similar to the reserve method, deallocate() is working like pool.push_front().
+      deallocate((void*)it);
+    }
+  }
+
+  template<class T, class Alloc>
   inline void* pool<T, Alloc>::AllocateNewObject()
   {
-      if (FLEX_UNLIKELY(mFixed))
-      {
-        throw std::runtime_error("fixed_pool: performed runtime allocation");
-      }
+    if (FLEX_UNLIKELY(mFixed))
+    {
+      throw std::runtime_error("fixed_pool: performed runtime allocation");
+    }
 
-      return mAllocator.allocate(1);
+    return mAllocator.allocate(1);
   }
-  
-  
+
 } //namespace flex
 #endif /* FLEX_POOL_H */
