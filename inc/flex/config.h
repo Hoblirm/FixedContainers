@@ -20,8 +20,6 @@
 
 #ifdef FLEX_HAS_CXX11
 #include <type_traits>
-#else
-#include <stdint.h> //Used for uint64_t within unions in place of std::aligned_storage
 #endif
 
 namespace flex

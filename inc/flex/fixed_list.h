@@ -49,7 +49,7 @@ namespace flex
     union
     {
       char mBuffer[N * sizeof(node_type)];
-      uint64_t dummy;
+      long double dummy;
     };
 #endif
   };

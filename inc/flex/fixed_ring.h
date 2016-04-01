@@ -46,7 +46,7 @@ namespace flex
     union
     {
       char mBuffer[(N + 1) * sizeof(T)];
-      uint64_t dummy;
+      long double dummy;
     };
 #endif
   };
