@@ -494,12 +494,17 @@ namespace flex
       }
       else
       {
+        // Handle the case in which val is a reference within the container.
+        const_iterator it = &val;
+        if ((it >= position) && (it < mEnd))
+          ++it;
+
         //This copy backwards will shift all the elements after position to the right
         //by one space.  This is valid since the capacity check above ensures we have
         //at least one spot available after the end.
         new ((void*) mEnd) T(*(mEnd - 1));
         std::copy_backward(position, mEnd - 1, mEnd);
-        *position = val;
+        *position = *it;
       }
       ++mEnd;
       return position;

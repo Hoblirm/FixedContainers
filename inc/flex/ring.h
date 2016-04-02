@@ -511,6 +511,37 @@ namespace flex
       }
       else
       {
+        // Handle the case in which val is a reference within the container.
+        const value_type* valPtr = &val;
+        if ((valPtr >= mBegin.mLeftBound) && (valPtr <= mBegin.mRightBound))
+        {
+          //Container looks like: [ *** End *** Begin *** Position ***]
+          if (position.mPtr > mEnd.mPtr)
+          {
+            //If val is greater than position, or less than mEnd it must be incremented.
+            if ((valPtr >= position.mPtr) || (valPtr < mEnd.mPtr))
+            {
+              if (valPtr == mBegin.mRightBound)
+              {
+                valPtr = mBegin.mLeftBound;
+              }
+              else
+              {
+                ++valPtr;
+              }
+            }
+          }
+          else
+          {
+            //Possible container formats : [ *** Begin *** Position *** End ***]
+            //                             [ *** Position *** End *** Begin ***]
+
+            //If val is between position and mEnd, then it must be incremented.
+            if ((valPtr >= position.mPtr) && (valPtr < mEnd.mPtr))
+              ++valPtr;
+          }
+        }
+
         //This copy backwards will shift all the elements after position to the right
         //by one space.  This is valid since the capacity check above ensures we have
         //at least one spot available after the end.
@@ -518,7 +549,7 @@ namespace flex
         --back;
         new ((void*) prev_end.mPtr) T(*back);
         std::copy_backward(position, back, prev_end);
-        *position = val;
+        *position = *valPtr;
       }
       return position;
     }

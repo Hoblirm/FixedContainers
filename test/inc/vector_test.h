@@ -388,6 +388,18 @@ public:
     TS_ASSERT_EQUALS(myvector[8], 100);
     TS_ASSERT_EQUALS(myvector[9], 100);
     TS_ASSERT_EQUALS(myvector[10], 100);
+
+    //Test insert for value within container
+    vec b(OBJ_DATA, OBJ_DATA + 8);
+    b.reserve(16);
+    b.insert(b.begin(), *(b.end() - 1));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 9);
+    TS_ASSERT_EQUALS(b[0], OBJ_DATA[7]);
+    for (int i = 1; i < b.size(); ++i)
+    {
+      TS_ASSERT_EQUALS(b[i], OBJ_DATA[i - 1]);
+    }
   }
 
   void test_max_size(void)
