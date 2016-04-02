@@ -511,8 +511,9 @@ namespace flex
       }
       else
       {
-        // Handle the case in which val is a reference within the container.
         const value_type* valPtr = &val;
+
+        // Handle the case in which val is a reference within the container.
         if ((valPtr >= mBegin.mLeftBound) && (valPtr <= mBegin.mRightBound))
         {
           //Container looks like: [ *** End *** Begin *** Position ***]

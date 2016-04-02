@@ -1,13 +1,14 @@
 #ifndef FLEX_ALLOCATOR_H
 #define FLEX_ALLOCATOR_H
 
-#include <limits>
+#include <limits>//For std::numeric_limits used in max_size()
+#include <stdio.h>//For sprintf used in allocate()
 
 #include <flex/allocation_guard.h>
 
 namespace flex
 {
-  template<class T> class allocator: public guarded_object
+  template<class T, size_t DebugId = 0> class allocator: public guarded_object
   {
   public:
     // type definitions
@@ -71,7 +72,9 @@ namespace flex
     {
       if (FLEX_UNLIKELY(sAllocationGuardEnabled))
       {
-        throw std::runtime_error("allocation_guard: allocator performed runtime allocation");
+        char msg[128];
+        sprintf(msg,"flex_allocator<DebugId=%uz>: performed allocation when guard was enabled",DebugId);
+        throw std::runtime_error(msg);
       }
       return reinterpret_cast<pointer>(::operator new(num * sizeof(T)));
     }

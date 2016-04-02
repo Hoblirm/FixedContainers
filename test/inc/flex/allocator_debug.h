@@ -20,11 +20,20 @@ namespace flex
     typedef typename base_type::size_type size_type;
     typedef typename base_type::difference_type difference_type;
 
+    inline allocator_debug()
+    {
+    }
+
+    template<class U>
+    inline allocator_debug(const allocator_debug<U>&)
+    {
+    }
+
     pointer allocate(size_type num, typename std::allocator<void>::const_pointer hint = 0)
     {
       pointer p = allocator<T>::allocate(num, hint);
       if (NULL != p)
-        mAllocatedPointers.insert(std::pair<void*, size_type>((void*)p, num));
+        mAllocatedPointers.insert(std::pair<void*, size_type>((void*) p, num));
       return p;
     }
 
@@ -53,7 +62,7 @@ namespace flex
     // deallocate storage p of deleted elements
     void deallocate(pointer p, size_type num)
     {
-      deallocate((void*)p,num);
+      deallocate((void*) p, num);
     }
 
     inline void deallocate(void* p, size_type num)
@@ -79,7 +88,7 @@ namespace flex
       }
       allocator<T>::deallocate(p, num);
     }
-    
+
     static void clear()
     {
       mAllocatedPointers.clear();
