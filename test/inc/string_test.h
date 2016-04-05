@@ -2284,8 +2284,6 @@ public:
   /*
    * Non-standard member methods
    */
-
-  //void make_lower();
   void test_make_lower()
   {
     /*
@@ -2297,7 +2295,6 @@ public:
     TS_ASSERT_EQUALS(a.c_str(), "abcdefgh");
   }
 
-  //void make_upper();
   void test_make_upper()
   {
     /*
@@ -2309,7 +2306,6 @@ public:
     TS_ASSERT_EQUALS(a.c_str(), "ABCDEFGH");
   }
 
-  //void ltrim();
   void test_ltrim()
   {
     /*
@@ -2321,7 +2317,6 @@ public:
     TS_ASSERT_EQUALS(a.c_str(), "2345  ");
   }
 
-  //void rtrim();
   void test_rtrim()
   {
     /*
@@ -2333,7 +2328,6 @@ public:
     TS_ASSERT_EQUALS(a.c_str(), "  2345");
   }
 
-  //void trim();
   void test_trim()
   {
     /*

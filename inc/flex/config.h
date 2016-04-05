@@ -20,6 +20,9 @@
 
 #ifdef FLEX_HAS_CXX11
 #include <type_traits>
+#define FLEX_NOEXCEPT noexcept
+#else
+#define FLEX_NOEXCEPT
 #endif
 
 namespace flex
