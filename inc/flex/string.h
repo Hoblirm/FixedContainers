@@ -498,6 +498,7 @@ public:
   void resize(size_type n);
   void reserve(size_type = 0);
   void set_capacity(size_type n = npos); // Revises the capacity to the user-specified value. Resizes the container to match the capacity if the requested capacity n is less than the current size. If n == npos then the capacity is reallocated (if necessary) such that capacity == size.
+  void shrink_to_fit();
   void force_size(size_type n); // Unilaterally moves the string end position (mpEnd) to the given location. Useful for when the user writes into the string via some extenal means such as C strcpy or sprintf. This allows for more efficient use than using resize to achieve this.
 
   // Raw access
@@ -1575,6 +1576,33 @@ inline void basic_string<T, Allocator>::set_capacity(size_type n)
     mpEnd = mpBegin + n;
 
   if (n != (size_type) ((mpCapacity - mpBegin) - 1)) // If there is any capacity change...
+  {
+    if (n)
+    {
+      pointer pNewBegin = DoAllocate(n + 1); // We need the + 1 to accomodate the trailing 0.
+      pointer pNewEnd = pNewBegin;
+
+      pNewEnd = CharStringUninitializedCopy(mpBegin, mpEnd, pNewBegin);
+      *pNewEnd = 0;
+
+      DeallocateSelf();
+      mpBegin = pNewBegin;
+      mpEnd = pNewEnd;
+      mpCapacity = pNewBegin + (n + 1);
+    }
+    else
+    {
+      DeallocateSelf();
+      AllocateSelf();
+    }
+  }
+}
+
+template<typename T, typename Allocator>
+inline void basic_string<T, Allocator>::shrink_to_fit()
+{
+  size_type n = size();
+  if (n != capacity()) // If there is any capacity change...
   {
     if (n)
     {

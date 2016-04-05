@@ -216,6 +216,60 @@ public:
     TS_ASSERT_EQUALS(d.c_str(), "01234567");
   }
 
+  void test_initializer_constructor()
+  {
+    /*
+     * Case1: Empty c string
+     */
+    flex::allocation_guard::enable();
+    str a( { });
+    flex::allocation_guard::disable();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 0);
+
+    /*
+     * Case2: Populated c string
+     */
+    str b( { '0', '1', '2', '3', '4', '5', '6', '7' });
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 8);
+    TS_ASSERT_EQUALS(b.c_str(), "01234567");
+
+    /*
+     * Case3: Allocation exception
+     */
+    flex::allocation_guard::enable();
+    TS_ASSERT_THROWS(str( { '0', '1', '2', '3', '4', '5', '6', '7' }), std::runtime_error);
+    flex::allocation_guard::disable();
+  }
+
+  void test_move_constructor()
+  {
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Empty string
+     */
+    flex::allocation_guard::enable();
+    str a;
+    str b(std::move(a));
+    flex::allocation_guard::disable();
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 0);
+
+    /*
+     * Case2: Populated string
+     */
+    str c("01234567");
+    flex::allocation_guard::enable();
+    const char* c_ptr = c.c_str();
+    str d(std::move(c));
+    flex::allocation_guard::disable();
+    TS_ASSERT_EQUALS(d.size(), 8);
+    TS_ASSERT_DIFFERS((void*)c.c_str(), (void*)c_ptr);
+    TS_ASSERT_EQUALS((void*)d.c_str(), (void*)c_ptr);
+    TS_ASSERT_EQUALS(d.c_str(), "01234567");
+#endif
+  }
   void test_append_string()
   {
     /*
@@ -287,6 +341,18 @@ public:
     str a("0123");
     str b("4567");
     a.append(b.begin(), b.end());
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 8);
+    TS_ASSERT_EQUALS(a.c_str(), "01234567");
+  }
+
+  void test_append_initializer()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0123");
+    a.append( { '4', '5', '6', '7' });
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 8);
     TS_ASSERT_EQUALS(a.c_str(), "01234567");
@@ -366,6 +432,38 @@ public:
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 4);
     TS_ASSERT_EQUALS(a.c_str(), "4567");
+  }
+
+  void test_assign_initializer()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0123");
+    a.assign( { '4', '5', '6', '7' });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a.c_str(), "4567");
+  }
+
+  void test_assign_move()
+  {
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0123");
+    str b("4567");
+    const char* b_ptr = b.c_str();
+    allocation_guard::enable();
+    a.assign(std::move(b));
+    allocation_guard::disable();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS((void*)a.c_str(), (void*)b_ptr);
+    TS_ASSERT_DIFFERS((void*)b.c_str(), (void*)b_ptr);
+    TS_ASSERT_EQUALS(a.c_str(), "4567");
+#endif
   }
 
   void test_at()
@@ -1352,6 +1450,35 @@ public:
     TS_ASSERT_EQUALS(a.c_str(), "01234567");
   }
 
+  void test_insert_initializer()
+  {
+    str a("25");
+
+    /*
+     * Case1: At beginning
+     */
+    a.insert(a.begin(), { '0', '1' });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a.c_str(), "0125");
+
+    /*
+     * Case2: At end
+     */
+    a.insert(a.begin() + 4, { '6', '7' });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "012567");
+
+    /*
+     * Case3: In middle
+     */
+    a.insert(a.begin() + 3, { '3', '4' });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 8);
+    TS_ASSERT_EQUALS(a.c_str(), "01234567");
+  }
+
   void test_length()
   {
     /*
@@ -1415,7 +1542,6 @@ public:
 
   void test_operator_plus_set_initializer()
   {
-#ifdef FLEX_HAS_CXX11
     /*
      * Case1: Normal conditions
      */
@@ -1425,7 +1551,6 @@ public:
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 8);
     TS_ASSERT_EQUALS(a.c_str(), "01234567");
-#endif
   }
 
   void test_operator_assign_string()
@@ -1467,7 +1592,6 @@ public:
 
   void test_operator_assign_initializer()
   {
-#ifdef FLEX_HAS_CXX11
     /*
      * Case1: Normal conditions
      */
@@ -1477,7 +1601,6 @@ public:
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 4);
     TS_ASSERT_EQUALS(a.c_str(), "4567");
-#endif
   }
 
   void test_operator_assign_move()
@@ -1597,6 +1720,286 @@ public:
     TS_ASSERT_EQUALS(*(--it), '3');
   }
 
+  void test_replace_string()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0895");
+    str b("1234");
+
+    a.replace(1, 2, b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "012345");
+  }
+
+  void test_replace_string_iterators()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0895");
+    str b("1234");
+
+    a.replace(a.begin() + 1, a.begin() + 3, b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "012345");
+  }
+
+  void test_replace_substring()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("018945");
+    str b("1234");
+
+    a.replace(2, 2, b, 1, 2);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "012345");
+  }
+
+  void test_replace_cstring()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0895");
+
+    a.replace(1, 2, "1234");
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "012345");
+  }
+
+  void test_replace_cstring_iterators()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0895");
+
+    a.replace(a.begin() + 1, a.begin() + 3, "1234");
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "012345");
+  }
+
+  void test_replace_buffer()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0895");
+    char buf[5] = "1234";
+
+    a.replace(1, 2, buf, 4);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "012345");
+  }
+
+  void test_replace_buffer_iterators()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0895");
+    char buf[5] = "1234";
+
+    a.replace(a.begin() + 1, a.begin() + 3, buf, 4);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "012345");
+  }
+
+  void test_replace_fill()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0895");
+
+    a.replace(1, 2, 4, '1');
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "011115");
+  }
+
+  void test_replace_fill_iterators()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0895");
+
+    a.replace(a.begin() + 1, a.begin() + 3, 4, '1');
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "011115");
+  }
+
+  void test_replace_range()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0895");
+    str b("1234");
+
+    a.replace(a.begin() + 1, a.begin() + 3, b.begin(), b.end());
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "012345");
+  }
+
+  void test_replace_initializer()
+  {
+    /*
+     * Case1: Normal conditions
+     */
+    str a("0895");
+
+    a.replace(1, 2, { '1', '2', '3', '4' });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 6);
+    TS_ASSERT_EQUALS(a.c_str(), "012345");
+  }
+
+  void test_reserve()
+  {
+    /*
+     * Case1: Empty string
+     */
+    str a;
+    a.reserve(64);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 0);
+    TS_ASSERT_EQUALS(a.capacity(), 64);
+  }
+
+  void test_resize()
+  {
+    /*
+     * Case1: Size is increased
+     */
+    str a;
+    a.resize(8);
+    TS_ASSERT_EQUALS(a.size(), 8);
+    TS_ASSERT_EQUALS(a.capacity(), 8);
+
+    /*
+     * Case1: Size is decreased.
+     */
+    a.resize(4);
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a.capacity(), 8);
+  }
+
+  void test_resize_char()
+  {
+    /*
+     * Case1: Size is increased
+     */
+    str a;
+    a.resize(8, '0');
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 8);
+    TS_ASSERT_EQUALS(a.capacity(), 8);
+
+    /*
+     * Case1: Size is decreased.
+     */
+    a.resize(4, '0');
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a.capacity(), 8);
+  }
+
+  void test_rfind_string()
+  {
+    str a("01234567");
+    /*
+     * Case1: String found
+     */
+    TS_ASSERT_EQUALS(a.rfind(str("2345")), 2);
+
+    /*
+     * Case2: String not found
+     */
+    TS_ASSERT_EQUALS(a.rfind(str("8")), str::npos);
+  }
+
+  void test_rfind_cstring()
+  {
+    str a("01234567");
+    /*
+     * Case1: CString found
+     */
+    TS_ASSERT_EQUALS(a.rfind("2345"), 2);
+
+    /*
+     * Case2: CString not found
+     */
+    TS_ASSERT_EQUALS(a.rfind("8"), str::npos);
+  }
+
+  void test_rfind_buffer()
+  {
+    str a("01234567");
+
+    /*
+     * Case1: Buffer found
+     */
+    char buf[5] = "2345";
+    TS_ASSERT_EQUALS(a.rfind(buf, 7, 4), 2);
+
+    /*
+     * Case2: Buffer not found
+     */
+    char buf2[2] = "8";
+    TS_ASSERT_EQUALS(a.rfind(buf2, 7, 1), str::npos);
+  }
+
+  void test_rfind_character()
+  {
+    str a("01234567");
+    /*
+     * Case1: Character found
+     */
+    TS_ASSERT_EQUALS(a.rfind('2'), 2);
+
+    /*
+     * Case2: Character not found
+     */
+    TS_ASSERT_EQUALS(a.rfind('8'), str::npos);
+  }
+
+  void test_shrink_to_fit()
+  {
+    /*
+     * Case1: Capacity is unchanged
+     */
+    str a("0123");
+    TS_ASSERT_EQUALS(a.capacity(), 4);
+    a.shrink_to_fit();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.capacity(), 4);
+
+    /*
+     * Case2: Capacity is decreased
+     */
+    str b("01234567");
+    b = a;
+    TS_ASSERT_EQUALS(b.capacity(), 8);
+    b.shrink_to_fit();
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.capacity(), 4);
+  }
+
   void test_size()
   {
     /*
@@ -1611,4 +2014,336 @@ public:
     str b("0123");
     TS_ASSERT_EQUALS(b.size(), 4);
   }
-};
+
+  void test_substr()
+  {
+    /*
+     * Case1: Normal condition
+     */
+    str a("01234567");
+    str b = a.substr(2, 4);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 4);
+    TS_ASSERT_EQUALS(b.c_str(), "2345");
+  }
+
+  void test_swap()
+  {
+    str a;
+    str b("4567");
+    str c("0123");
+
+    /*
+     * Case1: Empty strings
+     */
+    a.swap(c);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(c));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(c.size(), 0);
+    TS_ASSERT_EQUALS(a.c_str(), "0123");
+
+    /*
+     * Case2: Normal condition
+     */
+    a.swap(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(b.size(), 4);
+    TS_ASSERT_EQUALS(a.c_str(), "4567");
+    TS_ASSERT_EQUALS(b.c_str(), "0123");
+  }
+
+  /*
+   * Non-member overloads
+   */
+
+  void test_operator_plus_string()
+  {
+    /*
+     * Case1: Neither are rvalues
+     */
+    str a("0123");
+    str b("4567");
+    a = a + b;
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 8);
+    TS_ASSERT_EQUALS(a.c_str(), "01234567");
+
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case2: Left is rvalue
+     */
+    str c("0123");
+    str d("4567");
+    const char* c_ptr = c.c_str();
+    d = std::move(c) + d;
+    TS_ASSERT(is_container_valid(d));
+    TS_ASSERT_EQUALS(d.size(),8);
+    TS_ASSERT_DIFFERS((void*)c.c_str(),(void*)c_ptr)
+    TS_ASSERT_EQUALS((void*)d.c_str(),(void*)c_ptr)
+    TS_ASSERT_EQUALS(d.c_str(),"01234567");
+
+    /*
+     * Case3: Right is rvalue
+     */
+    str e("0123");
+    str f("4567");
+    e = e + std::move(f);
+    TS_ASSERT(is_container_valid(e));
+    TS_ASSERT_EQUALS(e.size(),8);
+    TS_ASSERT_EQUALS(e.c_str(),"01234567");
+
+    /*
+     * Case4: Both are rvalues
+     */
+    str g("0123");
+    str h("4567");
+    const char* g_ptr = g.c_str();
+    str i = std::move(g) + std::move(h);
+    TS_ASSERT(is_container_valid(i));
+    TS_ASSERT_EQUALS(i.size(),8);
+    TS_ASSERT_DIFFERS((void*)g.c_str(),(void*)g_ptr)
+    TS_ASSERT_EQUALS((void*)i.c_str(),(void*)g_ptr)
+    TS_ASSERT_EQUALS(i.c_str(),"01234567");
+#endif
+  }
+
+  void test_operator_plus_cstring()
+  {
+    /*
+     * Case1: Right is cstring
+     */
+    str a("0123");
+    a = a + "4567";
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 8);
+    TS_ASSERT_EQUALS(a.c_str(), "01234567");
+
+    /*
+     * Case2: Left is cstring
+     */
+    str b("4567");
+    b = "0123" + b;
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 8);
+    TS_ASSERT_EQUALS(b.c_str(), "01234567");
+
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case3: Left is rvalue
+     */
+    str c("0123");
+    const char* c_ptr = c.c_str();
+    str d = std::move(c) + "4567";
+    TS_ASSERT(is_container_valid(d));
+    TS_ASSERT_DIFFERS((void*)c.c_str(),(void*)c_ptr)
+    TS_ASSERT_EQUALS((void*)d.c_str(),(void*)c_ptr)
+    TS_ASSERT_EQUALS(d.size(), 8);
+    TS_ASSERT_EQUALS(d.c_str(), "01234567");
+
+    /*
+     * Case4: Right is rvalue
+     */
+    str e("4567");
+    const char* e_ptr = e.c_str();
+    str f = "0123" + std::move(e);
+    TS_ASSERT(is_container_valid(f));
+    TS_ASSERT_DIFFERS((void*)e.c_str(),(void*)e_ptr)
+    TS_ASSERT_EQUALS((void*)f.c_str(),(void*)e_ptr)
+    TS_ASSERT_EQUALS(f.size(), 8);
+    TS_ASSERT_EQUALS(f.c_str(), "01234567");
+#endif
+  }
+
+  void test_operator_plus_char()
+  {
+    /*
+     * Case1: Right is cstring
+     */
+    str a("0123");
+    a = a + '4';
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 5);
+    TS_ASSERT_EQUALS(a.c_str(), "01234");
+
+    /*
+     * Case2: Left is cstring
+     */
+    str b("4567");
+    b = '3' + b;
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 5);
+    TS_ASSERT_EQUALS(b.c_str(), "34567");
+
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case3: Left is rvalue
+     */
+    str c("0123");
+    const char* c_ptr = c.c_str();
+    str d = std::move(c) + '4';
+    TS_ASSERT(is_container_valid(d));
+    TS_ASSERT_DIFFERS((void*)c.c_str(),(void*)c_ptr)
+    TS_ASSERT_EQUALS((void*)d.c_str(),(void*)c_ptr)
+    TS_ASSERT_EQUALS(d.size(), 5);
+    TS_ASSERT_EQUALS(d.c_str(), "01234");
+
+    /*
+     * Case4: Right is rvalue
+     */
+    str e("4567");
+    str f = '3' + std::move(e);
+    TS_ASSERT(is_container_valid(f));
+    TS_ASSERT_EQUALS(f.size(), 5);
+    TS_ASSERT_EQUALS(f.c_str(), "34567");
+#endif
+  }
+
+  void test_relational_operators()
+  {
+    str a("0123");
+    str b("4567");
+    str c("0123");
+
+    /*
+     * Case1: == operator
+     */
+    TS_ASSERT(a == c);
+    TS_ASSERT(a == "0123");
+    TS_ASSERT("0123" == c);
+    TS_ASSERT(!(a == b));
+    TS_ASSERT(!("0123" == b));
+    TS_ASSERT(!(a == "4567"));
+
+    /*
+     * Case2: != operator
+     */
+    TS_ASSERT(a != b);
+    TS_ASSERT("0123" != b);
+    TS_ASSERT(a != "4567");
+    TS_ASSERT(!(a != c));
+    TS_ASSERT(!(a != "0123"));
+    TS_ASSERT(!("0123" != c));
+
+    /*
+     * Case3: < operator
+     */
+    TS_ASSERT(a < b);
+    TS_ASSERT("0123" < b);
+    TS_ASSERT(a < "4567");
+    TS_ASSERT(!(b < a));
+    TS_ASSERT(!(b < "0123"));
+    TS_ASSERT(!("4567" < a));
+    TS_ASSERT(!(c < a));
+    TS_ASSERT(!(c < "0123"));
+    TS_ASSERT(!("0123" < a));
+
+    /*
+     * Case4: <= operator
+     */
+    TS_ASSERT(a <= b);
+    TS_ASSERT("0123" <= b);
+    TS_ASSERT(a <= "4567");
+    TS_ASSERT(!(b <= a));
+    TS_ASSERT(!(b <= "0123"));
+    TS_ASSERT(!("4567" <= a));
+    TS_ASSERT(c <= a);
+    TS_ASSERT(c <= "0123");
+    TS_ASSERT("0123" <= a);
+
+    /*
+     * Case5: > operator
+     */
+    TS_ASSERT(b > a);
+    TS_ASSERT(b > "0123");
+    TS_ASSERT("4567" > a);
+    TS_ASSERT(!(a > b));
+    TS_ASSERT(!("0123" > b));
+    TS_ASSERT(!(a > "4567"));
+    TS_ASSERT(!(c > a));
+    TS_ASSERT(!(c > "0123"));
+    TS_ASSERT(!("0123" > a));
+
+    /*
+     * Case6: >= operator
+     */
+    TS_ASSERT(b >= a);
+    TS_ASSERT(b >= "0123");
+    TS_ASSERT("4567" >= a);
+    TS_ASSERT(!(a >= b));
+    TS_ASSERT(!("0123" >= b));
+    TS_ASSERT(!(a >= "4567"));
+    TS_ASSERT(c >= a);
+    TS_ASSERT(c >= "0123");
+    TS_ASSERT("0123" >= a);
+  }
+
+  /*
+   * Non-standard member methods
+   */
+
+  //void make_lower();
+  void test_make_lower()
+  {
+    /*
+     * Case1: Normal condition
+     */
+    str a("AbCdEfGh");
+    a.make_lower();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.c_str(), "abcdefgh");
+  }
+
+  //void make_upper();
+  void test_make_upper()
+  {
+    /*
+     * Case1: Normal condition
+     */
+    str a("AbCdEfGh");
+    a.make_upper();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.c_str(), "ABCDEFGH");
+  }
+
+  //void ltrim();
+  void test_ltrim()
+  {
+    /*
+     * Case1: Normal condition
+     */
+    str a("  2345  ");
+    a.ltrim();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.c_str(), "2345  ");
+  }
+
+  //void rtrim();
+  void test_rtrim()
+  {
+    /*
+     * Case1: Normal condition
+     */
+    str a("  2345  ");
+    a.rtrim();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.c_str(), "  2345");
+  }
+
+  //void trim();
+  void test_trim()
+  {
+    /*
+     * Case1: Normal condition
+     */
+    str a("  2345  ");
+    a.trim();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.c_str(), "2345");
+  }
+
+}
+;

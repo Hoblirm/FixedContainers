@@ -818,15 +818,25 @@ namespace flex
   template<class T, class Alloc>
   inline void ring<T, Alloc>::shrink_to_fit()
   {
-    if (capacity() > size())
+    size_type n = size();
+    if (capacity() > n)
     {
-      //Allocate memory with sufficient capacity.
-      size_type new_capacity = size();
-      pointer new_begin = Allocate(new_capacity);
+      pointer new_begin, new_end;
+      size_type new_capacity;
+      if (n)
+      {
+        //Allocate memory with sufficient capacity.
+        new_capacity = size();
+        new_begin = Allocate(new_capacity);
 
-      //Copy all values.
-      pointer new_end = std::uninitialized_copy(mBegin, mEnd, new_begin);
-
+        //Copy all values.
+        new_end = std::uninitialized_copy(mBegin, mEnd, new_begin);
+      }
+      else
+      {
+        new_begin = new_end = NULL;
+        new_capacity = 0;
+      }
       DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
   }
