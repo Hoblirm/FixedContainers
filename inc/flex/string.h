@@ -225,7 +225,6 @@ public:
 	basic_string(const value_type* p, const allocator_type& allocator = allocator_type());
 	basic_string(size_type n, value_type c, const allocator_type& allocator = allocator_type());
 	basic_string(const this_type& x);
-	//basic_string(const this_type& x, const allocator_type& allocator);
 	template<class InputIterator> basic_string(InputIterator pBegin, InputIterator pEnd,
 			const allocator_type& allocator = allocator_type());
 	basic_string(CtorDoNotInitialize, size_type n, const allocator_type& allocator = allocator_type());
