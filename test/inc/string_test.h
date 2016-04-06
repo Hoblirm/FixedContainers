@@ -6,16 +6,9 @@
 #include <string.h>
 #include <string>
 
-namespace eastl
-{
-  EASTL_API EmptyString gEmptyString = { 0 };
-}
-
 class string_test: public CxxTest::TestSuite
 {
-
-  //typedef std::basic_string<char, std::char_traits<char>, flex::allocator_debug<char> > str;
-  typedef eastl::basic_string<char, flex::allocator_debug<char> > str;
+  typedef flex::basic_string<char, flex::allocator_debug<char> > str;
 
 public:
 
@@ -41,8 +34,7 @@ public:
       return false;
     }
 
-    //TODO: Consider adding string validate method in here.
-    return true;
+    return c.validate();
   }
 
   void test_default_constructor()
