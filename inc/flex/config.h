@@ -1,8 +1,27 @@
 #ifndef FLEX_CONFIG_H
 #define FLEX_CONFIG_H
 
-#ifndef FLEX_LIKELY
+/*
+ * FLEX_HAS_CXX11
+ */
+#if (__cplusplus >= 201103L)
+#define FLEX_HAS_CXX11 true
+#endif
 
+/*
+ * FLEX_NOEXCEPT
+ */
+#ifdef FLEX_HAS_CXX11
+#include <type_traits>
+#define FLEX_NOEXCEPT noexcept
+#else
+#define FLEX_NOEXCEPT
+#endif
+
+/*
+ * FLEX_LIKELY
+ */
+#ifndef FLEX_LIKELY
 #if defined(__GNUC__) && (__GNUC__ >= 3)
 #define FLEX_LIKELY(x)   __builtin_expect(!!(x), true)
 #define FLEX_UNLIKELY(x) __builtin_expect(!!(x), false)
@@ -13,21 +32,11 @@
 
 #endif//FLEX_LIKELY
 
-//Trivial macro to determine C++11 support.  A more fine-grain solution may be needed for specific compilers.
-#if (__cplusplus >= 201103L)
-#define FLEX_HAS_CXX11 true
-#endif
-
-#ifdef FLEX_HAS_CXX11
-#include <type_traits>
-#define FLEX_NOEXCEPT noexcept
-#else
-#define FLEX_NOEXCEPT
-#endif
-
+/*
+ * flex::destruct_range
+ */
 namespace flex
 {
-
 #ifdef FLEX_HAS_CXX11
   template<typename InputIterator>
   inline void destruct_range_impl(InputIterator first, InputIterator last, std::true_type)
@@ -61,9 +70,154 @@ namespace flex
     }
 #endif
   }
-
 } //namespace flex
 
+namespace flex
+{
+  inline void error_msg(const char* msg)
+   {
+     printf(msg);
+     printf("\n");
+   }
+
+  inline void assert_failure(const char* expression)
+  {
+    char msg[128];
+    sprintf(msg, "FLEX_ASSERT(%s) failed!");
+    error_msg(msg);
+  }
+
+  inline void throw_bad_alloc()
+  {
+    throw std::bad_alloc();
+  }
+
+  inline void throw_invalid_argument(const char* msg)
+  {
+    throw std::invalid_argument(msg);
+  }
+
+  inline void throw_length_error(const char* msg)
+  {
+    throw std::length_error(msg);
+  }
+
+  inline void throw_out_of_range(const char* msg)
+  {
+    throw std::out_of_range(msg);
+  }
+
+  inline void throw_overflow_error(const char* msg)
+  {
+    throw std::overflow_error(msg);
+  }
+}
+
+/*
+ * FLEX_ASSERT
+ */
+#ifndef FLEX_ASSERT
+#if FLEX_DEBUG
+#define FLEX_ASSERT(expression) \
+        do { \
+        	if (FLEX_UNLIKELY(!(expression))) \
+        	{ \
+        		flex::assert_failure(#expression); \
+        	} \
+        } while (0)
+#else
+#define FLEX_ASSERT(expression)
+#endif
+#endif
+
+/*
+ * FLEX_THROW_BAD_ALLOC_IF
+ */
+#ifndef FLEX_THROW_BAD_ALLOC_IF
+#ifndef FLEX_RELEASE
+#define FLEX_THROW_BAD_ALLOC_IF(expression) \
+        do { \
+             if (FLEX_UNLIKELY(expression)) \
+             { \
+                flex::throw_bad_alloc(); \
+             } \
+        } while (0)
+#else
+#define FLEX_THROW_BAD_ALLOC_IF(expression)
+#endif
+#endif
+
+/*
+ * FLEX_THROW_INVALID_ARGUMENT_IF
+ */
+#ifndef FLEX_THROW_INVALID_ARGUMENT_IF
+#ifndef FLEX_RELEASE
+#define FLEX_THROW_INVALID_ARGUMENT_IF(expression,msg) \
+        do { \
+             if (FLEX_UNLIKELY(expression)) \
+             { \
+                flex::throw_invalid_argument(msg); \
+             } \
+        } while (0)
+#else
+#define FLEX_THROW_INVALID_ARGUMENT_IF(expression,msg)
+#endif
+#endif
+
+/*
+ * FLEX_THROW_LENGTH_ERROR_IF
+ */
+#ifndef FLEX_THROW_LENGTH_ERROR_IF
+#ifndef FLEX_RELEASE
+#define FLEX_THROW_LENGTH_ERROR_IF(expression,msg) \
+        do { \
+             if (FLEX_UNLIKELY(expression)) \
+             { \
+                flex::throw_length_error(msg); \
+             } \
+        } while (0)
+#else
+#define FLEX_THROW_LENGTH_ERROR_IF(expression,msg)
+#endif
+#endif
+
+/*
+ * FLEX_THROW_OUT_OF_RANGE_IF
+ */
+#ifndef FLEX_THROW_OUT_OF_RANGE_IF
+#ifndef FLEX_RELEASE
+#define FLEX_THROW_OUT_OF_RANGE_IF(expression,msg) \
+        do { \
+             if (FLEX_UNLIKELY(expression)) \
+             { \
+                flex::throw_out_of_range(msg); \
+             } \
+        } while (0)
+#else
+#define FLEX_THROW_OUT_OF_RANGE_IF(expression,msg)
+#endif
+#endif
+
+/*
+ * FLEX_THROW_OVERFLOW_ERROR_IF
+ */
+#ifndef FLEX_THROW_OVERFLOW_ERROR_IF
+#ifndef FLEX_RELEASE
+#define FLEX_THROW_BAD_ALLOC_IF(expression,msg) \
+        do { \
+             if (FLEX_UNLIKELY(expression)) \
+             { \
+                flex::throw_overflow_error(msg); \
+             } \
+        } while (0)
+#else
+#define FLEX_THROW_OVERFLOW_ERROR_IF(expression,msg)
+#endif
+#endif
+
+/*
+ * std::initializer_list
+ */
 #ifdef FLEX_HAS_CXX11
 #include <initializer_list>
 #else
@@ -78,7 +232,7 @@ namespace std
     typedef const E& reference;
     typedef const E& const_reference;
     typedef size_t size_type;
-    typedef const E* iterator;      // Must be const, as initializer_list (and its mpArray) is an immutable temp object.
+    typedef const E* iterator;    // Must be const, as initializer_list (and its mpArray) is an immutable temp object.
     typedef const E* const_iterator;
 
   private:
@@ -99,7 +253,7 @@ namespace std
     size_type size() const FLEX_NOEXCEPT
     { return mArraySize;}
     const_iterator begin() const FLEX_NOEXCEPT
-    { return mpArray;}     // Must be const_iterator, as initializer_list (and its mpArray) is an immutable temp object.
+    { return mpArray;}   // Must be const_iterator, as initializer_list (and its mpArray) is an immutable temp object.
     const_iterator end() const FLEX_NOEXCEPT
     { return mpArray + mArraySize;}
   };

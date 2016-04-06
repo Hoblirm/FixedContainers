@@ -2544,7 +2544,7 @@ namespace flex
   template<typename T, typename Allocator>
   inline void basic_string<T, Allocator>::AllocateSelf()
   {
-    //EASTL_ASSERT(sEmptyString.mUint32 == 0);
+    FLEX_ASSERT(sEmptyString.mUint32 == 0);
     mpBegin = const_cast<value_type*>(GetEmptyString(value_type())); // In const_cast-int this, we promise not to modify it.
     mpEnd = mpBegin;
     mpCapacity = mpBegin + 1; // When we are using sEmptyString, mpCapacity is always mpEnd + 1. This is an important distinguising characteristic.
