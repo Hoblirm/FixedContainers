@@ -13,6 +13,16 @@ class allocation_guard_test: public CxxTest::TestSuite
 {
 public:
 
+  void setUp()
+  {
+    errno = 0;
+  }
+
+  void tearDown()
+  {
+    TS_ASSERT(!errno);
+  }
+
   void test_enable_and_disable(void)
   {
     allocation_guard::enable();
@@ -26,14 +36,18 @@ public:
     guarded_class* ptr;
 
     allocation_guard::enable();
-    TS_ASSERT_THROWS(ptr = new guarded_class, std::runtime_error);
-
+    ptr = new guarded_class;
+    TS_ASSERT(errno);
+    errno=0;
     allocation_guard::disable();
-    TS_ASSERT_THROWS_NOTHING(ptr = new guarded_class);
+    delete ptr;
+
+    ptr = new guarded_class;
+    TS_ASSERT(!errno);
     //Ensure the object is allocated by writing to it and not getting a seg fault.
-    for (int i=0;i<256;++i)
+    for (int i = 0; i < 256; ++i)
     {
-      ptr->data[i]=(char)i;
+      ptr->data[i] = (char) i;
     }
     delete ptr;
   }
@@ -43,10 +57,13 @@ public:
     guarded_class* ptr;
 
     allocation_guard::enable();
-    TS_ASSERT_THROWS(ptr = new guarded_class[2], std::runtime_error);
-
+    ptr = new guarded_class[2];
+    errno=0;
     allocation_guard::disable();
-    TS_ASSERT_THROWS_NOTHING(ptr = new guarded_class[2]);
+    delete[] ptr;
+
+    ptr = new guarded_class[2];
+    TS_ASSERT(!errno);
     delete[] ptr;
   }
 };

@@ -55,10 +55,13 @@ public:
   void setUp()
   {
     flex::allocator_debug<flex::pool<obj>::node_type>::clear();
+    errno = 0;
   }
 
   void tearDown()
   {
+    TS_ASSERT(!errno);
+
     //This ensures that all objs constructed by the container have their destructors called.
     TS_ASSERT(flex::allocator_debug<flex::pool<obj>::node_type>::mConstructedPointers.empty());
 
@@ -129,7 +132,9 @@ public:
      * Case2: Ensure it throws if allocation guard is enabled.
      */
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(pool_obj b(16), std::runtime_error)
+    pool_obj b(16);
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
   }
 
@@ -158,14 +163,17 @@ public:
      */
     pool_obj a;
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(a.allocate(), std::runtime_error)
+    obj* ptr = (obj*)a.allocate();
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
+    a.deallocate((void*) ptr);
     TS_ASSERT(is_container_valid(a));
 
     /*
      * Case2: Ensure it works on empty container.
      */
-    obj* ptr = (obj*) a.allocate();
+    ptr = (obj*) a.allocate();
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 0);
     new ((void*) ptr) obj(7);
@@ -302,17 +310,19 @@ public:
      */
     pool_obj a;
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(a.reserve(16), std::runtime_error)
+    a.reserve(16);
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
     TS_ASSERT(is_container_valid(a));
-    TS_ASSERT_EQUALS(a.size(), 0);
+    TS_ASSERT_EQUALS(a.size(), 16);
 
     /*
      * Case2: Ensure it allocates to an empty container
      */
     a.reserve(16);
     TS_ASSERT(is_container_valid(a));
-    TS_ASSERT_EQUALS(a.size(), 16);
+    TS_ASSERT_EQUALS(a.size(), 32);
 
     /*
      * Case3: Ensure it allocates to a populated container
@@ -320,7 +330,7 @@ public:
      */
     a.reserve(8);
     TS_ASSERT(is_container_valid(a));
-    TS_ASSERT_EQUALS(a.size(), 24);
+    TS_ASSERT_EQUALS(a.size(), 40);
   }
 
 };

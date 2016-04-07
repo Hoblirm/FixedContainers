@@ -58,10 +58,12 @@ public:
   void setUp()
   {
     flex::allocation_guard::enable();
+    errno = 0;
   }
 
   void tearDown()
   {
+    TS_ASSERT(!errno);
     flex::allocation_guard::disable();
   }
 
@@ -495,7 +497,6 @@ public:
 
   void test_default_fill_constructor(void)
   {
-    allocation_guard::enable();
     fixed_vector<obj, 3> a(2);
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 2);
@@ -504,7 +505,6 @@ public:
     TS_ASSERT_EQUALS(a[1], obj::DEFAULT_VAL);
 
     TS_ASSERT_THROWS(invalid_fill_constructor(), std::runtime_error);
-    allocation_guard::disable();
   }
 
   void test_fill_constructor(void)
@@ -585,7 +585,11 @@ public:
     fixed_vector<obj, 8> a(8, (obj) 0);
     assignment_method(a);
     read_method(a);
-    TS_ASSERT_THROWS(copy_method(a), std::runtime_error);
+
+    TS_ASSERT(!errno);
+    copy_method(a);
+    TS_ASSERT(errno);
+    errno = 0;
 
     allocation_guard::disable();
     copy_method(a);

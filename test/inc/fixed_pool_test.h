@@ -55,10 +55,12 @@ public:
   void setUp()
   {
     flex::allocation_guard::enable();
+    errno = 0;
   }
 
   void tearDown()
   {
+    TS_ASSERT(!errno);
     flex::allocation_guard::disable();
   }
 
@@ -145,7 +147,10 @@ public:
     {
       v.push_back(a.allocate());
     }
-    TS_ASSERT_THROWS(a.allocate(), std::runtime_error)
+    ptr = (obj*) a.allocate();
+    TS_ASSERT(errno);
+    errno = 0;
+    a.deallocate(ptr);
     TS_ASSERT(is_container_valid(a));
 
     //Clean up to prevent memory leak.
@@ -237,9 +242,11 @@ public:
      * Case1: Ensure throw keeps container in valid state:
      */
     pool_obj a;
-    TS_ASSERT_THROWS(a.reserve(32), std::runtime_error)
+    a.reserve(32);
+    TS_ASSERT(errno);
+    errno = 0;
     TS_ASSERT(is_container_valid(a));
-    TS_ASSERT_EQUALS(a.size(), 16);
+    TS_ASSERT_EQUALS(a.size(), 48);
   }
 
 };

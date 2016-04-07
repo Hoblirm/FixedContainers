@@ -66,10 +66,13 @@ public:
   void setUp()
   {
     flex::allocator_debug<flex::list<obj>::node_type>::clear();
+    errno = 0;
   }
 
   void tearDown()
   {
+    TS_ASSERT(!errno);
+
     //This ensures that all objs constructed by the container have their destructors called.
     TS_ASSERT(flex::allocator_debug<flex::list<obj>::node_type>::mConstructedPointers.empty());
 
@@ -84,7 +87,6 @@ public:
     //2. Ensures that nodes are properly initialized and destructed.  Remember that unused list
     //   nodes are kept in a pool.  These unused nodes should be uninitialized.
     //3. Ensures the cached size variable is in sync with the number of list nodes.
-
 
     //We will loop through all the list nodes ensuring that the previous iterator matches that
     //of the current node's prev_pointer.  All nodes in the list should be initialized.
@@ -171,7 +173,9 @@ public:
       if (SIZES[s] > 0)
       {
         flex::allocation_guard::enable();
-        TS_ASSERT_THROWS(list_obj a(SIZES[s]), std::runtime_error);
+        list_obj a(SIZES[s]);
+        TS_ASSERT(errno);
+        errno=0;
         flex::allocation_guard::disable();
       }
 
@@ -257,7 +261,9 @@ public:
       if (a.size() > 0)
       {
         flex::allocation_guard::enable();
-        TS_ASSERT_THROWS(list_obj b(a), std::runtime_error);
+        list_obj b(a);
+        TS_ASSERT(errno);
+        errno=0;
         flex::allocation_guard::disable();
       }
       TS_ASSERT(is_container_valid(a));

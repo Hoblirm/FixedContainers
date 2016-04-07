@@ -150,10 +150,17 @@ namespace flex
       mFixed(true), mBegin(new_begin), mEnd(new_end), mCapacity(mBegin + capacity)
 
   {
+    //TODO: test this case.
+#ifndef FLEX_RELEASE
     if (FLEX_UNLIKELY(mEnd > mCapacity))
     {
-      throw std::runtime_error("flex::fixed_vector - constructor() size exceeds capacity");
+      throw std::runtime_error("tmp");
+      flex::error_msg("flex::fixed_vector - constructor() size exceeds capacity");
+      mFixed = false;
+      mBegin = Allocate(capacity);
+      mEnd = mCapacity = mBegin + capacity;
     }
+#endif
   }
 
   template<class T, class Alloc>
@@ -169,12 +176,7 @@ namespace flex
   template<class T, class Alloc>
   inline typename vector_base<T, Alloc>::pointer vector_base<T, Alloc>::Allocate(size_type n)
   {
-    if (FLEX_UNLIKELY(mFixed))
-    {
-      throw std::runtime_error("flex::fixed_vector - allocation performed on fixed container");
-      mFixed = false;
-    }
-
+    FLEX_THROW_OUT_OF_RANGE_IF(mFixed,"flex::fixed_vector - capacity exceeded");
     return mAllocator.allocate(n);
   }
 
@@ -307,27 +309,15 @@ namespace flex
   template<class T, class Alloc>
   inline typename vector<T, Alloc>::reference vector<T, Alloc>::at(size_type n)
   {
-    if (FLEX_LIKELY(n < size()))
-    {
-      return mBegin[n];
-    }
-    else
-    {
-      throw std::out_of_range("Fixed container called at() with out-of-bounds index.");
-    }
+    FLEX_THROW_OUT_OF_RANGE_IF(n >= size(), "flex::vector.at() - index out-of-bounds");
+    return mBegin[n];
   }
 
   template<class T, class Alloc>
   inline typename vector<T, Alloc>::const_reference vector<T, Alloc>::at(size_type n) const
   {
-    if (FLEX_LIKELY(n < size()))
-    {
-      return mBegin[n];
-    }
-    else
-    {
-      throw std::out_of_range("Fixed container called at() with out-of-bounds index.");
-    }
+    FLEX_THROW_OUT_OF_RANGE_IF(n >= size(), "flex::vector.at() - index out-of-bounds");
+    return mBegin[n];
   }
 
   template<class T, class Alloc>

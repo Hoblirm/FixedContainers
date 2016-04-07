@@ -66,10 +66,12 @@ public:
   void setUp()
   {
     flex::allocation_guard::enable();
+    errno = 0;
   }
 
   void tearDown()
   {
+    TS_ASSERT(!errno);
     flex::allocation_guard::disable();
   }
 
@@ -268,7 +270,7 @@ public:
       {
         TS_ASSERT_EQUALS(*it, fill_val);
       }
-     // TS_ASSERT(is_container_valid(a));
+      // TS_ASSERT(is_container_valid(a));
     }
 
     /*
@@ -284,7 +286,7 @@ public:
       {
         TS_ASSERT_EQUALS(*it, fill_val);
       }
-   //   TS_ASSERT(is_container_valid(a));
+      //   TS_ASSERT(is_container_valid(a));
     }
   }
 
@@ -712,7 +714,7 @@ public:
     fixed_list_obj a;
     fixed_list_obj::iterator it;
 
-    for (unsigned s = 0; s < (SIZE_COUNT-1); ++s)
+    for (unsigned s = 0; s < (SIZE_COUNT - 1); ++s)
     {
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
       size_t current_size = a.size();
@@ -786,7 +788,7 @@ public:
     fixed_list_obj a;
     fixed_list_obj::iterator it;
 
-    for (unsigned s = 0; s < (SIZE_COUNT-1); ++s)
+    for (unsigned s = 0; s < (SIZE_COUNT - 1); ++s)
     {
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
       size_t current_size = a.size();
@@ -860,7 +862,7 @@ public:
     fixed_list_obj b(OBJ_DATA, OBJ_DATA + 2);
     fixed_list_obj::iterator it;
 
-    for (unsigned s = 0; s < (SIZE_COUNT-1); ++s)
+    for (unsigned s = 0; s < (SIZE_COUNT - 1); ++s)
     {
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
       size_t current_size = a.size();
@@ -1519,7 +1521,7 @@ public:
     fixed_list_obj b;
     fixed_list_obj::iterator it;
 
-    for (unsigned s = 0; s < (SIZE_COUNT-1); ++s)
+    for (unsigned s = 0; s < (SIZE_COUNT - 1); ++s)
     {
       b.assign(OBJ_DATA, OBJ_DATA + 16);
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
@@ -1612,7 +1614,7 @@ public:
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT(is_container_valid(b));
 
-    for (unsigned s = 0; s < (SIZE_COUNT-1); ++s)
+    for (unsigned s = 0; s < (SIZE_COUNT - 1); ++s)
     {
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
       size_t current_size = a.size();
@@ -1815,7 +1817,7 @@ public:
     fixed_list_obj::iterator tmp_it;
     a = tmp;
     TS_ASSERT_EQUALS(a.size(), 8);
-    TS_ASSERT_EQUALS(a.capacity(),128);
+    TS_ASSERT_EQUALS(a.capacity(), 128);
     it = a.begin();
     tmp_it = tmp.begin();
     for (int i = 0; i < a.size(); ++i)

@@ -15,10 +15,13 @@ public:
   void setUp()
   {
     flex::allocator_debug<char>::clear();
+    errno = 0;
   }
 
   void tearDown()
   {
+    TS_ASSERT(!errno);
+
     //This ensures that all objs constructed by the container have their destructors called.
     TS_ASSERT(flex::allocator_debug<char>::mConstructedPointers.empty());
 
@@ -72,7 +75,9 @@ public:
      * Case3: Allocation exception
      */
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(str("01234567"), std::runtime_error);
+    str c("01234567");
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
   }
 
@@ -121,7 +126,9 @@ public:
      * Case3: Allocation exception
      */
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(str(c, 2, 4), std::runtime_error);
+    str f(c, 2, 4);
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
 
     /*
@@ -156,7 +163,9 @@ public:
      * Case3: Allocation exception
      */
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(str(c.c_str(), 4), std::runtime_error);
+    str e(c.c_str(), 4);
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
   }
 
@@ -182,7 +191,9 @@ public:
      * Case3: Allocation exception
      */
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(str(8, '8'), std::runtime_error);
+    str c(8, '8');
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
   }
 
@@ -231,7 +242,9 @@ public:
      * Case3: Allocation exception
      */
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(str( { '0', '1', '2', '3', '4', '5', '6', '7' }), std::runtime_error);
+    str c( { '0', '1', '2', '3', '4', '5', '6', '7' });
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
   }
 

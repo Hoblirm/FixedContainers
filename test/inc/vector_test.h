@@ -63,10 +63,13 @@ public:
   void setUp()
   {
     flex::allocator_debug<int>::clear();
+    errno = 0;
   }
 
   void tearDown()
   {
+    TS_ASSERT(!errno);
+
     //This ensures that all objs constructed by the container have their destructors called.
     TS_ASSERT(flex::allocator_debug<int>::mConstructedPointers.empty());
 
@@ -668,7 +671,9 @@ public:
   void test_default_constructor(void)
   {
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(vec a(1), std::runtime_error);
+    vec b(1);
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
 
     vec a;
@@ -680,7 +685,9 @@ public:
   void test_default_fill_constructor(void)
   {
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(vec a(2), std::runtime_error);
+    vec b(2);
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
 
     vec a(2);
@@ -694,7 +701,9 @@ public:
   void test_fill_constructor(void)
   {
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(vec a(2, obj(7)), std::runtime_error);
+    vec b(2, obj(7));
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
 
     vec a(2, obj(7));
@@ -738,7 +747,9 @@ public:
     }
 
     flex::allocation_guard::enable();
-    TS_ASSERT_THROWS(vec b(a), std::runtime_error);
+    vec c(a);
+    TS_ASSERT(errno);
+    errno = 0;
     flex::allocation_guard::disable();
 
     vec b(a);

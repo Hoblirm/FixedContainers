@@ -2,13 +2,12 @@
 #define FLEX_ALLOCATOR_H
 
 #include <limits>//For std::numeric_limits used in max_size()
-#include <stdio.h>//For sprintf used in allocate()
 
 #include <flex/allocation_guard.h>
 
 namespace flex
 {
-  template<class T, size_t DebugId = 0> class allocator: public guarded_object
+  template<class T> class allocator: public guarded_object
   {
   public:
     // type definitions
@@ -70,12 +69,7 @@ namespace flex
     //void*.  Would be cleanest to change this method and update other containers.
     inline pointer allocate(size_type num, typename std::allocator<void>::const_pointer = 0)
     {
-      if (FLEX_UNLIKELY(sAllocationGuardEnabled))
-      {
-        char msg[128];
-        sprintf(msg,"flex_allocator<DebugId=%uz>: performed allocation when guard was enabled",DebugId);
-        throw std::runtime_error(msg);
-      }
+      FLEX_INVALID_ALLOC_IF(sAllocationGuardEnabled, "flex_allocator: performed allocation when guard was enabled");
       return reinterpret_cast<pointer>(::operator new(num * sizeof(T)));
     }
 

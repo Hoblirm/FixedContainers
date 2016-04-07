@@ -191,17 +191,15 @@ namespace flex
     for (node_type* it = first; it != last; ++it)
     {
       //Similar to the reserve method, deallocate() is working like pool.push_front().
-      deallocate((void*)it);
+      deallocate((void*) it);
     }
   }
 
   template<class T, class Alloc>
   inline void* pool<T, Alloc>::AllocateNewObject()
   {
-    if (FLEX_UNLIKELY(mFixed))
-    {
-      throw std::runtime_error("fixed_pool: performed runtime allocation");
-    }
+  //  if (mFixed) throw std::runtime_error("tmp");
+    FLEX_INVALID_ALLOC_IF(mFixed, "fixed_pool: exceeded capacity");
 
     return mAllocator.allocate(1);
   }

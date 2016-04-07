@@ -66,10 +66,12 @@ public:
   void setUp()
   {
     flex::allocation_guard::enable();
+    errno = 0;
   }
 
   void tearDown()
   {
+    TS_ASSERT(!errno);
     flex::allocation_guard::disable();
   }
 

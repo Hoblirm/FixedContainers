@@ -153,10 +153,18 @@ namespace flex
       mFixed(true), mBegin(new_begin, new_begin, right_bound), mEnd(new_end, new_begin, right_bound)
 
   {
+    //TODO: test this case.
+#ifndef FLEX_RELEASE
     if (FLEX_UNLIKELY(new_end > right_bound))
     {
-      throw std::runtime_error("flex::fixed_ring - constructor() size exceeds capacity");
+      throw std::runtime_error("tmp");
+      flex::error_msg("flex::fixed_ring - constructor() size exceeds capacity");
+      mFixed = false;
+      size_type n = right_bound - new_begin;
+      mBegin.mPtr = mBegin.mLeftBound = mEnd.mLeftBound = Allocate(n);
+      mEnd.mPtr = mBegin.mRightBound = mEnd.mRightBound = mBegin.mPtr + n;
     }
+#endif
   }
 
   template<class T, class Alloc>
@@ -173,12 +181,14 @@ namespace flex
   template<class T, class Alloc>
   inline typename ring_base<T, Alloc>::pointer ring_base<T, Alloc>::Allocate(size_type capacity)
   {
+#ifndef FLEX_RELEASE
     if (FLEX_UNLIKELY(mFixed))
     {
-      throw std::runtime_error("flex::fixed_ring - allocation performed");
+      throw std::runtime_error("tmp");
+      flex::error_msg("flex::fixed_ring - allocation performed");
       mFixed = false;
     }
-
+#endif
     //The size allocated is 1 more than the capacity.  This is do to the fact that we don't want begin() to equal end().
     //Therefore there will always be one allocated element that is unused.
     return mAllocator.allocate(capacity + 1);
@@ -312,27 +322,15 @@ namespace flex
   template<class T, class Alloc>
   inline typename ring<T, Alloc>::reference ring<T, Alloc>::at(size_type n)
   {
-    if (FLEX_LIKELY(n < size()))
-    {
-      return operator[](n);
-    }
-    else
-    {
-      throw std::out_of_range("flex::ring.at() - index out-of-bounds");
-    }
+    FLEX_THROW_OUT_OF_RANGE_IF(n >= size(), "flex::ring.at() - index out-of-bounds");
+    return operator[](n);
   }
 
   template<class T, class Alloc>
   inline typename ring<T, Alloc>::const_reference ring<T, Alloc>::at(size_type n) const
   {
-    if (FLEX_LIKELY(n < size()))
-    {
-      return operator[](n);
-    }
-    else
-    {
-      throw std::out_of_range("flex::ring.at() - index out-of-bounds");
-    }
+    FLEX_THROW_OUT_OF_RANGE_IF(n >= size(), "flex::ring.at() - index out-of-bounds");
+    return operator[](n);
   }
 
   template<class T, class Alloc>

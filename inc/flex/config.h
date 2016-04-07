@@ -1,6 +1,11 @@
 #ifndef FLEX_CONFIG_H
 #define FLEX_CONFIG_H
 
+#include <cstdlib>
+#include <cerrno> //Used errno in error_msg()
+#include <stdexcept> //For exceptions
+#include <stdio.h>//For printf used in assert/throw methods.
+
 /*
  * FLEX_HAS_CXX11
  */
@@ -74,17 +79,22 @@ namespace flex
 
 namespace flex
 {
-  inline void error_msg(const char* msg)
-   {
-     printf(msg);
-     printf("\n");
-   }
+  inline void error_msg(const char* msg, int error_code = -1)
+  {
+    //errno is used mainly for testing purposes.  May want to consider
+    //alternative solutions if error handling is to be done at runtime.
+    errno = error_code;
+#ifndef FLEX_TEST
+    printf(msg);
+    printf("\n");
+#endif
+  }
 
   inline void assert_failure(const char* expression)
   {
     char msg[128];
     sprintf(msg, "FLEX_ASSERT(%s) failed!");
-    error_msg(msg);
+    flex::error_msg(msg);
   }
 
   inline void throw_bad_alloc()
@@ -127,6 +137,23 @@ namespace flex
         } while (0)
 #else
 #define FLEX_ASSERT(expression)
+#endif
+#endif
+
+/*
+ * FLEX_INVALID_ALLOC_IF
+ */
+#ifndef FLEX_INVALID_ALLOC_IF
+#ifndef FLEX_RELEASE
+#define FLEX_INVALID_ALLOC_IF(expression,msg) \
+        do { \
+             if (FLEX_UNLIKELY(expression)) \
+             { \
+                flex::error_msg(msg); \
+             } \
+        } while (0)
+#else
+#define FLEX_INVALID_ALLOC_IF(expression,msg)
 #endif
 #endif
 

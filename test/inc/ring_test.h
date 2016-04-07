@@ -66,10 +66,13 @@ public:
   void setUp()
   {
     flex::allocator_debug<obj>::clear();
+    errno = 0;
   }
 
   void tearDown()
   {
+    TS_ASSERT(!errno);
+
     //This ensures that all objs constructed by the container have their destructors called.
     TS_ASSERT(flex::allocator_debug<obj>::mConstructedPointers.empty());
 
@@ -119,7 +122,9 @@ public:
        * Case1: Verify fill constructor allocates memory.
        */
       flex::allocation_guard::enable();
-      TS_ASSERT_THROWS(ring_obj a(SIZES[s]), std::runtime_error);
+      ring_obj b(SIZES[s]);
+      TS_ASSERT(errno);
+      errno = 0;
       flex::allocation_guard::disable();
 
       /*
@@ -202,7 +207,9 @@ public:
       ring_obj a(OBJ_DATA, OBJ_DATA + SIZES[s]);
       TS_ASSERT(is_container_valid(a));
       flex::allocation_guard::enable();
-      TS_ASSERT_THROWS(ring_obj b(a), std::runtime_error);
+      ring_obj c(a);
+      TS_ASSERT(errno);
+      errno = 0;
       flex::allocation_guard::disable();
 
       /*
@@ -713,15 +720,15 @@ public:
     /*
      * Case 4: Test insert for value within container
      */
-    ring_obj b(OBJ_DATA,OBJ_DATA+8);
+    ring_obj b(OBJ_DATA, OBJ_DATA + 8);
     b.reserve(16);
-    b.insert(b.begin(),*(b.end()-1));
+    b.insert(b.begin(), *(b.end() - 1));
     TS_ASSERT(is_container_valid(b));
     TS_ASSERT_EQUALS(b.size(), 9);
     TS_ASSERT_EQUALS(b[0], OBJ_DATA[7]);
-    for (int i=1;i<b.size();++i)
+    for (int i = 1; i < b.size(); ++i)
     {
-      TS_ASSERT_EQUALS(b[i], OBJ_DATA[i-1]);
+      TS_ASSERT_EQUALS(b[i], OBJ_DATA[i - 1]);
     }
   }
 
