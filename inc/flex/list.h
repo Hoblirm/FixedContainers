@@ -1103,7 +1103,7 @@ namespace flex
   template<class T, class Alloc>
   inline typename list<T, Alloc>::node_type* list<T, Alloc>::AllocateNode()
   {
-    FLEX_INVALID_ALLOC_IF(mFixed,"flex::fixed_list - exceeded capacity");
+    FLEX_THROW_OUT_OF_RANGE_IF(mFixed,"flex::fixed_list - exceeded capacity");
     return mAllocator.allocate(1);
   }
 

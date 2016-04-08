@@ -150,17 +150,7 @@ namespace flex
       mFixed(true), mBegin(new_begin), mEnd(new_end), mCapacity(mBegin + capacity)
 
   {
-    //TODO: test this case.
-#ifndef FLEX_RELEASE
-    if (FLEX_UNLIKELY(mEnd > mCapacity))
-    {
-      throw std::runtime_error("tmp");
-      flex::error_msg("flex::fixed_vector - constructor() size exceeds capacity");
-      mFixed = false;
-      mBegin = Allocate(capacity);
-      mEnd = mCapacity = mBegin + capacity;
-    }
-#endif
+    FLEX_THROW_OUT_OF_RANGE_IF(mEnd > mCapacity, "flex::fixed_vector - constructor() size exceeds capacity");
   }
 
   template<class T, class Alloc>
@@ -176,7 +166,7 @@ namespace flex
   template<class T, class Alloc>
   inline typename vector_base<T, Alloc>::pointer vector_base<T, Alloc>::Allocate(size_type n)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(mFixed,"flex::fixed_vector - capacity exceeded");
+    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_vector - capacity exceeded");
     return mAllocator.allocate(n);
   }
 

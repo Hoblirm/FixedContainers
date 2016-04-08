@@ -6,6 +6,10 @@
 #include <stdexcept> //For exceptions
 #include <stdio.h>//For printf used in assert/throw methods.
 
+#ifdef FLEX_TEST
+#define FLEX_DEBUG
+#endif
+
 /*
  * FLEX_HAS_CXX11
  */
@@ -85,15 +89,16 @@ namespace flex
     //alternative solutions if error handling is to be done at runtime.
     errno = error_code;
 #ifndef FLEX_TEST
-    printf(msg);
+    printf("%s", msg);
     printf("\n");
 #endif
   }
 
   inline void assert_failure(const char* expression)
   {
-    char msg[128];
-    sprintf(msg, "FLEX_ASSERT(%s) failed!");
+    const int msg_size = 128;
+    char msg[msg_size];
+    snprintf(msg, msg_size, "FLEX_ASSERT(%s) failed!", expression);
     flex::error_msg(msg);
   }
 
@@ -127,7 +132,7 @@ namespace flex
  * FLEX_ASSERT
  */
 #ifndef FLEX_ASSERT
-#if FLEX_DEBUG
+#ifdef FLEX_DEBUG
 #define FLEX_ASSERT(expression) \
         do { \
         	if (FLEX_UNLIKELY(!(expression))) \
@@ -141,11 +146,11 @@ namespace flex
 #endif
 
 /*
- * FLEX_INVALID_ALLOC_IF
+ * FLEX_ERROR_MSG_IF
  */
-#ifndef FLEX_INVALID_ALLOC_IF
+#ifndef FLEX_ERROR_MSG_IF
 #ifndef FLEX_RELEASE
-#define FLEX_INVALID_ALLOC_IF(expression,msg) \
+#define FLEX_ERROR_MSG_IF(expression,msg) \
         do { \
              if (FLEX_UNLIKELY(expression)) \
              { \
@@ -153,7 +158,7 @@ namespace flex
              } \
         } while (0)
 #else
-#define FLEX_INVALID_ALLOC_IF(expression,msg)
+#define FLEX_ERROR_MSG_IF(expression,msg)
 #endif
 #endif
 
@@ -230,7 +235,7 @@ namespace flex
  */
 #ifndef FLEX_THROW_OVERFLOW_ERROR_IF
 #ifndef FLEX_RELEASE
-#define FLEX_THROW_BAD_ALLOC_IF(expression,msg) \
+#define FLEX_THROW_OVERFLOW_ERROR_IF(expression,msg) \
         do { \
              if (FLEX_UNLIKELY(expression)) \
              { \

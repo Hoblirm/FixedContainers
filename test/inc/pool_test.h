@@ -306,7 +306,7 @@ public:
   void test_reserve()
   {
     /*
-     * Case1: Ensure throw keeps container in valid state:
+     * Case1: Runtime allocation.
      */
     pool_obj a;
     flex::allocation_guard::enable();

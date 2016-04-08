@@ -69,7 +69,7 @@ namespace flex
     //void*.  Would be cleanest to change this method and update other containers.
     inline pointer allocate(size_type num, typename std::allocator<void>::const_pointer = 0)
     {
-      FLEX_INVALID_ALLOC_IF(sAllocationGuardEnabled, "flex_allocator: performed allocation when guard was enabled");
+      FLEX_ERROR_MSG_IF(sAllocationGuardEnabled, "flex_allocator: performed allocation when guard was enabled");
       return reinterpret_cast<pointer>(::operator new(num * sizeof(T)));
     }
 

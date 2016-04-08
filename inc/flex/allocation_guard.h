@@ -10,13 +10,13 @@ namespace flex
   {
     inline static void* operator new(std::size_t sz)
     {
-      FLEX_INVALID_ALLOC_IF(sAllocationGuardEnabled, "guarded_object: new operator called for child class");
+      FLEX_ERROR_MSG_IF(sAllocationGuardEnabled, "guarded_object: new operator called for child class");
       return ::operator new(sz);
     }
 
     inline static void* operator new[](std::size_t sz)
     {
-      FLEX_INVALID_ALLOC_IF(sAllocationGuardEnabled, "guarded_object: new[] operator called for child class");
+      FLEX_ERROR_MSG_IF(sAllocationGuardEnabled, "guarded_object: new[] operator called for child class");
       return ::operator new(sz);
 
     }

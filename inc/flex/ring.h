@@ -153,18 +153,7 @@ namespace flex
       mFixed(true), mBegin(new_begin, new_begin, right_bound), mEnd(new_end, new_begin, right_bound)
 
   {
-    //TODO: test this case.
-#ifndef FLEX_RELEASE
-    if (FLEX_UNLIKELY(new_end > right_bound))
-    {
-      throw std::runtime_error("tmp");
-      flex::error_msg("flex::fixed_ring - constructor() size exceeds capacity");
-      mFixed = false;
-      size_type n = right_bound - new_begin;
-      mBegin.mPtr = mBegin.mLeftBound = mEnd.mLeftBound = Allocate(n);
-      mEnd.mPtr = mBegin.mRightBound = mEnd.mRightBound = mBegin.mPtr + n;
-    }
-#endif
+    FLEX_THROW_OUT_OF_RANGE_IF(new_end > right_bound, "flex::fixed_ring - constructor() size exceeds capacity");
   }
 
   template<class T, class Alloc>
@@ -181,14 +170,7 @@ namespace flex
   template<class T, class Alloc>
   inline typename ring_base<T, Alloc>::pointer ring_base<T, Alloc>::Allocate(size_type capacity)
   {
-#ifndef FLEX_RELEASE
-    if (FLEX_UNLIKELY(mFixed))
-    {
-      throw std::runtime_error("tmp");
-      flex::error_msg("flex::fixed_ring - allocation performed");
-      mFixed = false;
-    }
-#endif
+    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_ring - capacity exceeded");
     //The size allocated is 1 more than the capacity.  This is do to the fact that we don't want begin() to equal end().
     //Therefore there will always be one allocated element that is unused.
     return mAllocator.allocate(capacity + 1);

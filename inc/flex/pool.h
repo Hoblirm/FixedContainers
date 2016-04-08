@@ -198,8 +198,7 @@ namespace flex
   template<class T, class Alloc>
   inline void* pool<T, Alloc>::AllocateNewObject()
   {
-  //  if (mFixed) throw std::runtime_error("tmp");
-    FLEX_INVALID_ALLOC_IF(mFixed, "fixed_pool: exceeded capacity");
+    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "fixed_pool: exceeded capacity");
 
     return mAllocator.allocate(1);
   }
