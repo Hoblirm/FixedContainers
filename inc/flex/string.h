@@ -16,8 +16,6 @@
 //    - basic_string is easier to read, debug, and visualize.
 //    - basic_string internally manually expands basic functions such as begin(),
 //      size(), etc. in order to improve debug performance and optimizer success.
-//    - basic_string is savvy to an environment that doesn't have exception handling,
-//      as is sometimes the case with console or embedded environments.
 //    - basic_string has less deeply nested function calls and allows the user to
 //      enable forced inlining in debug builds in order to reduce bloat.
 //    - basic_string doesn't use char traits.
@@ -196,9 +194,9 @@ namespace flex
 
   protected:
     bool mFixed;
-    value_type* mpBegin; // Begin of string.
-    value_type* mpEnd; // End of string. *mpEnd is always '0', as we 0-terminate our string. mpEnd is always < mpCapacity.
-    value_type* mpCapacity; // End of allocated space, including the space needed to store the trailing '0' char. mpCapacity is always at least mpEnd + 1. To consider: rename this to mpAllocEnd, thus avoiding confusion with the public capacity() function.
+    value_type* mBegin; // Begin of string.
+    value_type* mEnd; // End of string. *mEnd is always '0', as we 0-terminate our string. mEnd is always < mCapacity.
+    value_type* mCapacity; // End of allocated space, including the space needed to store the trailing '0' char. mCapacity is always at least mEnd + 1. To consider: rename this to mpAllocEnd, thus avoiding confusion with the public capacity() function.
     allocator_type mAllocator; // To do: Use base class optimization to make this go away.
 
   public:
@@ -252,12 +250,12 @@ namespace flex
     this_type& assign(std::initializer_list<value_type>);
 
     // Iterators.
-    iterator begin() FLEX_NOEXCEPT; // Expanded in source code as: mpBegin
-    const_iterator begin() const FLEX_NOEXCEPT; // Expanded in source code as: mpBegin
+    iterator begin() FLEX_NOEXCEPT; // Expanded in source code as: mBegin
+    const_iterator begin() const FLEX_NOEXCEPT; // Expanded in source code as: mBegin
     const_iterator cbegin() const FLEX_NOEXCEPT;
 
-    iterator end() FLEX_NOEXCEPT; // Expanded in source code as: mpEnd
-    const_iterator end() const FLEX_NOEXCEPT; // Expanded in source code as: mpEnd
+    iterator end() FLEX_NOEXCEPT; // Expanded in source code as: mEnd
+    const_iterator end() const FLEX_NOEXCEPT; // Expanded in source code as: mEnd
     const_iterator cend() const FLEX_NOEXCEPT;
 
     reverse_iterator rbegin() FLEX_NOEXCEPT;
@@ -269,11 +267,11 @@ namespace flex
     const_reverse_iterator crend() const FLEX_NOEXCEPT;
 
     // Size-related functionality
-    bool empty() const FLEX_NOEXCEPT; // Expanded in source code as: (mpBegin == mpEnd) or (mpBegin != mpEnd)
-    size_type size() const FLEX_NOEXCEPT; // Expanded in source code as: (size_type)(mpEnd - mpBegin)
-    size_type length() const FLEX_NOEXCEPT; // Expanded in source code as: (size_type)(mpEnd - mpBegin)
+    bool empty() const FLEX_NOEXCEPT; // Expanded in source code as: (mBegin == mEnd) or (mBegin != mEnd)
+    size_type size() const FLEX_NOEXCEPT; // Expanded in source code as: (size_type)(mEnd - mBegin)
+    size_type length() const FLEX_NOEXCEPT; // Expanded in source code as: (size_type)(mEnd - mBegin)
     size_type max_size() const FLEX_NOEXCEPT; // Expanded in source code as: kMaxSize
-    size_type capacity() const FLEX_NOEXCEPT; // Expanded in source code as: (size_type)((mpCapacity - mpBegin) - 1). Thus thus returns the max strlen the container can currently hold without resizing.
+    size_type capacity() const FLEX_NOEXCEPT; // Expanded in source code as: (size_type)((mCapacity - mBegin) - 1). Thus thus returns the max strlen the container can currently hold without resizing.
     void resize(size_type n, value_type c);
     void resize(size_type n);
     void reserve(size_type = 0);
@@ -400,6 +398,8 @@ namespace flex
     bool validate() const FLEX_NOEXCEPT;
 
   protected:
+    basic_string(pointer new_begin, pointer new_end, size_type capacity);
+
     // Helper functions for initialization/insertion operations.
     value_type* DoAllocate(size_type n);
     void DoFree(value_type* p, size_type n);
@@ -606,53 +606,52 @@ namespace flex
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string() :
-      mFixed(false), mpBegin(NULL), mpEnd(NULL), mpCapacity(NULL), mAllocator()
+      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator()
   {
     AllocateSelf();
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(const allocator_type& allocator) :
-      mFixed(false), mpBegin(NULL), mpEnd(NULL), mpCapacity(NULL), mAllocator(allocator)
+      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
   {
     AllocateSelf();
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(const this_type& x) :
-      mFixed(false), mpBegin(NULL), mpEnd(NULL), mpCapacity(NULL), mAllocator(x.mAllocator)
+      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(x.mAllocator)
   {
-    RangeInitialize(x.mpBegin, x.mpEnd);
+    RangeInitialize(x.mBegin, x.mEnd);
   }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(const this_type& x, size_type position, size_type n) :
-      mFixed(false), mpBegin(NULL), mpEnd(NULL), mpCapacity(NULL), mAllocator(x.mAllocator)
+      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(x.mAllocator)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(x.mpEnd - x.mpBegin),
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(x.mEnd - x.mBegin),
         "flex::basic_string - substring constructor has invalid position"); // 21.4.2 p4
 
-    RangeInitialize(x.mpBegin + position,
-        x.mpBegin + position + std::min(n, (size_type) (x.mpEnd - x.mpBegin) - position));
+    RangeInitialize(x.mBegin + position, x.mBegin + position + std::min(n, (size_type) (x.mEnd - x.mBegin) - position));
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(const value_type* p, size_type n, const allocator_type& allocator) :
-      mFixed(false), mpBegin(NULL), mpEnd(NULL), mpCapacity(NULL), mAllocator(allocator)
+      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
   {
     RangeInitialize(p, p + n);
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(const value_type* p, const allocator_type& allocator) :
-      mFixed(false), mpBegin(NULL), mpEnd(NULL), mpCapacity(NULL), mAllocator(allocator)
+      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
   {
     RangeInitialize(p);
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(size_type n, value_type c, const allocator_type& allocator) :
-      mFixed(false), mpBegin(NULL), mpEnd(NULL), mpCapacity(NULL), mAllocator(allocator)
+      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
   {
     SizeInitialize(n, c);
   }
@@ -661,7 +660,7 @@ namespace flex
   template<class InputIterator>
   inline basic_string<T, Allocator>::basic_string(InputIterator pBegin, InputIterator pEnd,
       const allocator_type& allocator) :
-      mFixed(false), mpBegin(NULL), mpEnd(NULL), mpCapacity(NULL), mAllocator(allocator)
+      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
   {
     RangeInitialize(pBegin, pEnd);
   }
@@ -670,16 +669,16 @@ namespace flex
 // initialize but also doesn't collide with any other constructor declaration.
   template<typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(CtorDoNotInitialize /*unused*/, size_type n, const allocator_type& allocator) :
-      mFixed(false), mpBegin(NULL), mpEnd(NULL), mpCapacity(NULL), mAllocator(allocator)
+      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
   {
     // Note that we do not call SizeInitialize here.
     AllocateSelf(n + 1); // '+1' so that we have room for the terminating 0.
-    *mpEnd = 0;
+    *mEnd = 0;
   }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(std::initializer_list<value_type> init, const allocator_type& allocator) :
-      mFixed(false), mpBegin(NULL), mpEnd(NULL), mpCapacity(NULL), mAllocator(allocator)
+      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
   {
     RangeInitialize(init.begin(), init.end());
   }
@@ -687,9 +686,9 @@ namespace flex
 #if FLEX_HAS_CXX11
   template <typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(this_type&& x)
-  : mpBegin(x.mpBegin),
-  mpEnd(x.mpEnd),
-  mpCapacity(x.mpCapacity),
+  : mBegin(x.mBegin),
+  mEnd(x.mEnd),
+  mCapacity(x.mCapacity),
   mAllocator(x.mAllocator)
   {
     x.AllocateSelf();
@@ -697,21 +696,21 @@ namespace flex
 
   template <typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(this_type&& x, const allocator_type& allocator)
-  : mpBegin(NULL),
-  mpEnd(NULL),
-  mpCapacity(NULL),
+  : mBegin(NULL),
+  mEnd(NULL),
+  mCapacity(NULL),
   mAllocator(allocator)
   {
     if(!mFixed && !x.mFixed) // If we can borrow from x...
     {
-      mpBegin = x.mpBegin; // It's OK if x.mpBegin is NULL.
-      mpEnd = x.mpEnd;
-      mpCapacity = x.mpCapacity;
+      mBegin = x.mBegin; // It's OK if x.mBegin is NULL.
+      mEnd = x.mEnd;
+      mCapacity = x.mCapacity;
       x.AllocateSelf();
     }
-    else if(x.mpBegin)
+    else if(x.mBegin)
     {
-      RangeInitialize(x.mpBegin, x.mpEnd);
+      RangeInitialize(x.mBegin, x.mEnd);
       // Let x destruct its own items.
     }
   }
@@ -750,104 +749,104 @@ namespace flex
   inline const typename basic_string<T, Allocator>::value_type*
   basic_string<T, Allocator>::data() const FLEX_NOEXCEPT
   {
-    return mpBegin;
+    return mBegin;
   }
 
   template<typename T, typename Allocator>
   inline const typename basic_string<T, Allocator>::value_type*
   basic_string<T, Allocator>::c_str() const FLEX_NOEXCEPT
   {
-    return mpBegin;
+    return mBegin;
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::iterator basic_string<T, Allocator>::begin() FLEX_NOEXCEPT
   {
-    return mpBegin;
+    return mBegin;
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::iterator basic_string<T, Allocator>::end() FLEX_NOEXCEPT
   {
-    return mpEnd;
+    return mEnd;
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_iterator basic_string<T, Allocator>::begin() const FLEX_NOEXCEPT
   {
-    return mpBegin;
+    return mBegin;
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_iterator basic_string<T, Allocator>::cbegin() const FLEX_NOEXCEPT
   {
-    return mpBegin;
+    return mBegin;
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_iterator basic_string<T, Allocator>::end() const FLEX_NOEXCEPT
   {
-    return mpEnd;
+    return mEnd;
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_iterator basic_string<T, Allocator>::cend() const FLEX_NOEXCEPT
   {
-    return mpEnd;
+    return mEnd;
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::reverse_iterator basic_string<T, Allocator>::rbegin() FLEX_NOEXCEPT
   {
-    return reverse_iterator(mpEnd);
+    return reverse_iterator(mEnd);
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::reverse_iterator basic_string<T, Allocator>::rend() FLEX_NOEXCEPT
   {
-    return reverse_iterator(mpBegin);
+    return reverse_iterator(mBegin);
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_reverse_iterator basic_string<T, Allocator>::rbegin() const FLEX_NOEXCEPT
   {
-    return const_reverse_iterator(mpEnd);
+    return const_reverse_iterator(mEnd);
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_reverse_iterator basic_string<T, Allocator>::crbegin() const FLEX_NOEXCEPT
   {
-    return const_reverse_iterator(mpEnd);
+    return const_reverse_iterator(mEnd);
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_reverse_iterator basic_string<T, Allocator>::rend() const FLEX_NOEXCEPT
   {
-    return const_reverse_iterator(mpBegin);
+    return const_reverse_iterator(mBegin);
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_reverse_iterator basic_string<T, Allocator>::crend() const FLEX_NOEXCEPT
   {
-    return const_reverse_iterator(mpBegin);
+    return const_reverse_iterator(mBegin);
   }
 
   template<typename T, typename Allocator>
   inline bool basic_string<T, Allocator>::empty() const FLEX_NOEXCEPT
   {
-    return (mpBegin == mpEnd);
+    return (mBegin == mEnd);
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::size() const FLEX_NOEXCEPT
   {
-    return (size_type) (mpEnd - mpBegin);
+    return (size_type) (mEnd - mBegin);
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::length() const FLEX_NOEXCEPT
   {
-    return (size_type) (mpEnd - mpBegin);
+    return (size_type) (mEnd - mBegin);
   }
 
   template<typename T, typename Allocator>
@@ -859,23 +858,23 @@ namespace flex
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::capacity() const FLEX_NOEXCEPT
   {
-    return (size_type) ((mpCapacity - mpBegin) - 1); // '-1' because we pretend that we didn't allocate memory for the terminating 0.
+    return (size_type) ((mCapacity - mBegin) - 1); // '-1' because we pretend that we didn't allocate memory for the terminating 0.
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_reference basic_string<T, Allocator>::operator[](size_type n) const
   {
     // We allow the user to reference the trailing 0 char without asserting. Perhaps we shouldn't.
-    FLEX_ASSERT(n <= (static_cast<size_type>(mpEnd - mpBegin)));
-    return mpBegin[n]; // Sometimes done as *(mpBegin + n)
+    FLEX_ASSERT(n <= (static_cast<size_type>(mEnd - mBegin)));
+    return mBegin[n]; // Sometimes done as *(mBegin + n)
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::reference basic_string<T, Allocator>::operator[](size_type n)
   {
     // We allow the user to reference the trailing 0 char without asserting. Perhaps we shouldn't.
-    FLEX_ASSERT(n <= (static_cast<size_type>(mpEnd - mpBegin)));
-    return mpBegin[n]; // Sometimes done as *(mpBegin + n)
+    FLEX_ASSERT(n <= (static_cast<size_type>(mEnd - mBegin)));
+    return mBegin[n]; // Sometimes done as *(mBegin + n)
   }
 
   template<typename T, typename Allocator>
@@ -883,7 +882,7 @@ namespace flex
   {
     if (&x != this)
     {
-      assign(x.mpBegin, x.mpEnd);
+      assign(x.mBegin, x.mEnd);
     }
     return *this;
   }
@@ -918,10 +917,10 @@ namespace flex
   template<typename T, typename Allocator>
   void basic_string<T, Allocator>::resize(size_type n, value_type c)
   {
-    const size_type s = (size_type) (mpEnd - mpBegin);
+    const size_type s = (size_type) (mEnd - mBegin);
 
     if (n < s)
-      erase(mpBegin + n, mpEnd);
+      erase(mBegin + n, mEnd);
     else if (n > s)
       append(n - s, c);
   }
@@ -929,10 +928,10 @@ namespace flex
   template<typename T, typename Allocator>
   void basic_string<T, Allocator>::resize(size_type n)
   {
-    const size_type s = (size_type) (mpEnd - mpBegin);
+    const size_type s = (size_type) (mEnd - mBegin);
 
     if (n < s)
-      erase(mpBegin + n, mpEnd);
+      erase(mBegin + n, mEnd);
     else if (n > s)
     {
       append(n - s, value_type());
@@ -953,9 +952,9 @@ namespace flex
     // the container and only reallocate if increasing the size. The user
     // can use the set_capacity function to reduce the capacity.
 
-    n = std::max(n, (size_type) (mpEnd - mpBegin)); // Calculate the new capacity, which needs to be >= container size.
+    n = std::max(n, (size_type) (mEnd - mBegin)); // Calculate the new capacity, which needs to be >= container size.
 
-    if (n >= (size_type) (mpCapacity - mpBegin)) // If there is something to do... // We use >= because mpCapacity accounts for the trailing zero.
+    if (n >= (size_type) (mCapacity - mBegin)) // If there is something to do... // We use >= because mCapacity accounts for the trailing zero.
       set_capacity(n);
   }
 
@@ -963,24 +962,24 @@ namespace flex
   inline void basic_string<T, Allocator>::set_capacity(size_type n)
   {
     if (n == npos) // If the user wants to set the capacity to equal the current size... // '-1' because we pretend that we didn't allocate memory for the terminating 0.
-      n = (size_type) (mpEnd - mpBegin);
-    else if (n < (size_type) (mpEnd - mpBegin))
-      mpEnd = mpBegin + n;
+      n = (size_type) (mEnd - mBegin);
+    else if (n < (size_type) (mEnd - mBegin))
+      mEnd = mBegin + n;
 
-    if (n != (size_type) ((mpCapacity - mpBegin) - 1)) // If there is any capacity change...
+    if (n != (size_type) ((mCapacity - mBegin) - 1)) // If there is any capacity change...
     {
       if (n)
       {
         pointer pNewBegin = DoAllocate(n + 1); // We need the + 1 to accomodate the trailing 0.
         pointer pNewEnd = pNewBegin;
 
-        pNewEnd = CharStringUninitializedCopy(mpBegin, mpEnd, pNewBegin);
+        pNewEnd = CharStringUninitializedCopy(mBegin, mEnd, pNewBegin);
         *pNewEnd = 0;
 
         DeallocateSelf();
-        mpBegin = pNewBegin;
-        mpEnd = pNewEnd;
-        mpCapacity = pNewBegin + (n + 1);
+        mBegin = pNewBegin;
+        mEnd = pNewEnd;
+        mCapacity = pNewBegin + (n + 1);
       }
       else
       {
@@ -1001,13 +1000,13 @@ namespace flex
         pointer pNewBegin = DoAllocate(n + 1); // We need the + 1 to accomodate the trailing 0.
         pointer pNewEnd = pNewBegin;
 
-        pNewEnd = CharStringUninitializedCopy(mpBegin, mpEnd, pNewBegin);
+        pNewEnd = CharStringUninitializedCopy(mBegin, mEnd, pNewBegin);
         *pNewEnd = 0;
 
         DeallocateSelf();
-        mpBegin = pNewBegin;
-        mpEnd = pNewEnd;
-        mpCapacity = pNewBegin + (n + 1);
+        mBegin = pNewBegin;
+        mEnd = pNewEnd;
+        mCapacity = pNewBegin + (n + 1);
       }
       else
       {
@@ -1020,53 +1019,53 @@ namespace flex
   template<typename T, typename Allocator>
   inline void basic_string<T, Allocator>::clear() FLEX_NOEXCEPT
   {
-    if (mpBegin != mpEnd)
+    if (mBegin != mEnd)
     {
-      *mpBegin = value_type(0);
-      mpEnd = mpBegin;
+      *mBegin = value_type(0);
+      mEnd = mBegin;
     }
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_reference basic_string<T, Allocator>::at(size_type n) const
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(n >= (size_type ) (mpEnd - mpBegin), "flex::string.at() - index out-of-bounds");
-    return mpBegin[n];
+    FLEX_THROW_OUT_OF_RANGE_IF(n >= (size_type ) (mEnd - mBegin), "flex::string.at() - index out-of-bounds");
+    return mBegin[n];
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::reference basic_string<T, Allocator>::at(size_type n)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(n >= (size_type ) (mpEnd - mpBegin), "flex::string.at() - index out-of-bounds");
-    return mpBegin[n];
+    FLEX_THROW_OUT_OF_RANGE_IF(n >= (size_type ) (mEnd - mBegin), "flex::string.at() - index out-of-bounds");
+    return mBegin[n];
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::reference basic_string<T, Allocator>::front()
   {
-    FLEX_ASSERT(mpBegin < mpEnd);
-    return *mpBegin;
+    FLEX_ASSERT(mBegin < mEnd);
+    return *mBegin;
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_reference basic_string<T, Allocator>::front() const
   {
-    FLEX_ASSERT(mpBegin < mpEnd);
-    return *mpBegin;
+    FLEX_ASSERT(mBegin < mEnd);
+    return *mBegin;
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::reference basic_string<T, Allocator>::back()
   {
-    FLEX_ASSERT(mpBegin < mpEnd);
-    return *(mpEnd - 1);
+    FLEX_ASSERT(mBegin < mEnd);
+    return *(mEnd - 1);
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::const_reference basic_string<T, Allocator>::back() const
   {
-    FLEX_ASSERT(mpBegin < mpEnd);
-    return *(mpEnd - 1);
+    FLEX_ASSERT(mBegin < mEnd);
+    return *(mEnd - 1);
   }
 
   template<typename T, typename Allocator>
@@ -1091,16 +1090,15 @@ namespace flex
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>& basic_string<T, Allocator>::append(const this_type& x)
   {
-    return append(x.mpBegin, x.mpEnd);
+    return append(x.mBegin, x.mEnd);
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>& basic_string<T, Allocator>::append(const this_type& x, size_type position,
       size_type n)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(x.mpEnd - x.mpBegin), "basic_string -- out of range");
-    return append(x.mpBegin + position,
-        x.mpBegin + position + std::min(n, (size_type) (x.mpEnd - x.mpBegin) - position));
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(x.mEnd - x.mBegin), "basic_string -- out of range");
+    return append(x.mBegin + position, x.mBegin + position + std::min(n, (size_type) (x.mEnd - x.mBegin) - position));
   }
 
   template<typename T, typename Allocator>
@@ -1118,21 +1116,21 @@ namespace flex
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::append(size_type n, value_type c)
   {
-    const size_type s = (size_type) (mpEnd - mpBegin);
+    const size_type s = (size_type) (mEnd - mBegin);
 
     FLEX_THROW_LENGTH_ERROR_IF((n > kMaxSize) || (s > (kMaxSize - n)), "basic_string -- length_error");
 
-    const size_type nCapacity = (size_type) ((mpCapacity - mpBegin) - 1);
+    const size_type nCapacity = (size_type) ((mCapacity - mBegin) - 1);
 
     if ((s + n) > nCapacity)
       reserve(std::max((size_type) GetNewCapacity(nCapacity), (size_type) (s + n)));
 
     if (n > 0)
     {
-      CharStringUninitializedFillN(mpEnd + 1, n - 1, c);
-      *mpEnd = c;
-      mpEnd += n;
-      *mpEnd = 0;
+      CharStringUninitializedFillN(mEnd + 1, n - 1, c);
+      *mEnd = c;
+      mEnd += n;
+      *mEnd = 0;
     }
 
     return *this;
@@ -1143,13 +1141,13 @@ namespace flex
   {
     if (pBegin != pEnd)
     {
-      const size_type nOldSize = (size_type) (mpEnd - mpBegin);
+      const size_type nOldSize = (size_type) (mEnd - mBegin);
       const size_type n = (size_type) (pEnd - pBegin);
 
       FLEX_THROW_LENGTH_ERROR_IF(((size_t )n > kMaxSize) || (nOldSize > (kMaxSize - n)),
           "basic_string -- length_error");
 
-      const size_type nCapacity = (size_type) ((mpCapacity - mpBegin) - 1);
+      const size_type nCapacity = (size_type) ((mCapacity - mBegin) - 1);
 
       if ((nOldSize + n) > nCapacity)
       {
@@ -1158,23 +1156,23 @@ namespace flex
         pointer pNewBegin = DoAllocate(nLength);
         pointer pNewEnd = pNewBegin;
 
-        pNewEnd = CharStringUninitializedCopy(mpBegin, mpEnd, pNewBegin);
+        pNewEnd = CharStringUninitializedCopy(mBegin, mEnd, pNewBegin);
         pNewEnd = CharStringUninitializedCopy(pBegin, pEnd, pNewEnd);
         *pNewEnd = 0;
 
         DeallocateSelf();
-        mpBegin = pNewBegin;
-        mpEnd = pNewEnd;
-        mpCapacity = pNewBegin + nLength;
+        mBegin = pNewBegin;
+        mEnd = pNewEnd;
+        mCapacity = pNewBegin + nLength;
       }
       else
       {
         const value_type* pTemp = pBegin;
         ++pTemp;
-        CharStringUninitializedCopy(pTemp, pEnd, mpEnd + 1);
-        mpEnd[n] = 0;
-        *mpEnd = *pBegin;
-        mpEnd += n;
+        CharStringUninitializedCopy(pTemp, pEnd, mEnd + 1);
+        mEnd[n] = 0;
+        *mEnd = *pBegin;
+        mEnd += n;
       }
     }
 
@@ -1184,35 +1182,34 @@ namespace flex
   template<typename T, typename Allocator>
   inline void basic_string<T, Allocator>::push_back(value_type c)
   {
-    if ((mpEnd + 1) == mpCapacity) // If we are out of space... (note that we test for + 1 because we have a trailing 0)
-      reserve(std::max(GetNewCapacity((size_type) ((mpCapacity - mpBegin) - 1)), (size_type) (mpEnd - mpBegin) + 1));
-    *mpEnd++ = c;
-    *mpEnd = 0;
+    if ((mEnd + 1) == mCapacity) // If we are out of space... (note that we test for + 1 because we have a trailing 0)
+      reserve(std::max(GetNewCapacity((size_type) ((mCapacity - mBegin) - 1)), (size_type) (mEnd - mBegin) + 1));
+    *mEnd++ = c;
+    *mEnd = 0;
   }
 
   template<typename T, typename Allocator>
   inline void basic_string<T, Allocator>::pop_back()
   {
-    FLEX_ASSERT(mpBegin < mpEnd);
-    mpEnd[-1] = value_type(0);
-    --mpEnd;
+    FLEX_ASSERT(mBegin < mEnd);
+    mEnd[-1] = value_type(0);
+    --mEnd;
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>& basic_string<T, Allocator>::assign(const this_type& x)
   {
     // The C++11 Standard 21.4.6.3 p6 specifies that assign from this_type assigns contents only and not the allocator.
-    return assign(x.mpBegin, x.mpEnd);
+    return assign(x.mBegin, x.mEnd);
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>& basic_string<T, Allocator>::assign(const this_type& x, size_type position,
       size_type n)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(x.mpEnd - x.mpBegin), "basic_string -- out of range");
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(x.mEnd - x.mBegin), "basic_string -- out of range");
     // The C++11 Standard 21.4.6.3 p6 specifies that assign from this_type assigns contents only and not the allocator.
-    return assign(x.mpBegin + position,
-        x.mpBegin + position + std::min(n, (size_type) (x.mpEnd - x.mpBegin) - position));
+    return assign(x.mBegin + position, x.mBegin + position + std::min(n, (size_type) (x.mEnd - x.mBegin) - position));
   }
 
   template<typename T, typename Allocator>
@@ -1230,15 +1227,15 @@ namespace flex
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::assign(size_type n, value_type c)
   {
-    if (n <= (size_type) (mpEnd - mpBegin))
+    if (n <= (size_type) (mEnd - mBegin))
     {
-      CharTypeAssignN(mpBegin, n, c);
-      erase(mpBegin + n, mpEnd);
+      CharTypeAssignN(mBegin, n, c);
+      erase(mBegin + n, mEnd);
     }
     else
     {
-      CharTypeAssignN(mpBegin, (size_type) (mpEnd - mpBegin), c);
-      append(n - (size_type) (mpEnd - mpBegin), c);
+      CharTypeAssignN(mBegin, (size_type) (mEnd - mBegin), c);
+      append(n - (size_type) (mEnd - mBegin), c);
     }
     return *this;
   }
@@ -1247,15 +1244,15 @@ namespace flex
   basic_string<T, Allocator>& basic_string<T, Allocator>::assign(const value_type* pBegin, const value_type* pEnd)
   {
     const ptrdiff_t n = pEnd - pBegin;
-    if (static_cast<size_type>(n) <= (size_type) (mpEnd - mpBegin))
+    if (static_cast<size_type>(n) <= (size_type) (mEnd - mBegin))
     {
-      memmove(mpBegin, pBegin, (size_t) n * sizeof(value_type));
-      erase(mpBegin + n, mpEnd);
+      memmove(mBegin, pBegin, (size_t) n * sizeof(value_type));
+      erase(mBegin + n, mEnd);
     }
     else
     {
-      memmove(mpBegin, pBegin, (size_t) (mpEnd - mpBegin) * sizeof(value_type));
-      append(pBegin + (size_type) (mpEnd - mpBegin), pEnd);
+      memmove(mBegin, pBegin, (size_t) (mEnd - mBegin) * sizeof(value_type));
+      append(pBegin + (size_type) (mEnd - mBegin), pEnd);
     }
     return *this;
   }
@@ -1272,12 +1269,12 @@ namespace flex
   {
     if(!mFixed && !x.mFixed)
     {
-      std::swap(mpBegin, x.mpBegin);
-      std::swap(mpEnd, x.mpEnd);
-      std::swap(mpCapacity, x.mpCapacity);
+      std::swap(mBegin, x.mBegin);
+      std::swap(mEnd, x.mEnd);
+      std::swap(mCapacity, x.mCapacity);
     }
     else
-    assign(x.mpBegin, x.mpEnd);
+    assign(x.mBegin, x.mEnd);
 
     return *this;
   }
@@ -1286,10 +1283,10 @@ namespace flex
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::insert(size_type position, const this_type& x)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    FLEX_THROW_LENGTH_ERROR_IF((size_type )(mpEnd - mpBegin) > (kMaxSize - (size_type )(x.mpEnd - x.mpBegin)),
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    FLEX_THROW_LENGTH_ERROR_IF((size_type )(mEnd - mBegin) > (kMaxSize - (size_type )(x.mEnd - x.mBegin)),
         "basic_string -- length_error");
-    insert(mpBegin + position, x.mpBegin, x.mpEnd);
+    insert(mBegin + position, x.mBegin, x.mEnd);
     return *this;
   }
 
@@ -1297,38 +1294,38 @@ namespace flex
   basic_string<T, Allocator>& basic_string<T, Allocator>::insert(size_type position, const this_type& x, size_type beg,
       size_type n)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    size_type nLength = std::min(n, (size_type) (x.mpEnd - x.mpBegin) - beg);
-    FLEX_THROW_LENGTH_ERROR_IF((size_type )(mpEnd - mpBegin) > (kMaxSize - nLength), "basic_string -- length_error");
-    insert(mpBegin + position, x.mpBegin + beg, x.mpBegin + beg + nLength);
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    size_type nLength = std::min(n, (size_type) (x.mEnd - x.mBegin) - beg);
+    FLEX_THROW_LENGTH_ERROR_IF((size_type )(mEnd - mBegin) > (kMaxSize - nLength), "basic_string -- length_error");
+    insert(mBegin + position, x.mBegin + beg, x.mBegin + beg + nLength);
     return *this;
   }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::insert(size_type position, const value_type* p, size_type n)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    FLEX_THROW_LENGTH_ERROR_IF((size_type )(mpEnd - mpBegin) > (kMaxSize - n), "basic_string -- length_error");
-    insert(mpBegin + position, p, p + n);
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    FLEX_THROW_LENGTH_ERROR_IF((size_type )(mEnd - mBegin) > (kMaxSize - n), "basic_string -- length_error");
+    insert(mBegin + position, p, p + n);
     return *this;
   }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::insert(size_type position, const value_type* p)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
     size_type nLength = (size_type) CharStrlen(p);
-    FLEX_THROW_LENGTH_ERROR_IF((size_type )(mpEnd - mpBegin) > (kMaxSize - nLength), "basic_string -- length_error");
-    insert(mpBegin + position, p, p + nLength);
+    FLEX_THROW_LENGTH_ERROR_IF((size_type )(mEnd - mBegin) > (kMaxSize - nLength), "basic_string -- length_error");
+    insert(mBegin + position, p, p + nLength);
     return *this;
   }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::insert(size_type position, size_type n, value_type c)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    FLEX_THROW_LENGTH_ERROR_IF((size_type )(mpEnd - mpBegin) > (kMaxSize - n), "basic_string -- length_error");
-    insert(mpBegin + position, n, c);
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    FLEX_THROW_LENGTH_ERROR_IF((size_type )(mEnd - mBegin) > (kMaxSize - n), "basic_string -- length_error");
+    insert(mBegin + position, n, c);
     return *this;
   }
 
@@ -1336,10 +1333,10 @@ namespace flex
   inline typename basic_string<T, Allocator>::iterator basic_string<T, Allocator>::insert(const_iterator p,
       value_type c)
   {
-    if (p == mpEnd)
+    if (p == mEnd)
     {
       push_back(c);
-      return mpEnd - 1;
+      return mEnd - 1;
     }
     return InsertInternal(p, c);
   }
@@ -1348,71 +1345,71 @@ namespace flex
   typename basic_string<T, Allocator>::iterator basic_string<T, Allocator>::insert(const_iterator p, size_type n,
       value_type c)
   {
-    const ptrdiff_t nPosition = (p - mpBegin); // Save this because we might reallocate.
-    FLEX_ASSERT((mpBegin <= p) && (p <= mpEnd));
+    const ptrdiff_t nPosition = (p - mBegin); // Save this because we might reallocate.
+    FLEX_ASSERT((mBegin <= p) && (p <= mEnd));
 
     if (n) // If there is anything to insert...
     {
-      if (size_type(mpCapacity - mpEnd) >= (n + 1)) // If we have enough capacity...
+      if (size_type(mCapacity - mEnd) >= (n + 1)) // If we have enough capacity...
       {
-        const size_type nElementsAfter = (size_type) (mpEnd - p);
-        iterator pOldEnd = mpEnd;
+        const size_type nElementsAfter = (size_type) (mEnd - p);
+        iterator pOldEnd = mEnd;
 
         if (nElementsAfter >= n) // If there's enough space for the new chars between the insert position and the end...
         {
-          CharStringUninitializedCopy((mpEnd - n) + 1, mpEnd + 1, mpEnd + 1);
-          mpEnd += n;
+          CharStringUninitializedCopy((mEnd - n) + 1, mEnd + 1, mEnd + 1);
+          mEnd += n;
           memmove(const_cast<value_type*>(p) + n, p, (size_t) ((nElementsAfter - n) + 1) * sizeof(value_type));
           CharTypeAssignN(const_cast<value_type*>(p), n, c);
         }
         else
         {
-          CharStringUninitializedFillN(mpEnd + 1, n - nElementsAfter - 1, c);
-          mpEnd += n - nElementsAfter;
+          CharStringUninitializedFillN(mEnd + 1, n - nElementsAfter - 1, c);
+          mEnd += n - nElementsAfter;
 
-          CharStringUninitializedCopy(p, pOldEnd + 1, mpEnd);
-          mpEnd += nElementsAfter;
+          CharStringUninitializedCopy(p, pOldEnd + 1, mEnd);
+          mEnd += nElementsAfter;
 
           CharTypeAssignN(const_cast<value_type*>(p), nElementsAfter + 1, c);
         }
       }
       else
       {
-        const size_type nOldSize = (size_type) (mpEnd - mpBegin);
-        const size_type nOldCap = (size_type) ((mpCapacity - mpBegin) - 1);
+        const size_type nOldSize = (size_type) (mEnd - mBegin);
+        const size_type nOldCap = (size_type) ((mCapacity - mBegin) - 1);
         const size_type nLength = std::max((size_type) GetNewCapacity(nOldCap), (size_type) (nOldSize + n)) + 1; // + 1 to accomodate the trailing 0.
 
         iterator pNewBegin = DoAllocate(nLength);
         iterator pNewEnd = pNewBegin;
 
-        pNewEnd = CharStringUninitializedCopy(mpBegin, p, pNewBegin);
+        pNewEnd = CharStringUninitializedCopy(mBegin, p, pNewBegin);
         pNewEnd = CharStringUninitializedFillN(pNewEnd, n, c);
-        pNewEnd = CharStringUninitializedCopy(p, mpEnd, pNewEnd);
+        pNewEnd = CharStringUninitializedCopy(p, mEnd, pNewEnd);
         *pNewEnd = 0;
 
         DeallocateSelf();
-        mpBegin = pNewBegin;
-        mpEnd = pNewEnd;
-        mpCapacity = pNewBegin + nLength;
+        mBegin = pNewBegin;
+        mEnd = pNewEnd;
+        mCapacity = pNewBegin + nLength;
       }
     }
 
-    return mpBegin + nPosition;
+    return mBegin + nPosition;
   }
 
   template<typename T, typename Allocator>
   typename basic_string<T, Allocator>::iterator basic_string<T, Allocator>::insert(const_iterator p,
       const value_type* pBegin, const value_type* pEnd)
   {
-    const ptrdiff_t nPosition = (p - mpBegin); // Save this because we might reallocate.
-    FLEX_ASSERT((mpBegin <= p) || (p <= mpEnd));
+    const ptrdiff_t nPosition = (p - mBegin); // Save this because we might reallocate.
+    FLEX_ASSERT((mBegin <= p) || (p <= mEnd));
 
     const size_type n = (size_type) (pEnd - pBegin);
 
     if (n)
     {
-      const bool bCapacityIsSufficient = ((mpCapacity - mpEnd) >= (difference_type) (n + 1));
-      const bool bSourceIsFromSelf = ((pEnd >= mpBegin) && (pBegin <= mpEnd));
+      const bool bCapacityIsSufficient = ((mCapacity - mEnd) >= (difference_type) (n + 1));
+      const bool bSourceIsFromSelf = ((pEnd >= mBegin) && (pBegin <= mEnd));
 
       // If bSourceIsFromSelf is true, then we reallocate. This is because we are
       // inserting ourself into ourself and thus both the source and destination
@@ -1421,13 +1418,13 @@ namespace flex
       // whereby we don't need to reallocate or can often avoid reallocating.
       if (bCapacityIsSufficient && !bSourceIsFromSelf)
       {
-        const ptrdiff_t nElementsAfter = (mpEnd - p);
-        iterator pOldEnd = mpEnd;
+        const ptrdiff_t nElementsAfter = (mEnd - p);
+        iterator pOldEnd = mEnd;
 
         if (nElementsAfter >= (ptrdiff_t) n) // If the newly inserted characters entirely fit within the size of the original string...
         {
-          memmove(mpEnd + 1, mpEnd - n + 1, (size_t) n * sizeof(value_type));
-          mpEnd += n;
+          memmove(mEnd + 1, mEnd - n + 1, (size_t) n * sizeof(value_type));
+          mEnd += n;
           memmove(const_cast<value_type*>(p) + n, p, (size_t) ((nElementsAfter - n) + 1) * sizeof(value_type));
           memmove(const_cast<value_type*>(p), pBegin, (size_t) (pEnd - pBegin) * sizeof(value_type));
         }
@@ -1435,19 +1432,19 @@ namespace flex
         {
           const value_type* const pMid = pBegin + (nElementsAfter + 1);
 
-          memmove(mpEnd + 1, pMid, (size_t) (pEnd - pMid) * sizeof(value_type));
-          mpEnd += n - nElementsAfter;
+          memmove(mEnd + 1, pMid, (size_t) (pEnd - pMid) * sizeof(value_type));
+          mEnd += n - nElementsAfter;
 
-          memmove(mpEnd, p, (size_t) (pOldEnd - p + 1) * sizeof(value_type));
-          mpEnd += nElementsAfter;
+          memmove(mEnd, p, (size_t) (pOldEnd - p + 1) * sizeof(value_type));
+          mEnd += nElementsAfter;
 
           memmove(const_cast<value_type*>(p), pBegin, (size_t) (pMid - pBegin) * sizeof(value_type));
         }
       }
       else // Else we need to reallocate to implement this.
       {
-        const size_type nOldSize = (size_type) (mpEnd - mpBegin);
-        const size_type nOldCap = (size_type) ((mpCapacity - mpBegin) - 1);
+        const size_type nOldSize = (size_type) (mEnd - mBegin);
+        const size_type nOldCap = (size_type) ((mCapacity - mBegin) - 1);
         size_type nLength;
 
         if (bCapacityIsSufficient) // If bCapacityIsSufficient is true, then bSourceIsFromSelf must be false.
@@ -1458,19 +1455,19 @@ namespace flex
         pointer pNewBegin = DoAllocate(nLength);
         pointer pNewEnd = pNewBegin;
 
-        pNewEnd = CharStringUninitializedCopy(mpBegin, p, pNewBegin);
+        pNewEnd = CharStringUninitializedCopy(mBegin, p, pNewBegin);
         pNewEnd = CharStringUninitializedCopy(pBegin, pEnd, pNewEnd);
-        pNewEnd = CharStringUninitializedCopy(p, mpEnd, pNewEnd);
+        pNewEnd = CharStringUninitializedCopy(p, mEnd, pNewEnd);
         *pNewEnd = 0;
 
         DeallocateSelf();
-        mpBegin = pNewBegin;
-        mpEnd = pNewEnd;
-        mpCapacity = pNewBegin + nLength;
+        mBegin = pNewBegin;
+        mEnd = pNewEnd;
+        mCapacity = pNewBegin + nLength;
       }
     }
 
-    return mpBegin + nPosition;
+    return mBegin + nPosition;
   }
 
   template<typename T, typename Allocator>
@@ -1483,17 +1480,17 @@ namespace flex
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>& basic_string<T, Allocator>::erase(size_type position, size_type n)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");FLEX_ASSERT(position <= (size_type)(mpEnd - mpBegin));
-    erase(mpBegin + position, mpBegin + position + std::min(n, (size_type) (mpEnd - mpBegin) - position));
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");FLEX_ASSERT(position <= (size_type)(mEnd - mBegin));
+    erase(mBegin + position, mBegin + position + std::min(n, (size_type) (mEnd - mBegin) - position));
     return *this;
   }
 
   template<typename T, typename Allocator>
   inline typename basic_string<T, Allocator>::iterator basic_string<T, Allocator>::erase(const_iterator p)
   {
-    FLEX_ASSERT((mpBegin <= p) && (p < mpEnd));
-    memmove(const_cast<value_type*>(p), p + 1, (size_t) (mpEnd - p) * sizeof(value_type));
-    --mpEnd;
+    FLEX_ASSERT((mBegin <= p) && (p < mEnd));
+    memmove(const_cast<value_type*>(p), p + 1, (size_t) (mEnd - p) * sizeof(value_type));
+    --mEnd;
     return const_cast<value_type*>(p);
   }
 
@@ -1501,12 +1498,12 @@ namespace flex
   typename basic_string<T, Allocator>::iterator basic_string<T, Allocator>::erase(const_iterator pBegin,
       const_iterator pEnd)
   {
-    FLEX_ASSERT((pBegin >= mpBegin) && (pBegin <= mpEnd) && (pEnd >= mpBegin) && (pEnd <= mpEnd) && (pEnd >= pBegin));
+    FLEX_ASSERT((pBegin >= mBegin) && (pBegin <= mEnd) && (pEnd >= mBegin) && (pEnd <= mEnd) && (pEnd >= pBegin));
     if (pBegin != pEnd)
     {
-      memmove(const_cast<value_type*>(pBegin), pEnd, (size_t) ((mpEnd - pEnd) + 1) * sizeof(value_type));
-      const iterator pNewEnd = (mpEnd - (pEnd - pBegin));
-      mpEnd = pNewEnd;
+      memmove(const_cast<value_type*>(pBegin), pEnd, (size_t) ((mEnd - pEnd) + 1) * sizeof(value_type));
+      const iterator pNewEnd = (mEnd - (pEnd - pBegin));
+      mEnd = pNewEnd;
     }
     return const_cast<value_type*>(pBegin);
   }
@@ -1528,69 +1525,68 @@ namespace flex
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::replace(size_type position, size_type n, const this_type& x)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    const size_type nLength = std::min(n, (size_type) (mpEnd - mpBegin) - position);
-    FLEX_THROW_LENGTH_ERROR_IF(
-        ((size_type )(mpEnd - mpBegin) - nLength) >= (kMaxSize - (size_type )(x.mpEnd - x.mpBegin)),
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    const size_type nLength = std::min(n, (size_type) (mEnd - mBegin) - position);
+    FLEX_THROW_LENGTH_ERROR_IF(((size_type )(mEnd - mBegin) - nLength) >= (kMaxSize - (size_type )(x.mEnd - x.mBegin)),
         "basic_string -- length_error");
-    return replace(mpBegin + position, mpBegin + position + nLength, x.mpBegin, x.mpEnd);
+    return replace(mBegin + position, mBegin + position + nLength, x.mBegin, x.mEnd);
   }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::replace(size_type pos1, size_type n1, const this_type& x,
       size_type pos2, size_type n2)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF((pos1 > (size_type )(mpEnd - mpBegin)) || (pos2 > (size_type )(x.mpEnd - x.mpBegin)),
+    FLEX_THROW_OUT_OF_RANGE_IF((pos1 > (size_type )(mEnd - mBegin)) || (pos2 > (size_type )(x.mEnd - x.mBegin)),
         "basic_string -- out of range");
-    const size_type nLength1 = std::min(n1, (size_type) (mpEnd - mpBegin) - pos1);
-    const size_type nLength2 = std::min(n2, (size_type) (x.mpEnd - x.mpBegin) - pos2);
-    FLEX_THROW_LENGTH_ERROR_IF(((size_type )(mpEnd - mpBegin) - nLength1) >= (kMaxSize - nLength2),
+    const size_type nLength1 = std::min(n1, (size_type) (mEnd - mBegin) - pos1);
+    const size_type nLength2 = std::min(n2, (size_type) (x.mEnd - x.mBegin) - pos2);
+    FLEX_THROW_LENGTH_ERROR_IF(((size_type )(mEnd - mBegin) - nLength1) >= (kMaxSize - nLength2),
         "basic_string -- length_error");
-    return replace(mpBegin + pos1, mpBegin + pos1 + nLength1, x.mpBegin + pos2, x.mpBegin + pos2 + nLength2);
+    return replace(mBegin + pos1, mBegin + pos1 + nLength1, x.mBegin + pos2, x.mBegin + pos2 + nLength2);
   }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::replace(size_type position, size_type n1, const value_type* p,
       size_type n2)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    const size_type nLength = std::min(n1, (size_type) (mpEnd - mpBegin) - position);
-    FLEX_THROW_LENGTH_ERROR_IF((n2 > kMaxSize) || (((size_type )(mpEnd - mpBegin) - nLength) >= (kMaxSize - n2)),
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    const size_type nLength = std::min(n1, (size_type) (mEnd - mBegin) - position);
+    FLEX_THROW_LENGTH_ERROR_IF((n2 > kMaxSize) || (((size_type )(mEnd - mBegin) - nLength) >= (kMaxSize - n2)),
         "basic_string -- length_error");
-    return replace(mpBegin + position, mpBegin + position + nLength, p, p + n2);
+    return replace(mBegin + position, mBegin + position + nLength, p, p + n2);
   }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::replace(size_type position, size_type n1, const value_type* p)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    const size_type nLength = std::min(n1, (size_type) (mpEnd - mpBegin) - position);
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    const size_type nLength = std::min(n1, (size_type) (mEnd - mBegin) - position);
 
 #ifndef FLEX_RELEASE
     const size_type n2 = (size_type) CharStrlen(p);
-    if (FLEX_UNLIKELY((n2 > kMaxSize) || (((size_type )(mpEnd - mpBegin) - nLength) >= (kMaxSize - n2))))
+    if (FLEX_UNLIKELY((n2 > kMaxSize) || (((size_type )(mEnd - mBegin) - nLength) >= (kMaxSize - n2))))
       flex::throw_length_error("basic_string -- length_error");
 #endif
 
-    return replace(mpBegin + position, mpBegin + position + nLength, p, p + CharStrlen(p));
+    return replace(mBegin + position, mBegin + position + nLength, p, p + CharStrlen(p));
   }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::replace(size_type position, size_type n1, size_type n2,
       value_type c)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    const size_type nLength = std::min(n1, (size_type) (mpEnd - mpBegin) - position);
-    FLEX_THROW_LENGTH_ERROR_IF((n2 > kMaxSize) || ((size_type )(mpEnd - mpBegin) - nLength) >= (kMaxSize - n2),
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    const size_type nLength = std::min(n1, (size_type) (mEnd - mBegin) - position);
+    FLEX_THROW_LENGTH_ERROR_IF((n2 > kMaxSize) || ((size_type )(mEnd - mBegin) - nLength) >= (kMaxSize - n2),
         "basic_string -- length_error");
-    return replace(mpBegin + position, mpBegin + position + nLength, n2, c);
+    return replace(mBegin + position, mBegin + position + nLength, n2, c);
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>& basic_string<T, Allocator>::replace(const_iterator pBegin, const_iterator pEnd,
       const this_type& x)
   {
-    return replace(pBegin, pEnd, x.mpBegin, x.mpEnd);
+    return replace(pBegin, pEnd, x.mBegin, x.mEnd);
   }
 
   template<typename T, typename Allocator>
@@ -1611,7 +1607,7 @@ namespace flex
   basic_string<T, Allocator>& basic_string<T, Allocator>::replace(const_iterator pBegin, const_iterator pEnd,
       size_type n, value_type c)
   {
-    FLEX_ASSERT((pBegin >= mpBegin) && (pBegin <= mpEnd) && (pEnd >= mpBegin) && (pEnd <= mpEnd) && (pEnd >= pBegin));
+    FLEX_ASSERT((pBegin >= mBegin) && (pBegin <= mEnd) && (pEnd >= mBegin) && (pEnd <= mEnd) && (pEnd >= pBegin));
 
     const size_type nLength = static_cast<size_type>(pEnd - pBegin);
 
@@ -1632,7 +1628,7 @@ namespace flex
   basic_string<T, Allocator>& basic_string<T, Allocator>::replace(const_iterator pBegin1, const_iterator pEnd1,
       const value_type* pBegin2, const value_type* pEnd2)
   {
-    FLEX_ASSERT((pBegin1 >= mpBegin) && (pBegin1 <= mpEnd) && (pEnd1 >= mpBegin) && (pEnd1 <= mpEnd) && (pEnd1 >= pBegin1));
+    FLEX_ASSERT((pBegin1 >= mBegin) && (pBegin1 <= mEnd) && (pEnd1 >= mBegin) && (pEnd1 <= mEnd) && (pEnd1 >= pBegin1));
     const size_type nLength1 = (size_type) (pEnd1 - pBegin1);
     const size_type nLength2 = (size_type) (pEnd2 - pBegin2);
 
@@ -1659,23 +1655,23 @@ namespace flex
       else // else we have an overlapping operation.
       {
         // I can't think of any easy way of doing this without allocating temporary memory.
-        const size_type nOldSize = (size_type) (mpEnd - mpBegin);
-        const size_type nOldCap = (size_type) ((mpCapacity - mpBegin) - 1);
+        const size_type nOldSize = (size_type) (mEnd - mBegin);
+        const size_type nOldCap = (size_type) ((mCapacity - mBegin) - 1);
         const size_type nNewCapacity = std::max((size_type) GetNewCapacity(nOldCap),
             (size_type) (nOldSize + (nLength2 - nLength1))) + 1; // + 1 to accomodate the trailing 0.
 
         pointer pNewBegin = DoAllocate(nNewCapacity);
         pointer pNewEnd = pNewBegin;
 
-        pNewEnd = CharStringUninitializedCopy(mpBegin, pBegin1, pNewBegin);
+        pNewEnd = CharStringUninitializedCopy(mBegin, pBegin1, pNewBegin);
         pNewEnd = CharStringUninitializedCopy(pBegin2, pEnd2, pNewEnd);
-        pNewEnd = CharStringUninitializedCopy(pEnd1, mpEnd, pNewEnd);
+        pNewEnd = CharStringUninitializedCopy(pEnd1, mEnd, pNewEnd);
         *pNewEnd = 0;
 
         DeallocateSelf();
-        mpBegin = pNewBegin;
-        mpEnd = pNewEnd;
-        mpCapacity = pNewBegin + nNewCapacity;
+        mBegin = pNewBegin;
+        mEnd = pNewEnd;
+        mCapacity = pNewBegin + nNewCapacity;
       }
     }
     return *this;
@@ -1685,13 +1681,13 @@ namespace flex
   typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::copy(value_type* p, size_type n,
       size_type position) const
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
 
     // It is not clear from the C++ standard if 'p' destination pointer is allowed to
     // refer to memory from within the string itself. We assume so and use memmove
     // instead of memcpy until we find otherwise.
-    const size_type nLength = std::min(n, (size_type) (mpEnd - mpBegin) - position);
-    memmove(p, mpBegin + position, (size_t) nLength * sizeof(value_type));
+    const size_type nLength = std::min(n, (size_type) (mEnd - mBegin) - position);
+    memmove(p, mBegin + position, (size_t) nLength * sizeof(value_type));
     return nLength;
   }
 
@@ -1701,9 +1697,9 @@ namespace flex
     if (!mFixed && !x.mFixed) // If allocators are equivalent...
     {
       // We leave mAllocator as-is.
-      std::swap(mpBegin, x.mpBegin);
-      std::swap(mpEnd, x.mpEnd);
-      std::swap(mpCapacity, x.mpCapacity);
+      std::swap(mBegin, x.mBegin);
+      std::swap(mEnd, x.mEnd);
+      std::swap(mCapacity, x.mCapacity);
     }
     else // else swap the contents.
     {
@@ -1717,7 +1713,7 @@ namespace flex
   inline typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find(const this_type& x,
       size_type position) const FLEX_NOEXCEPT
   {
-    return find(x.mpBegin, position, (size_type) (x.mpEnd - x.mpBegin));
+    return find(x.mBegin, position, (size_type) (x.mEnd - x.mBegin));
   }
 
   template<typename T, typename Allocator>
@@ -1731,12 +1727,12 @@ namespace flex
   typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find(const value_type* p,
       size_type position, size_type n) const
   {
-    if (FLEX_LIKELY(((npos - n) >= position) && (position + n) <= (size_type ) (mpEnd - mpBegin))) // If the range is valid...
+    if (FLEX_LIKELY(((npos - n) >= position) && (position + n) <= (size_type ) (mEnd - mBegin))) // If the range is valid...
     {
-      const value_type* const pTemp = std::search(mpBegin + position, mpEnd, p, p + n);
+      const value_type* const pTemp = std::search(mBegin + position, mEnd, p, p + n);
 
-      if ((pTemp != mpEnd) || (n == 0))
-        return (size_type) (pTemp - mpBegin);
+      if ((pTemp != mEnd) || (n == 0))
+        return (size_type) (pTemp - mBegin);
     }
     return npos;
   }
@@ -1745,12 +1741,12 @@ namespace flex
   typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find(value_type c,
       size_type position) const FLEX_NOEXCEPT
   {
-    if (FLEX_LIKELY(position < (size_type )(mpEnd - mpBegin))) // If the position is valid...
+    if (FLEX_LIKELY(position < (size_type )(mEnd - mBegin))) // If the position is valid...
     {
-      const const_iterator pResult = std::find(mpBegin + position, mpEnd, c);
+      const const_iterator pResult = std::find(mBegin + position, mEnd, c);
 
-      if (pResult != mpEnd)
-        return (size_type) (pResult - mpBegin);
+      if (pResult != mEnd)
+        return (size_type) (pResult - mBegin);
     }
     return npos;
   }
@@ -1759,7 +1755,7 @@ namespace flex
   inline typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::rfind(const this_type& x,
       size_type position) const FLEX_NOEXCEPT
   {
-    return rfind(x.mpBegin, position, (size_type) (x.mpEnd - x.mpBegin));
+    return rfind(x.mBegin, position, (size_type) (x.mEnd - x.mBegin));
   }
 
   template<typename T, typename Allocator>
@@ -1778,17 +1774,17 @@ namespace flex
     // The standard seems to suggest that rfind doesn't act exactly the same as find in that input position
     // can be > size and the return value can still be other than npos. Thus, if n == 0 then you can
     // never return npos, unlike the case with find.
-    const size_type nLength = (size_type) (mpEnd - mpBegin);
+    const size_type nLength = (size_type) (mEnd - mBegin);
 
     if (FLEX_LIKELY(n <= nLength))
     {
       if (FLEX_LIKELY(n))
       {
-        const const_iterator pEnd = mpBegin + std::min(nLength - n, position) + n;
-        const const_iterator pResult = CharTypeStringRSearch(mpBegin, pEnd, p, p + n);
+        const const_iterator pEnd = mBegin + std::min(nLength - n, position) + n;
+        const const_iterator pResult = CharTypeStringRSearch(mBegin, pEnd, p, p + n);
 
         if (pResult != pEnd)
-          return (size_type) (pResult - mpBegin);
+          return (size_type) (pResult - mBegin);
       }
       else
         return std::min(nLength, position);
@@ -1801,15 +1797,15 @@ namespace flex
       size_type position) const FLEX_NOEXCEPT
   {
     // If n is zero or position is >= size, we return npos.
-    const size_type nLength = (size_type) (mpEnd - mpBegin);
+    const size_type nLength = (size_type) (mEnd - mBegin);
 
     if (FLEX_LIKELY(nLength))
     {
-      const value_type* const pEnd = mpBegin + std::min(nLength - 1, position) + 1;
-      const value_type* const pResult = CharTypeStringRFind(pEnd, mpBegin, c);
+      const value_type* const pEnd = mBegin + std::min(nLength - 1, position) + 1;
+      const value_type* const pResult = CharTypeStringRFind(pEnd, mBegin, c);
 
-      if (pResult != mpBegin)
-        return (size_type) ((pResult - 1) - mpBegin);
+      if (pResult != mBegin)
+        return (size_type) ((pResult - 1) - mBegin);
     }
     return npos;
   }
@@ -1818,7 +1814,7 @@ namespace flex
   inline typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find_first_of(const this_type& x,
       size_type position) const FLEX_NOEXCEPT
   {
-    return find_first_of(x.mpBegin, position, (size_type) (x.mpEnd - x.mpBegin));
+    return find_first_of(x.mBegin, position, (size_type) (x.mEnd - x.mBegin));
   }
 
   template<typename T, typename Allocator>
@@ -1833,13 +1829,13 @@ namespace flex
       size_type position, size_type n) const
   {
 // If position is >= size, we return npos.
-    if (FLEX_LIKELY((position < (size_type ) (mpEnd - mpBegin))))
+    if (FLEX_LIKELY((position < (size_type ) (mEnd - mBegin))))
     {
-      const iterator pBegin = mpBegin + position;
-      const iterator pResult = std::find_first_of(pBegin, mpEnd, p, p + n);
+      const iterator pBegin = mBegin + position;
+      const iterator pResult = std::find_first_of(pBegin, mEnd, p, p + n);
 
-      if (pResult != mpEnd)
-        return (size_type) (pResult - mpBegin);
+      if (pResult != mEnd)
+        return (size_type) (pResult - mBegin);
     }
     return npos;
   }
@@ -1855,7 +1851,7 @@ namespace flex
   inline typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find_last_of(const this_type& x,
       size_type position) const FLEX_NOEXCEPT
   {
-    return find_last_of(x.mpBegin, position, (size_type) (x.mpEnd - x.mpBegin));
+    return find_last_of(x.mBegin, position, (size_type) (x.mEnd - x.mBegin));
   }
 
   template<typename T, typename Allocator>
@@ -1870,15 +1866,15 @@ namespace flex
       size_type position, size_type n) const
   {
 // If n is zero or position is >= size, we return npos.
-    const size_type nLength = (size_type) (mpEnd - mpBegin);
+    const size_type nLength = (size_type) (mEnd - mBegin);
 
     if (FLEX_LIKELY(nLength))
     {
-      const value_type* const pEnd = mpBegin + std::min(nLength - 1, position) + 1;
-      const value_type* const pResult = CharTypeStringRFindFirstOf(pEnd, mpBegin, p, p + n);
+      const value_type* const pEnd = mBegin + std::min(nLength - 1, position) + 1;
+      const value_type* const pResult = CharTypeStringRFindFirstOf(pEnd, mBegin, p, p + n);
 
-      if (pResult != mpBegin)
-        return (size_type) ((pResult - 1) - mpBegin);
+      if (pResult != mBegin)
+        return (size_type) ((pResult - 1) - mBegin);
     }
     return npos;
   }
@@ -1894,7 +1890,7 @@ namespace flex
   inline typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find_first_not_of(
       const this_type& x, size_type position) const FLEX_NOEXCEPT
   {
-    return find_first_not_of(x.mpBegin, position, (size_type) (x.mpEnd - x.mpBegin));
+    return find_first_not_of(x.mBegin, position, (size_type) (x.mEnd - x.mBegin));
   }
 
   template<typename T, typename Allocator>
@@ -1908,12 +1904,12 @@ namespace flex
   typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find_first_not_of(const value_type* p,
       size_type position, size_type n) const
   {
-    if (FLEX_LIKELY(position <= (size_type ) (mpEnd - mpBegin)))
+    if (FLEX_LIKELY(position <= (size_type ) (mEnd - mBegin)))
     {
-      const const_iterator pResult = CharTypeStringFindFirstNotOf(mpBegin + position, mpEnd, p, p + n);
+      const const_iterator pResult = CharTypeStringFindFirstNotOf(mBegin + position, mEnd, p, p + n);
 
-      if (pResult != mpEnd)
-        return (size_type) (pResult - mpBegin);
+      if (pResult != mEnd)
+        return (size_type) (pResult - mBegin);
     }
     return npos;
   }
@@ -1922,13 +1918,13 @@ namespace flex
   typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find_first_not_of(value_type c,
       size_type position) const FLEX_NOEXCEPT
   {
-    if (FLEX_LIKELY(position <= (size_type )(mpEnd - mpBegin)))
+    if (FLEX_LIKELY(position <= (size_type )(mEnd - mBegin)))
     {
 // Todo: Possibly make a specialized version of CharTypeStringFindFirstNotOf(pBegin, pEnd, c).
-      const const_iterator pResult = CharTypeStringFindFirstNotOf(mpBegin + position, mpEnd, &c, &c + 1);
+      const const_iterator pResult = CharTypeStringFindFirstNotOf(mBegin + position, mEnd, &c, &c + 1);
 
-      if (pResult != mpEnd)
-        return (size_type) (pResult - mpBegin);
+      if (pResult != mEnd)
+        return (size_type) (pResult - mBegin);
     }
     return npos;
   }
@@ -1937,7 +1933,7 @@ namespace flex
   inline typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find_last_not_of(const this_type& x,
       size_type position) const FLEX_NOEXCEPT
   {
-    return find_last_not_of(x.mpBegin, position, (size_type) (x.mpEnd - x.mpBegin));
+    return find_last_not_of(x.mBegin, position, (size_type) (x.mEnd - x.mBegin));
   }
 
   template<typename T, typename Allocator>
@@ -1951,15 +1947,15 @@ namespace flex
   typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find_last_not_of(const value_type* p,
       size_type position, size_type n) const
   {
-    const size_type nLength = (size_type) (mpEnd - mpBegin);
+    const size_type nLength = (size_type) (mEnd - mBegin);
 
     if (FLEX_LIKELY(nLength))
     {
-      const value_type* const pEnd = mpBegin + std::min(nLength - 1, position) + 1;
-      const value_type* const pResult = CharTypeStringRFindFirstNotOf(pEnd, mpBegin, p, p + n);
+      const value_type* const pEnd = mBegin + std::min(nLength - 1, position) + 1;
+      const value_type* const pResult = CharTypeStringRFindFirstNotOf(pEnd, mBegin, p, p + n);
 
-      if (pResult != mpBegin)
-        return (size_type) ((pResult - 1) - mpBegin);
+      if (pResult != mBegin)
+        return (size_type) ((pResult - 1) - mBegin);
     }
     return npos;
   }
@@ -1968,16 +1964,16 @@ namespace flex
   typename basic_string<T, Allocator>::size_type basic_string<T, Allocator>::find_last_not_of(value_type c,
       size_type position) const FLEX_NOEXCEPT
   {
-    const size_type nLength = (size_type) (mpEnd - mpBegin);
+    const size_type nLength = (size_type) (mEnd - mBegin);
 
     if (FLEX_LIKELY(nLength))
     {
       // Todo: Possibly make a specialized version of CharTypeStringRFindFirstNotOf(pBegin, pEnd, c).
-      const value_type* const pEnd = mpBegin + std::min(nLength - 1, position) + 1;
-      const value_type* const pResult = CharTypeStringRFindFirstNotOf(pEnd, mpBegin, &c, &c + 1);
+      const value_type* const pEnd = mBegin + std::min(nLength - 1, position) + 1;
+      const value_type* const pResult = CharTypeStringRFindFirstNotOf(pEnd, mBegin, &c, &c + 1);
 
-      if (pResult != mpBegin)
-        return (size_type) ((pResult - 1) - mpBegin);
+      if (pResult != mBegin)
+        return (size_type) ((pResult - 1) - mBegin);
     }
     return npos;
   }
@@ -1985,54 +1981,53 @@ namespace flex
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator> basic_string<T, Allocator>::substr(size_type position, size_type n) const
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    return basic_string(mpBegin + position, mpBegin + position + std::min(n, (size_type) (mpEnd - mpBegin) - position),
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    return basic_string(mBegin + position, mBegin + position + std::min(n, (size_type) (mEnd - mBegin) - position),
         mAllocator);
   }
 
   template<typename T, typename Allocator>
   inline int basic_string<T, Allocator>::compare(const this_type& x) const FLEX_NOEXCEPT
   {
-    return compare(mpBegin, mpEnd, x.mpBegin, x.mpEnd);
+    return compare(mBegin, mEnd, x.mBegin, x.mEnd);
   }
 
   template<typename T, typename Allocator>
   inline int basic_string<T, Allocator>::compare(size_type pos1, size_type n1, const this_type& x) const
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(pos1 > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    return compare(mpBegin + pos1, mpBegin + pos1 + std::min(n1, (size_type) (mpEnd - mpBegin) - pos1), x.mpBegin,
-        x.mpEnd);
+    FLEX_THROW_OUT_OF_RANGE_IF(pos1 > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    return compare(mBegin + pos1, mBegin + pos1 + std::min(n1, (size_type) (mEnd - mBegin) - pos1), x.mBegin, x.mEnd);
   }
 
   template<typename T, typename Allocator>
   inline int basic_string<T, Allocator>::compare(size_type pos1, size_type n1, const this_type& x, size_type pos2,
       size_type n2) const
   {
-    FLEX_THROW_OUT_OF_RANGE_IF((pos1 > (size_type )(mpEnd - mpBegin)) || (pos2 > (size_type )(x.mpEnd - x.mpBegin)),
+    FLEX_THROW_OUT_OF_RANGE_IF((pos1 > (size_type )(mEnd - mBegin)) || (pos2 > (size_type )(x.mEnd - x.mBegin)),
         "basic_string -- out of range");
-    return compare(mpBegin + pos1, mpBegin + pos1 + std::min(n1, (size_type) (mpEnd - mpBegin) - pos1),
-        x.mpBegin + pos2, x.mpBegin + pos2 + std::min(n2, (size_type) (x.mpEnd - x.mpBegin) - pos2));
+    return compare(mBegin + pos1, mBegin + pos1 + std::min(n1, (size_type) (mEnd - mBegin) - pos1), x.mBegin + pos2,
+        x.mBegin + pos2 + std::min(n2, (size_type) (x.mEnd - x.mBegin) - pos2));
   }
 
   template<typename T, typename Allocator>
   inline int basic_string<T, Allocator>::compare(const value_type* p) const
   {
-    return compare(mpBegin, mpEnd, p, p + CharStrlen(p));
+    return compare(mBegin, mEnd, p, p + CharStrlen(p));
   }
 
   template<typename T, typename Allocator>
   inline int basic_string<T, Allocator>::compare(size_type pos1, size_type n1, const value_type* p) const
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(pos1 > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    return compare(mpBegin + pos1, mpBegin + pos1 + std::min(n1, (size_type) (mpEnd - mpBegin) - pos1), p,
+    FLEX_THROW_OUT_OF_RANGE_IF(pos1 > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    return compare(mBegin + pos1, mBegin + pos1 + std::min(n1, (size_type) (mEnd - mBegin) - pos1), p,
         p + CharStrlen(p));
   }
 
   template<typename T, typename Allocator>
   inline int basic_string<T, Allocator>::compare(size_type pos1, size_type n1, const value_type* p, size_type n2) const
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(pos1 > (size_type )(mpEnd - mpBegin), "basic_string -- out of range");
-    return compare(mpBegin + pos1, mpBegin + pos1 + std::min(n1, (size_type) (mpEnd - mpBegin) - pos1), p, p + n2);
+    FLEX_THROW_OUT_OF_RANGE_IF(pos1 > (size_type )(mEnd - mBegin), "basic_string -- out of range");
+    return compare(mBegin + pos1, mBegin + pos1 + std::min(n1, (size_type) (mEnd - mBegin) - pos1), p, p + n2);
   }
 
 // make_lower
@@ -2041,7 +2036,7 @@ namespace flex
   template<typename T, typename Allocator>
   inline void basic_string<T, Allocator>::make_lower()
   {
-    for (pointer p = mpBegin; p < mpEnd; ++p)
+    for (pointer p = mBegin; p < mEnd; ++p)
       *p = (value_type) CharToLower(*p);
   }
 
@@ -2051,7 +2046,7 @@ namespace flex
   template<typename T, typename Allocator>
   inline void basic_string<T, Allocator>::make_upper()
   {
-    for (pointer p = mpBegin; p < mpEnd; ++p)
+    for (pointer p = mBegin; p < mEnd; ++p)
       *p = (value_type) CharToUpper(*p);
   }
 
@@ -2094,33 +2089,33 @@ namespace flex
   {
     iterator pNewPosition = const_cast<value_type*>(p);
 
-    if ((mpEnd + 1) < mpCapacity)
+    if ((mEnd + 1) < mCapacity)
     {
-      *(mpEnd + 1) = 0;
-      memmove(const_cast<value_type*>(p) + 1, p, (size_t) (mpEnd - p) * sizeof(value_type));
+      *(mEnd + 1) = 0;
+      memmove(const_cast<value_type*>(p) + 1, p, (size_t) (mEnd - p) * sizeof(value_type));
       *pNewPosition = c;
-      ++mpEnd;
+      ++mEnd;
     }
     else
     {
-      const size_type nOldSize = (size_type) (mpEnd - mpBegin);
-      const size_type nOldCap = (size_type) ((mpCapacity - mpBegin) - 1);
+      const size_type nOldSize = (size_type) (mEnd - mBegin);
+      const size_type nOldCap = (size_type) ((mCapacity - mBegin) - 1);
       const size_type nLength = std::max((size_type) GetNewCapacity(nOldCap), (size_type) (nOldSize + 1)) + 1; // The second + 1 is to accomodate the trailing 0.
 
       iterator pNewBegin = DoAllocate(nLength);
       iterator pNewEnd = pNewBegin;
 
-      pNewPosition = CharStringUninitializedCopy(mpBegin, p, pNewBegin);
+      pNewPosition = CharStringUninitializedCopy(mBegin, p, pNewBegin);
       *pNewPosition = c;
 
       pNewEnd = pNewPosition + 1;
-      pNewEnd = CharStringUninitializedCopy(p, mpEnd, pNewEnd);
+      pNewEnd = CharStringUninitializedCopy(p, mEnd, pNewEnd);
       *pNewEnd = 0;
 
       DeallocateSelf();
-      mpBegin = pNewBegin;
-      mpEnd = pNewEnd;
-      mpCapacity = pNewBegin + nLength;
+      mBegin = pNewBegin;
+      mEnd = pNewEnd;
+      mCapacity = pNewBegin + nLength;
     }
     return pNewPosition;
   }
@@ -2130,8 +2125,8 @@ namespace flex
   {
     AllocateSelf((size_type) (n + 1)); // '+1' so that we have room for the terminating 0.
 
-    mpEnd = CharStringUninitializedFillN(mpBegin, n, c);
-    *mpEnd = 0;
+    mEnd = CharStringUninitializedFillN(mBegin, n, c);
+    *mEnd = 0;
   }
 
   template<typename T, typename Allocator>
@@ -2144,8 +2139,8 @@ namespace flex
 
     AllocateSelf((size_type) (n + 1)); // '+1' so that we have room for the terminating 0.
 
-    mpEnd = CharStringUninitializedCopy(pBegin, pEnd, mpBegin);
-    *mpEnd = 0;
+    mEnd = CharStringUninitializedCopy(pBegin, pEnd, mBegin);
+    *mEnd = 0;
   }
 
   template<typename T, typename Allocator>
@@ -2153,6 +2148,13 @@ namespace flex
   {
     FLEX_THROW_INVALID_ARGUMENT_IF(!pBegin, "basic_string -- invalid argument");
     RangeInitialize(pBegin, pBegin + CharStrlen(pBegin));
+  }
+
+  template<typename T, typename Allocator>
+  inline basic_string<T, Allocator>::basic_string(pointer new_begin, pointer new_end, size_type capacity) :
+      mFixed(true), mBegin(new_begin), mEnd(new_end), mCapacity(mBegin + capacity)
+  {
+    FLEX_THROW_OUT_OF_RANGE_IF(mEnd > mCapacity, "flex::fixed_string - constructor() size exceeds capacity");
   }
 
   template<typename T, typename Allocator>
@@ -2181,9 +2183,9 @@ namespace flex
   {
     FLEX_ASSERT(gEmptyString.mUint32 == 0);
     FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_basic_string - capacity exceeded");
-    mpBegin = const_cast<value_type*>(GetEmptyString(value_type())); // In const_cast-int this, we promise not to modify it.
-    mpEnd = mpBegin;
-    mpCapacity = mpBegin + 1; // When we are using gEmptyString, mpCapacity is always mpEnd + 1. This is an important distinguising characteristic.
+    mBegin = const_cast<value_type*>(GetEmptyString(value_type())); // In const_cast-int this, we promise not to modify it.
+    mEnd = mBegin;
+    mCapacity = mBegin + 1; // When we are using gEmptyString, mCapacity is always mEnd + 1. This is an important distinguising characteristic.
   }
 
   template<typename T, typename Allocator>
@@ -2195,9 +2197,9 @@ namespace flex
 
     if (n > 1)
     {
-      mpBegin = DoAllocate(n);
-      mpEnd = mpBegin;
-      mpCapacity = mpBegin + n;
+      mBegin = DoAllocate(n);
+      mEnd = mBegin;
+      mCapacity = mBegin + n;
     }
     else
       AllocateSelf();
@@ -2206,12 +2208,12 @@ namespace flex
   template<typename T, typename Allocator>
   inline void basic_string<T, Allocator>::DeallocateSelf()
   {
-    // Note that we compare mpCapacity to mpEnd instead of comparing
-    // mpBegin to &gEmptyString. This is important because we may have
+    // Note that we compare mCapacity to mEnd instead of comparing
+    // mBegin to &gEmptyString. This is important because we may have
     // a case whereby one library passes a string to another library to
     // deallocate and the two libraries have independent versions of gEmptyString.
-    if ((mpCapacity - mpBegin) > 1) // If we are not using gEmptyString as our memory...
-      DoFree(mpBegin, (size_type) (mpCapacity - mpBegin));
+    if ((mCapacity - mBegin) > 1) // If we are not using gEmptyString as our memory...
+      DoFree(mBegin, (size_type) (mCapacity - mBegin));
   }
 
 // CharTypeStringFindEnd
@@ -2477,11 +2479,11 @@ namespace flex
   template<typename T, typename Allocator>
   inline bool basic_string<T, Allocator>::validate() const FLEX_NOEXCEPT
   {
-    if ((mpBegin == NULL) || (mpEnd == NULL))
+    if ((mBegin == NULL) || (mEnd == NULL))
       return false;
-    if (mpEnd < mpBegin)
+    if (mEnd < mBegin)
       return false;
-    if (mpCapacity < mpEnd)
+    if (mCapacity < mEnd)
       return false;
     return true;
   }
