@@ -1,7 +1,7 @@
 #ifndef FLEX_POOL_H
 #define FLEX_POOL_H
 
-#include <flex/allocation_guard.h>
+#include <flex/allocator.h>
 
 namespace flex
 {

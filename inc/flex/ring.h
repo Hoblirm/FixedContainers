@@ -1,10 +1,11 @@
 #ifndef FLEX_RING_H
 #define FLEX_RING_H
 
-#include <algorithm>
-
-#include <flex/allocator.h>
 #include <flex/ring_iterator.h>
+#include <flex/allocator.h>
+
+#include <algorithm>
+#include <memory>
 
 namespace flex
 {

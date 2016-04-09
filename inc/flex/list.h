@@ -146,36 +146,41 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list() :
-      mFixed(false), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
+      mFixed(false), mSize(0), mNodePool(NULL)
   {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(size_type size, const T& val) :
-      mFixed(false), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
+      mFixed(false), mSize(0), mNodePool(NULL)
   {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), size, val);
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(int size, const T& val) :
-      mFixed(false), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
+      mFixed(false), mSize(0), mNodePool(NULL)
   {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), (size_type) size, val);
   }
 
   template<class T, class Alloc>
   template<typename InputIterator>
   inline list<T, Alloc>::list(InputIterator first, InputIterator last) :
-      mFixed(false), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
+      mFixed(false), mSize(0), mNodePool(NULL)
   {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), first, last);
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(const list<T, Alloc> & obj) :
-      mFixed(false), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
+      mFixed(false), mSize(0), mNodePool(NULL)
   {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), obj.cbegin(), obj.cend());
   }
 
@@ -1084,8 +1089,9 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(node_type* first, node_type* last) :
-      mFixed(true), mAnchor { &mAnchor, &mAnchor }, mSize(0), mNodePool(NULL)
+      mFixed(true), mSize(0), mNodePool(NULL)
   {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     if (first != last)
     {
       mNodePool = first;
@@ -1103,7 +1109,7 @@ namespace flex
   template<class T, class Alloc>
   inline typename list<T, Alloc>::node_type* list<T, Alloc>::AllocateNode()
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(mFixed,"flex::fixed_list - exceeded capacity");
+    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_list - exceeded capacity");
     return mAllocator.allocate(1);
   }
 

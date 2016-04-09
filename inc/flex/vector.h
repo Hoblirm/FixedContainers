@@ -1,10 +1,11 @@
 #ifndef FLEX_VECTOR_H
 #define FLEX_VECTOR_H
 
-#include <algorithm>
-#include <iterator>
-
 #include <flex/allocator.h>
+
+#include <algorithm>
+#include <memory>
+#include <iterator>
 
 namespace flex
 {

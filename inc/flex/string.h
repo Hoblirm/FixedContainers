@@ -82,19 +82,18 @@
 #ifndef FLEX_STRING_H
 #define FLEX_STRING_H
 
+#include <flex/allocator.h>
+
 #include <algorithm>
 #include <iterator>
-#include <flex/allocator.h>
 
 #include <stddef.h>             // size_t, ptrdiff_t, etc.
 #include <stdlib.h>             // malloc, free.
 #include <ctype.h>              // toupper, etc.
 #include <wchar.h>
-
 #include <stdint.h>
 #include <uchar.h>
 typedef char char8_t;
-
 #include <string.h> // strlen, etc.
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -252,15 +251,6 @@ namespace flex
 #endif
     this_type& assign(std::initializer_list<value_type>);
 
-    template<typename OtherCharType>
-    this_type& assign_convert(const OtherCharType* p);
-
-    template<typename OtherCharType>
-    this_type& assign_convert(const OtherCharType* p, size_type n);
-
-    template<typename OtherStringType>
-    this_type& assign_convert(const OtherStringType& x);
-
     // Iterators.
     iterator begin() FLEX_NOEXCEPT; // Expanded in source code as: mpBegin
     const_iterator begin() const FLEX_NOEXCEPT; // Expanded in source code as: mpBegin
@@ -315,15 +305,6 @@ namespace flex
     this_type& append(const value_type* p);
     this_type& append(size_type n, value_type c);
     this_type& append(const value_type* pBegin, const value_type* pEnd);
-
-    template<typename OtherCharType>
-    this_type& append_convert(const OtherCharType* p);
-
-    template<typename OtherCharType>
-    this_type& append_convert(const OtherCharType* p, size_type n);
-
-    template<typename OtherStringType>
-    this_type& append_convert(const OtherStringType& x);
 
     void push_back(value_type c);
     void pop_back();
@@ -415,8 +396,6 @@ namespace flex
     void ltrim();
     void rtrim();
     void trim();
-    this_type left(size_type n) const;
-    this_type right(size_type n) const;
 
     bool validate() const FLEX_NOEXCEPT;
 
@@ -437,11 +416,7 @@ namespace flex
     static const value_type* CharTypeStringFindEnd(const value_type* pBegin, const value_type* pEnd, value_type c);
     static const value_type* CharTypeStringRFind(const value_type* pRBegin, const value_type* pREnd,
         const value_type c);
-    static const value_type* CharTypeStringSearch(const value_type* p1Begin, const value_type* p1End,
-        const value_type* p2Begin, const value_type* p2End);
     static const value_type* CharTypeStringRSearch(const value_type* p1Begin, const value_type* p1End,
-        const value_type* p2Begin, const value_type* p2End);
-    static const value_type* CharTypeStringFindFirstOf(const value_type* p1Begin, const value_type* p1End,
         const value_type* p2Begin, const value_type* p2End);
     static const value_type* CharTypeStringRFindFirstOf(const value_type* p1RBegin, const value_type* p1REnd,
         const value_type* p2Begin, const value_type* p2End);
@@ -1141,46 +1116,6 @@ namespace flex
   }
 
   template<typename T, typename Allocator>
-  template<typename OtherCharType>
-  basic_string<T, Allocator>& basic_string<T, Allocator>::append_convert(const OtherCharType* pOther)
-  {
-    return append_convert(pOther, (size_type) CharStrlen(pOther));
-  }
-
-  template<typename T, typename Allocator>
-  template<typename OtherStringType>
-  basic_string<T, Allocator>& basic_string<T, Allocator>::append_convert(const OtherStringType& x)
-  {
-    return append_convert(x, x.length());
-  }
-
-  template<typename T, typename Allocator>
-  template<typename OtherCharType>
-  basic_string<T, Allocator>& basic_string<T, Allocator>::append_convert(const OtherCharType* pOther, size_type n)
-  {
-    // Question: What do we do in the case that we have an illegally encoded source string?
-    // This can happen with UTF8 strings. Do we throw an exception or do we ignore the input?
-    // One argument is that it's not a string class' job to handle the security aspects of a
-    // program and the higher level application code should be verifying UTF8 string validity,
-    // and thus we should do the friendly thing and ignore the invalid characters as opposed
-    // to making the user of this function handle exceptions that are easily forgotten.
-
-    const size_t kBufferSize = 512;
-    value_type selfBuffer[kBufferSize]; // This assumes that value_type is one of char8_t, char16_t, char32_t, or wchar_t. Or more importantly, a type with a trivial constructor and destructor.
-    value_type* const selfBufferEnd = selfBuffer + kBufferSize;
-    const OtherCharType* pOtherEnd = pOther + n;
-
-    while (pOther != pOtherEnd)
-    {
-      value_type* pSelfBufferCurrent = selfBuffer;
-      DecodePart(pOther, pOtherEnd, pSelfBufferCurrent, selfBufferEnd); // Write pOther to pSelfBuffer, converting encoding as we go. We currently ignore the return value, as we don't yet have a plan for handling encoding errors.
-      append(selfBuffer, pSelfBufferCurrent);
-    }
-
-    return *this;
-  }
-
-  template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::append(size_type n, value_type c)
   {
     const size_type s = (size_type) (mpEnd - mpBegin);
@@ -1347,33 +1282,6 @@ namespace flex
     return *this;
   }
 #endif
-
-  template<typename T, typename Allocator>
-  template<typename OtherCharType>
-  basic_string<T, Allocator>& basic_string<T, Allocator>::assign_convert(const OtherCharType* p)
-  {
-    clear();
-    append_convert(p);
-    return *this;
-  }
-
-  template<typename T, typename Allocator>
-  template<typename OtherCharType>
-  basic_string<T, Allocator>& basic_string<T, Allocator>::assign_convert(const OtherCharType* p, size_type n)
-  {
-    clear();
-    append_convert(p, n);
-    return *this;
-  }
-
-  template<typename T, typename Allocator>
-  template<typename OtherStringType>
-  basic_string<T, Allocator>& basic_string<T, Allocator>::assign_convert(const OtherStringType& x)
-  {
-    clear();
-    append_convert(x.data(), x.length());
-    return *this;
-  }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>& basic_string<T, Allocator>::insert(size_type position, const this_type& x)
@@ -1927,8 +1835,8 @@ namespace flex
 // If position is >= size, we return npos.
     if (FLEX_LIKELY((position < (size_type ) (mpEnd - mpBegin))))
     {
-      const value_type* const pBegin = mpBegin + position;
-      const const_iterator pResult = CharTypeStringFindFirstOf(pBegin, mpEnd, p, p + n);
+      const iterator pBegin = mpBegin + position;
+      const iterator pResult = std::find_first_of(pBegin, mpEnd, p, p + n);
 
       if (pResult != mpEnd)
         return (size_type) (pResult - mpBegin);
@@ -2169,24 +2077,6 @@ namespace flex
   }
 
   template<typename T, typename Allocator>
-  inline basic_string<T, Allocator> basic_string<T, Allocator>::left(size_type n) const
-  {
-    const size_type nLength = length();
-    if (n < nLength)
-      return substr(0, n);
-    return *this;
-  }
-
-  template<typename T, typename Allocator>
-  inline basic_string<T, Allocator> basic_string<T, Allocator>::right(size_type n) const
-  {
-    const size_type nLength = length();
-    if (n < nLength)
-      return substr(nLength - n, n);
-    return *this;
-  }
-
-  template<typename T, typename Allocator>
   int basic_string<T, Allocator>::compare(const value_type* pBegin1, const value_type* pEnd1, const value_type* pBegin2,
       const value_type* pEnd2)
   {
@@ -2357,53 +2247,6 @@ namespace flex
     return pREnd;
   }
 
-// CharTypeStringSearch
-// Specialized value_type version of STL search() function.
-// Purpose: find p2 within p1. Return p1End if not found or if either string is zero length.
-  template<typename T, typename Allocator>
-  const typename basic_string<T, Allocator>::value_type*
-  basic_string<T, Allocator>::CharTypeStringSearch(const value_type* p1Begin, const value_type* p1End,
-      const value_type* p2Begin, const value_type* p2End)
-  {
-    // Test for zero length strings, in which case we have a match or a failure,
-    // but the return value is the same either way.
-    if ((p1Begin == p1End) || (p2Begin == p2End))
-      return p1Begin;
-
-    // Test for a pattern of length 1.
-    if ((p2Begin + 1) == p2End)
-      return std::find(p1Begin, p1End, *p2Begin);
-
-    // General case.
-    const value_type* pTemp;
-    const value_type* pTemp1 = (p2Begin + 1);
-    const value_type* pCurrent = p1Begin;
-
-    while (p1Begin != p1End)
-    {
-      p1Begin = std::find(p1Begin, p1End, *p2Begin);
-      if (p1Begin == p1End)
-        return p1End;
-
-      pTemp = pTemp1;
-      pCurrent = p1Begin;
-      if (++pCurrent == p1End)
-        return p1End;
-
-      while (*pCurrent == *pTemp)
-      {
-        if (++pTemp == p2End)
-          return p1Begin;
-        if (++pCurrent == p1End)
-          return p1End;
-      }
-
-      ++p1Begin;
-    }
-
-    return p1Begin;
-  }
-
 // CharTypeStringRSearch
 // Specialized value_type version of STL find_end() function (which really is a reverse search function).
 // Purpose: find last instance of p2 within p1. Return p1End if not found or if either string is zero length.
@@ -2450,25 +2293,6 @@ namespace flex
       --pSearchEnd;
     }
 
-    return p1End;
-  }
-
-// CharTypeStringFindFirstOf
-// Specialized value_type version of STL find_first_of() function.
-// This function is much like the C runtime strtok function, except the strings aren't null-terminated.
-  template<typename T, typename Allocator>
-  const typename basic_string<T, Allocator>::value_type*
-  basic_string<T, Allocator>::CharTypeStringFindFirstOf(const value_type* p1Begin, const value_type* p1End,
-      const value_type* p2Begin, const value_type* p2End)
-  {
-    for (; p1Begin != p1End; ++p1Begin)
-    {
-      for (const value_type* pTemp = p2Begin; pTemp != p2End; ++pTemp)
-      {
-        if (*p1Begin == *pTemp)
-          return p1Begin;
-      }
-    }
     return p1End;
   }
 
