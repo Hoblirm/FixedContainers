@@ -219,16 +219,7 @@ public:
   void test_initializer_constructor()
   {
     /*
-     * Case1: Empty c string
-     */
-    flex::allocation_guard::enable();
-    str a( { });
-    flex::allocation_guard::disable();
-    TS_ASSERT(is_container_valid(a));
-    TS_ASSERT_EQUALS(a.size(), 0);
-
-    /*
-     * Case2: Populated c string
+     * Case1: Populated c string
      */
     str b( { '0', '1', '2', '3', '4', '5', '6', '7' });
     TS_ASSERT(is_container_valid(b));
@@ -236,7 +227,7 @@ public:
     TS_ASSERT_EQUALS(b.c_str(), "01234567");
 
     /*
-     * Case3: Allocation exception
+     * Case2: Allocation exception
      */
     flex::allocation_guard::enable();
     str c( { '0', '1', '2', '3', '4', '5', '6', '7' });

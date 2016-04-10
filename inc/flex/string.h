@@ -402,6 +402,7 @@ namespace flex
 
   protected:
     basic_string(pointer new_begin, pointer new_end, size_type capacity);
+    basic_string(pointer new_begin, size_type size, bool fixed);
 
     // Helper functions for initialization/insertion operations.
     value_type* DoAllocate(size_type n);
@@ -2186,6 +2187,13 @@ namespace flex
       mFixed(true), mBegin(new_begin), mEnd(new_end), mCapacity(mBegin + capacity)
   {
     FLEX_THROW_OUT_OF_RANGE_IF(mEnd > mCapacity, "flex::fixed_string - constructor() size exceeds capacity");
+  }
+
+  template<typename T, typename Allocator>
+  inline basic_string<T, Allocator>::basic_string(pointer new_begin, size_type n, bool fixed) :
+      mFixed(fixed), mBegin(new_begin), mEnd(new_begin + n), mCapacity(mEnd)
+  {
+
   }
 
   template<typename T, typename Allocator>

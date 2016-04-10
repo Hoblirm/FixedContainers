@@ -1,7 +1,6 @@
 #include <cxxtest/TestSuite.h>
 
 #include <flex/fixed_string.h>
-#include <flex/allocator_debug.h>
 
 class fixed_string_test: public CxxTest::TestSuite
 {
@@ -164,14 +163,7 @@ public:
   void test_initializer_constructor()
   {
     /*
-     * Case1: Empty c string
-     */
-    str a( { });
-    TS_ASSERT(is_container_valid(a));
-    TS_ASSERT_EQUALS(a.size(), 0);
-
-    /*
-     * Case2: Populated c string
+     * Case1: Populated c string
      */
     str b( { '0', '1', '2', '3', '4', '5', '6', '7' });
     TS_ASSERT(is_container_valid(b));
