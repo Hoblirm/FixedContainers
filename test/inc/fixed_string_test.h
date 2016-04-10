@@ -1939,11 +1939,6 @@ public:
 
   void test_operator_plus_string()
   {
-    //operator+() must allocate memory as it doesn't make much sense for this
-    //method to return a fixed_string().  The append() or operator+=() methods
-    //should be preferred for fixed_strings, as they don't allocate memory.
-    flex::allocation_guard::disable();
-
     /*
      * Case1: Neither are rvalues
      */
@@ -1999,11 +1994,6 @@ public:
 
   void test_operator_plus_cstring()
   {
-    //operator+() must allocate memory as it doesn't make much sense for this
-    //method to return a fixed_string().  The append() or operator+=() methods
-    //should be preferred for fixed_strings, as they don't allocate memory.
-    flex::allocation_guard::disable();
-
     /*
      * Case1: Right is cstring
      */
@@ -2055,11 +2045,6 @@ public:
 
   void test_operator_plus_char()
   {
-    //operator+() must allocate memory as it doesn't make much sense for this
-    //method to return a fixed_string().  The append() or operator+=() methods
-    //should be preferred for fixed_strings, as they don't allocate memory.
-    flex::allocation_guard::disable();
-
     /*
      * Case1: Right is cstring
      */

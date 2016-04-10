@@ -177,6 +177,53 @@ namespace flex
     return this_type(mBegin + position, mBegin + position + std::min(n, (size_type) (mEnd - mBegin) - position));
   }
 
+  template<size_t N, typename Alloc>
+  fixed_string<N, Alloc> operator+(const fixed_string<N, Alloc>& a, const fixed_string<N, Alloc>& b)
+  {
+    fixed_string<N, Alloc> result;
+    result.append(a);
+    result.append(b);
+    return result;
+  }
+
+  template<size_t N, typename Alloc>
+  fixed_string<N, Alloc> operator+(const typename fixed_string<N, Alloc>::value_type* p,
+      const fixed_string<N, Alloc>& b)
+  {
+    fixed_string<N, Alloc> result;
+    result.append(p, p + (typename fixed_string<N, Alloc>::size_type) CharStrlen(p));
+    result.append(b);
+    return result;
+  }
+
+  template<size_t N, typename Alloc>
+  fixed_string<N, Alloc> operator+(typename fixed_string<N, Alloc>::value_type c, const fixed_string<N, Alloc>& b)
+  {
+    fixed_string<N, Alloc> result;
+    result.push_back(c);
+    result.append(b);
+    return result;
+  }
+
+  template<size_t N, typename Alloc>
+  fixed_string<N, Alloc> operator+(const fixed_string<N, Alloc>& a,
+      const typename fixed_string<N, Alloc>::value_type* p)
+  {
+    fixed_string<N, Alloc> result;
+    result.append(a);
+    result.append(p, p + (typename fixed_string<N, Alloc>::size_type) CharStrlen(p));
+    return result;
+  }
+
+  template<size_t N, typename Alloc>
+  fixed_string<N, Alloc> operator+(const fixed_string<N, Alloc>& a, typename fixed_string<N, Alloc>::value_type c)
+  {
+    fixed_string<N, Alloc> result;
+    result.append(a);
+    result.push_back(c);
+    return result;
+  }
+
 } //namespace flex
 
 #endif /* FLEX_FIXED_STRING_H */
