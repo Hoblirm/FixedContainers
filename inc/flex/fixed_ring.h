@@ -90,7 +90,7 @@ namespace flex
   inline fixed_ring<T, N, Alloc>::fixed_ring(const ring<T, Alloc> & obj) :
       ring<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), (pointer) mBuffer + N)
   {
-    std::uninitialized_copy(obj.mBegin, obj.mEnd, mBegin.mPtr);
+    std::uninitialized_copy(obj.begin(), obj.end(), mBegin.mPtr);
   }
 
   template<class T, size_t N, class Alloc>

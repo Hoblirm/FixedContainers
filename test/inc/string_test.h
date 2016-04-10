@@ -3,9 +3,6 @@
 #include <flex/string.h>
 #include <flex/allocator_debug.h>
 
-#include <string.h>
-#include <string>
-
 class string_test: public CxxTest::TestSuite
 {
   typedef flex::basic_string<char, flex::allocator_debug<char> > str;

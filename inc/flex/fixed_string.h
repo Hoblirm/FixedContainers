@@ -6,10 +6,11 @@
 namespace flex
 {
 
-  template<size_t N> class fixed_string: public string
+  template<size_t N, class Alloc = flex::allocator<char> > class fixed_string: public basic_string<char, Alloc>
   {
   public:
-    typedef string base_type;
+    typedef basic_string<char, Alloc> base_type;
+    typedef fixed_string<N, Alloc> this_type;
 
     typedef typename base_type::value_type value_type;
     typedef typename base_type::pointer pointer;
@@ -27,83 +28,153 @@ namespace flex
     using base_type::mEnd;
     using base_type::mCapacity;
     using base_type::assign;
+    using base_type::npos;
 
     fixed_string();
-    explicit fixed_string(size_type size, const value_type& val = value_type());
-    fixed_string(int size, const value_type& val);
-    template<typename InputIterator> fixed_string(InputIterator first, InputIterator last);
-    fixed_string(const fixed_string<N> & obj);
-    fixed_string(const string & obj);
+    fixed_string(const this_type& x);
+    fixed_string(const base_type& obj);
+    fixed_string(const this_type& x, size_type position, size_type n = npos);
+    fixed_string(const value_type* p);
+    fixed_string(const value_type* p, size_type n);
+    fixed_string(size_type n, value_type c);
+    template<class InputIterator> fixed_string(InputIterator pBegin, InputIterator pEnd);
+    fixed_string(std::initializer_list<value_type> init);
 
-    fixed_string<N>& operator=(const fixed_string<N>& obj);
-    fixed_string<N>& operator=(const string& obj);
+    this_type& operator=(const this_type& obj);
+    this_type& operator=(const base_type& obj);
+    this_type& operator=(std::initializer_list<value_type> obj);
+    this_type& operator=(const value_type* p);
+    this_type& operator=(const value_type c);
+
+    this_type substr(size_type position = 0, size_type n = npos) const;
 
   private:
 #ifdef FLEX_HAS_CXX11
-    typename std::aligned_storage<sizeof(value_type), alignof(value_type)>::type mBuffer[N];
+    typename std::aligned_storage<sizeof(value_type), alignof(value_type)>::type mBuffer[N+1];
 #else
     union
     {
-      char mBuffer[N * sizeof(value_type)];
+      char mBuffer[(N + 1) * sizeof(value_type)];
       long double dummy;
     };
 #endif
   };
 
-  template<size_t N>
-  inline fixed_string<N>::fixed_string() :
-      base_type((pointer) mBuffer, (pointer) mBuffer, N)
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>::fixed_string() :
+      base_type((pointer) mBuffer, (pointer) mBuffer, N + 1)
   {
+    *mEnd = 0;
   }
 
-  template<size_t N>
-  inline fixed_string<N>::fixed_string(size_type size, const value_type& val) :
-      base_type((pointer) mBuffer, (pointer) mBuffer + size, N)
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>::fixed_string(const this_type& x) :
+      base_type((pointer) mBuffer, (pointer) mBuffer + x.size(), N + 1)
   {
-    std::uninitialized_fill(mBegin, mEnd, val);
+    memcpy(mBegin, x.mBegin, x.size() * sizeof(value_type));
+    *mEnd = 0;
   }
 
-  template<size_t N>
-  inline fixed_string<N>::fixed_string(int size, const value_type& val) :
-      base_type((pointer) mBuffer, (pointer) mBuffer + size, N)
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>::fixed_string(const base_type& x) :
+      base_type((pointer) mBuffer, (pointer) mBuffer + x.size(), N + 1)
   {
-    std::uninitialized_fill(mBegin, mEnd, val);
+    memcpy(mBegin, x.begin(), x.size() * sizeof(value_type));
+    *mEnd = 0;
   }
 
-  template<size_t N>
-  template<typename InputIterator>
-  inline fixed_string<N>::fixed_string(InputIterator first, InputIterator last) :
-      base_type((pointer) mBuffer, (pointer) mBuffer + std::distance(first, last), N)
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>::fixed_string(const this_type& x, size_type position, size_type n) :
+      base_type((pointer) mBuffer, (pointer) mBuffer + ((n > (x.size() - position)) ? (x.size() - position) : n), N + 1)
   {
-    std::uninitialized_copy(first, last, mBegin);
+    memcpy(mBegin, x.mBegin + position, (mEnd - mBegin) * sizeof(value_type));
+    *mEnd = 0;
   }
 
-  template<size_t N>
-  inline fixed_string<N>::fixed_string(const fixed_string<N> & obj) :
-      base_type((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>::fixed_string(const value_type* p) :
+      base_type((pointer) mBuffer, (pointer) mBuffer + strlen(p), N + 1)
   {
-    std::uninitialized_copy(obj.mBegin, obj.mEnd, mBegin);
+    memcpy(mBegin, p, (mEnd - mBegin) * sizeof(value_type));
+    *mEnd = 0;
   }
 
-  template<size_t N>
-  inline fixed_string<N>::fixed_string(const string & obj) :
-      base_type((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>::fixed_string(const value_type* p, size_type n) :
+      base_type((pointer) mBuffer, (pointer) mBuffer + n, N + 1)
   {
-    std::uninitialized_copy(obj.mBegin, obj.mEnd, mBegin);
+    memcpy(mBegin, p, n * sizeof(value_type));
+    *mEnd = 0;
   }
 
-  template<size_t N>
-  inline fixed_string<N>& fixed_string<N>::operator=(const fixed_string<N>& obj)
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>::fixed_string(size_type n, value_type c) :
+      base_type((pointer) mBuffer, (pointer) mBuffer + n, N + 1)
+  {
+    if (n)
+    {
+      memset(mBegin, c, n);
+    }
+    *mEnd = 0;
+  }
+
+  template<size_t N, class Alloc>
+  template<class InputIterator>
+  inline fixed_string<N, Alloc>::fixed_string(InputIterator pBegin, InputIterator pEnd) :
+      base_type((pointer) mBuffer, (pointer) mBuffer + std::distance(pBegin, pEnd), N + 1)
+  {
+    memcpy(mBegin, pBegin, (mEnd - mBegin) * sizeof(value_type));
+    *mEnd = 0;
+  }
+
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>::fixed_string(std::initializer_list<value_type> init) :
+      base_type((pointer) mBuffer, (pointer) mBuffer + init.size(), N + 1)
+  {
+    memcpy(mBegin, init.begin(), init.size() * sizeof(value_type));
+    *mEnd = 0;
+  }
+
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>& fixed_string<N, Alloc>::operator=(const this_type& obj)
   {
     assign(obj.begin(), obj.end());
     return *this;
   }
 
-  template<size_t N>
-  inline fixed_string<N>& fixed_string<N>::operator=(const string& obj)
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>& fixed_string<N, Alloc>::operator=(const base_type& obj)
   {
     assign(obj.begin(), obj.end());
     return *this;
+  }
+
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>& fixed_string<N, Alloc>::operator=(std::initializer_list<value_type> obj)
+  {
+    assign(obj.begin(), obj.end());
+    return *this;
+  }
+
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>& fixed_string<N, Alloc>::operator=(const value_type* p)
+  {
+    assign(p);
+    return *this;
+  }
+
+  template<size_t N, class Alloc>
+  inline fixed_string<N, Alloc>& fixed_string<N, Alloc>::operator=(const value_type c)
+  {
+    assign((size_type) 1, c);
+    return *this;
+  }
+
+  template<size_t N, typename Alloc>
+  inline fixed_string<N, Alloc> fixed_string<N, Alloc>::substr(size_type position, size_type n) const
+  {
+    FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(mEnd - mBegin), "fixed_string -- out of range");
+    return this_type(mBegin + position, mBegin + position + std::min(n, (size_type) (mEnd - mBegin) - position));
   }
 
 } //namespace flex

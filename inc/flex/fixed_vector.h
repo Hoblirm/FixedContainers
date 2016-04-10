@@ -89,7 +89,7 @@ namespace flex
   inline fixed_vector<T, N, Alloc>::fixed_vector(const vector<T, Alloc> & obj) :
       vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
   {
-    std::uninitialized_copy(obj.mBegin, obj.mEnd, mBegin);
+    std::uninitialized_copy(obj.begin(), obj.end(), mBegin);
   }
 
   template<class T, size_t N, class Alloc>

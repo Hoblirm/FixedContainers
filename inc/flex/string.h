@@ -294,6 +294,7 @@ namespace flex
 
     // Append operations
     this_type& operator+=(const this_type& x);
+    this_type& operator+=(std::initializer_list<value_type> x);
     this_type& operator+=(const value_type* p);
     this_type& operator+=(value_type c);
 
@@ -303,6 +304,7 @@ namespace flex
     this_type& append(const value_type* p);
     this_type& append(size_type n, value_type c);
     this_type& append(const value_type* pBegin, const value_type* pEnd);
+    this_type& append(std::initializer_list<value_type> x);
 
     void push_back(value_type c);
     void pop_back();
@@ -333,6 +335,7 @@ namespace flex
     this_type& replace(size_type position, size_type n1, const value_type* p);
     this_type& replace(size_type position, size_type n1, size_type n2, value_type c);
     this_type& replace(const_iterator first, const_iterator last, const this_type& x);
+    this_type& replace(const_iterator first, const_iterator last, std::initializer_list<value_type> x);
     this_type& replace(const_iterator first, const_iterator last, const value_type* p, size_type n);
     this_type& replace(const_iterator first, const_iterator last, const value_type* p);
     this_type& replace(const_iterator first, const_iterator last, size_type n, value_type c);
@@ -1075,6 +1078,12 @@ namespace flex
   }
 
   template<typename T, typename Allocator>
+  inline basic_string<T, Allocator>& basic_string<T, Allocator>::operator+=(std::initializer_list<value_type> x)
+  {
+    return append(x);
+  }
+
+  template<typename T, typename Allocator>
   inline basic_string<T, Allocator>& basic_string<T, Allocator>::operator+=(const value_type* p)
   {
     return append(p);
@@ -1091,6 +1100,12 @@ namespace flex
   inline basic_string<T, Allocator>& basic_string<T, Allocator>::append(const this_type& x)
   {
     return append(x.mBegin, x.mEnd);
+  }
+
+  template<typename T, typename Allocator>
+  inline basic_string<T, Allocator>& basic_string<T, Allocator>::append(std::initializer_list<value_type> x)
+  {
+    return append(x.begin(), x.end());
   }
 
   template<typename T, typename Allocator>
@@ -1591,6 +1606,13 @@ namespace flex
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>& basic_string<T, Allocator>::replace(const_iterator pBegin, const_iterator pEnd,
+      std::initializer_list<value_type> x)
+  {
+    return replace(pBegin, pEnd, x.begin(), x.end());
+  }
+
+  template<typename T, typename Allocator>
+  inline basic_string<T, Allocator>& basic_string<T, Allocator>::replace(const_iterator pBegin, const_iterator pEnd,
       const value_type* p, size_type n)
   {
     return replace(pBegin, pEnd, p, p + n);
@@ -1703,9 +1725,18 @@ namespace flex
     }
     else // else swap the contents.
     {
-      const this_type temp(*this); // Can't call std::swap because that would
-      *this = x; // itself call this member swap function.
-      x = temp;
+      if (size() < x.size())
+      {
+        iterator it = std::swap_ranges(mBegin, mEnd, x.mBegin);
+        append(it, x.mEnd);
+        x.erase(it, x.mEnd);
+      }
+      else
+      {
+        iterator it = std::swap_ranges(x.mBegin, x.mEnd, mBegin);
+        x.append(it, mEnd);
+        erase(it, mEnd);
+      }
     }
   }
 
@@ -2161,6 +2192,7 @@ namespace flex
   inline typename basic_string<T, Allocator>::value_type*
   basic_string<T, Allocator>::DoAllocate(size_type n)
   {
+    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_string - capacity exceeded");
     return (value_type*) mAllocator.allocate(n);
   }
 
@@ -2182,7 +2214,7 @@ namespace flex
   inline void basic_string<T, Allocator>::AllocateSelf()
   {
     FLEX_ASSERT(gEmptyString.mUint32 == 0);
-    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_basic_string - capacity exceeded");
+    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_string - capacity exceeded");
     mBegin = const_cast<value_type*>(GetEmptyString(value_type())); // In const_cast-int this, we promise not to modify it.
     mEnd = mBegin;
     mCapacity = mBegin + 1; // When we are using gEmptyString, mCapacity is always mEnd + 1. This is an important distinguising characteristic.
@@ -2193,7 +2225,6 @@ namespace flex
   {
     FLEX_ASSERT(n < 0x40000000);
     FLEX_THROW_LENGTH_ERROR_IF(n > kMaxSize, "basic_string -- length_error");
-    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_basic_string - capacity exceeded");
 
     if (n > 1)
     {
