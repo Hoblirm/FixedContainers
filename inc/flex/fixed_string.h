@@ -55,7 +55,7 @@ namespace flex
     union
     {
       char mBuffer[(N + 1) * sizeof(value_type)];
-      long double dummy;
+      value_type dummy; //value_type must be a POD as non-PODs are not supported in unions prior to C++11
     };
 #endif
   };

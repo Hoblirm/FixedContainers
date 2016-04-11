@@ -12,13 +12,48 @@ class vector_test: public CxxTest::TestSuite
     static const int INIT_KEY = 858599509;
 
     obj() :
-        val(DEFAULT_VAL), init(INIT_KEY)
+        val(DEFAULT_VAL), init(INIT_KEY), move_only(false), was_copied(false)
     {
     }
 
     obj(int i) :
-        val(i), init(INIT_KEY)
+        val(i), init(INIT_KEY), move_only(false), was_copied(false)
     {
+    }
+
+    obj(const obj& o) :
+        val(o.val), init(INIT_KEY), move_only(o.move_only), was_copied(true)
+    {
+
+    }
+
+    obj& operator=(const obj& o)
+    {
+      val = o.val;
+      move_only = o.move_only;
+      was_copied = true;
+      return *this;
+    }
+
+#ifdef FLEX_HAS_CXX11
+    obj(const obj&& o) :
+    val(o.val), init(INIT_KEY), move_only(o.move_only), was_copied(o.was_copied)
+    {
+
+    }
+
+    obj& operator=(const obj&& o)
+    {
+      val = o.val;
+      move_only = o.move_only;
+      was_copied = o.was_copied;
+      return *this;
+    }
+#endif
+
+    operator int() const
+    {
+      return val;
     }
 
     ~obj()
@@ -26,19 +61,10 @@ class vector_test: public CxxTest::TestSuite
       init = 0;
     }
 
-    obj& operator=(const obj& o)
-    {
-      val = o.val;
-      return *this;
-    }
-
-    operator int() const
-    {
-      return val;
-    }
-
     int val;
     int init;
+    bool move_only;
+    bool was_copied;
   };
 
   typedef flex::vector<obj, flex::allocator_debug<obj> > vec;
@@ -77,6 +103,20 @@ public:
     TS_ASSERT(flex::allocator_debug<int>::mAllocatedPointers.empty());
   }
 
+  void mark_container_move_only(vec& c, bool clear_copy_flag = true)
+  {
+#ifdef FLEX_HAS_CXX11
+    for (int i = 0; i < c.size(); ++i)
+    {
+      c[i].move_only = true;
+      if (clear_copy_flag)
+      {
+        c[i].was_copied = false;
+      }
+    }
+#endif
+  }
+
   bool is_container_valid(const vec& c)
   {
     for (int i = 0; i < c.size(); ++i)
@@ -84,6 +124,11 @@ public:
       if (c[i].init != obj::INIT_KEY)
       {
         printf("Error: Expected (c[%d] == obj::INIT_KEY), found (%d != %d)\n", i, c[i].init, obj::INIT_KEY);
+        return false;
+      }
+      if (c[i].move_only && c[i].was_copied)
+      {
+        printf("Error: Expected (!(c[%d].move_only && c[%d].was_copied))", i, i);
         return false;
       }
     }
