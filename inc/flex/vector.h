@@ -76,11 +76,16 @@ namespace flex
     vector(int size, const value_type& val);
     template<typename InputIterator> vector(InputIterator first, InputIterator last);
     vector(const vector<T, Alloc> & obj);
+#ifdef FLEX_HAS_CXX11
+    vector(vector<T, Alloc>&& x);
+#endif
+    vector(std::initializer_list<value_type> il);
 
     void assign(size_type size, const T& val);
     void assign(int size, const T& val);
     template<typename InputIterator>
     void assign(InputIterator first, InputIterator last);
+    void assign(std::initializer_list<value_type> il);
     reference at(size_type n);
     const_reference at(size_type n) const;
     reference back();
@@ -108,6 +113,10 @@ namespace flex
     template<typename InputIterator> void insert(iterator position, InputIterator first, InputIterator last);
     size_type max_size() const;
     vector<T, Alloc>& operator=(const vector<T, Alloc>& obj);
+#ifdef FLEX_HAS_CXX11
+    vector<T, Alloc>& operator=(vector<T, Alloc>&& x);
+#endif
+    vector<T, Alloc>& operator=(std::initializer_list<value_type> il);
     reference operator[](size_type n);
     const_reference operator[](size_type n) const;
     void pop_back();

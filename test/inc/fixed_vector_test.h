@@ -556,6 +556,16 @@ public:
     }
   }
 
+  void test_move_constructor()
+  {
+    printf("X");
+  }
+
+  void test_initializer_constructor()
+  {
+    printf("X");
+  }
+
   void assignment_method(vector<obj>& x)
   {
     for (int i = 0; i < x.size(); i++)

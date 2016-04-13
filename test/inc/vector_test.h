@@ -185,6 +185,11 @@ public:
     TS_ASSERT_EQUALS(third[2], 4);
   }
 
+  void test_assign_initializer()
+  {
+    printf("X");
+  }
+
   void test_at(void)
   {
     const size_t size = 3;
@@ -523,6 +528,16 @@ public:
     TS_ASSERT_EQUALS(foo[2], 17);
   }
 
+  void test_assignment_operator_move()
+  {
+    printf("X");
+  }
+
+  void test_assignment_operator_initializer()
+  {
+    printf("X");
+  }
+
   void test_ary_operator(void)
   {
     const size_t size = 3;
@@ -713,6 +728,11 @@ public:
     foo.push_back(100);
   }
 
+  void test_swap_move()
+  {
+    printf("X");
+  }
+
   void test_default_constructor(void)
   {
     flex::allocation_guard::enable();
@@ -804,6 +824,17 @@ public:
       TS_ASSERT_EQUALS(b[i], a[i]);
     }
   }
+
+  void test_move_constructor()
+  {
+    printf("X");
+  }
+
+  void test_initializer_constructor()
+  {
+    printf("X");
+  }
+
 
   void test_relational_operators(void)
   {

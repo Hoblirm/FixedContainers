@@ -253,6 +253,16 @@ public:
     } //for: SIZE_COUNT
   }
 
+  void test_move_constructor()
+  {
+    printf("X");
+  }
+
+  void test_initializer_constructor()
+  {
+    printf("X");
+  }
+
   void test_assign_fill(void)
   {
     /*

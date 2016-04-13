@@ -228,6 +228,16 @@ public:
     } //for: SIZE_COUNT
   }
 
+  void test_move_constructor()
+  {
+    printf("X");
+  }
+
+  void test_initializer_constructor()
+  {
+    printf("X");
+  }
+
   void test_assign_fill(void)
   {
     /*
@@ -305,6 +315,11 @@ public:
         TS_ASSERT_EQUALS(a[i], tmp[i]);
       }
     }
+  }
+
+  void test_assign_initializer()
+  {
+    printf("X");
   }
 
   void test_at(void)
@@ -1035,6 +1050,11 @@ public:
     TS_ASSERT(b == ring_obj(OBJ_DATA, OBJ_DATA + 9));
   }
 
+  void test_swap_move()
+  {
+    printf("X");
+  }
+
   void test_assignment_operator(void)
   {
     //Light-weight test, as this simply calls the assign() method.
@@ -1049,6 +1069,16 @@ public:
     {
       TS_ASSERT_EQUALS(a[i], tmp[i]);
     }
+  }
+
+  void test_assignment_operator_move()
+  {
+    printf("X");
+  }
+
+  void test_assignment_operator_initializer()
+  {
+    printf("X");
   }
 
   void test_pop_back(void)

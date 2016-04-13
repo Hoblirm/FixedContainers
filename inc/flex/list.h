@@ -442,9 +442,13 @@ namespace flex
       //The list is currently in an invalid state, so we must catch the
       //allocation if it throws.
       node_type* new_node;
+
+#ifndef FLEX_RELEASE
       try
       {
+#endif
         new_node = AllocateNode();
+#ifndef FLEX_RELEASE
       }
       catch (...)
       {
@@ -453,7 +457,7 @@ namespace flex
         position.mNode->mPrev = lhs;
         throw;
       }
-
+#endif
       new ((void*) &new_node->mValue) value_type(val);
       new_node->mPrev = lhs;
 
@@ -510,9 +514,12 @@ namespace flex
       //The list is currently in an invalid state, so we must catch the
       //allocation if it throws.
       node_type* new_node;
+#ifndef FLEX_RELEASE
       try
       {
+#endif
         new_node = AllocateNode();
+#ifndef FLEX_RELEASE
       }
       catch (...)
       {
@@ -521,7 +528,7 @@ namespace flex
         position.mNode->mPrev = lhs;
         throw;
       }
-
+#endif
       new ((void*) &new_node->mValue) value_type(*first);
       ++mSize;
 

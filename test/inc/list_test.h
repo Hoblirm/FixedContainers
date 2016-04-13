@@ -175,7 +175,7 @@ public:
         flex::allocation_guard::enable();
         list_obj a(SIZES[s]);
         TS_ASSERT(errno);
-        errno=0;
+        errno = 0;
         flex::allocation_guard::disable();
       }
 
@@ -263,7 +263,7 @@ public:
         flex::allocation_guard::enable();
         list_obj b(a);
         TS_ASSERT(errno);
-        errno=0;
+        errno = 0;
         flex::allocation_guard::disable();
       }
       TS_ASSERT(is_container_valid(a));
@@ -283,6 +283,16 @@ public:
       TS_ASSERT(is_container_valid(b));
 
     } //for: SIZE_COUNT
+  }
+
+  void test_move_constructor()
+  {
+    printf("X");
+  }
+
+  void test_initializer_constructor()
+  {
+    printf("X");
   }
 
   void test_assign_fill(void)
@@ -363,44 +373,9 @@ public:
     }
   }
 
-  void test_assign_pointer()
+  void test_assign_initializer()
   {
-    list_obj a;
-
-    /*
-     * Case1: Verify assign can increase size.
-     */
-    for (unsigned s = 0; s < SIZE_COUNT; ++s)
-    {
-      a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
-      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
-      TS_ASSERT_EQUALS(a.size(), a.capacity());
-      int i = 0;
-      for (list_obj::iterator it = a.begin(); it != a.end(); ++it)
-      {
-        TS_ASSERT_EQUALS(*it, OBJ_DATA[i]);
-        ++i;
-      }
-      TS_ASSERT(is_container_valid(a));
-    }
-
-    /*
-     * Case2: Verify assign can decrease size.
-     */
-    for (int s = SIZE_COUNT - 1; s != -1; --s)
-    {
-      size_t prev_capacity = a.capacity();
-      a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
-      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
-      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
-      int i = 0;
-      for (list_obj::iterator it = a.begin(); it != a.end(); ++it)
-      {
-        TS_ASSERT_EQUALS(*it, OBJ_DATA[i]);
-        ++i;
-      }
-      TS_ASSERT(is_container_valid(a));
-    }
+    printf("X");
   }
 
   void test_back(void)
@@ -1870,6 +1845,11 @@ public:
     TS_ASSERT(is_container_valid(b));
   }
 
+  void test_swap_move()
+  {
+    printf("X");
+  }
+
   void test_unique(void)
   {
     list_obj a;
@@ -1949,6 +1929,16 @@ public:
       TS_ASSERT_EQUALS(*(it++), *(tmp_it++));
     }
     TS_ASSERT(is_container_valid(a));
+  }
+
+  void test_assignment_operator_move()
+  {
+    printf("X");
+  }
+
+  void test_assignment_operator_initializer()
+  {
+    printf("X");
   }
 
   void test_pop_back(void)
