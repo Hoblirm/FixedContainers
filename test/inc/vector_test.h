@@ -103,18 +103,22 @@ public:
     TS_ASSERT(flex::allocator_debug<int>::mAllocatedPointers.empty());
   }
 
-  void mark_container_move_only(vec& c, bool clear_copy_flag = true)
+  void mark_move_only(vec& c)
   {
 #ifdef FLEX_HAS_CXX11
     for (int i = 0; i < c.size(); ++i)
     {
       c[i].move_only = true;
-      if (clear_copy_flag)
-      {
-        c[i].was_copied = false;
-      }
     }
 #endif
+  }
+
+  void clear_copy_flags(vec& c)
+  {
+    for (int i = 0; i < c.size(); ++i)
+    {
+      c[i].was_copied = false;
+    }
   }
 
   bool is_container_valid(const vec& c)
@@ -187,7 +191,17 @@ public:
 
   void test_assign_initializer()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    vec a;
+    a.assign( { 0, 1, 2, 3 });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 0);
+    TS_ASSERT_EQUALS(a[1], 1);
+    TS_ASSERT_EQUALS(a[2], 2);
+    TS_ASSERT_EQUALS(a[3], 3);
   }
 
   void test_at(void)
@@ -489,7 +503,8 @@ public:
     //it doesn't matter what the contents are since the size is zero.  However, we want to ensure that the
     //assignment operator doesn't perform extra work by resetting these values.  This happens if no assignment
     //operator is defined and a default one is used.
-    foo = vec();
+    vec empty;
+    foo = empty;
     TS_ASSERT(is_container_valid(foo));
     TS_ASSERT_EQUALS(foo.size(), 0);
     TS_ASSERT_EQUALS(foo[0], 1);
@@ -498,7 +513,8 @@ public:
 
     //Same thing as above, but we want to ensure that the cast operator allows assignment of vectors
     //with different capacities.
-    foo = vec(1, obj(19));
+    vec tmp(1, obj(19));
+    foo = tmp;
     TS_ASSERT(is_container_valid(foo));
     TS_ASSERT_EQUALS(foo.size(), 1);
     TS_ASSERT_EQUALS(foo[0], 19);
@@ -530,12 +546,41 @@ public:
 
   void test_assignment_operator_move()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    vec a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    vec b;
+    b = std::move(a);
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    TS_ASSERT_EQUALS(b[0],0);
+    TS_ASSERT_EQUALS(b[1],1);
+    TS_ASSERT_EQUALS(b[2],2);
+    TS_ASSERT_EQUALS(b[3],3);
+#endif
   }
 
   void test_assignment_operator_initializer()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    vec a;
+    a =
+    { 0, 1, 2, 3};
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 0);
+    TS_ASSERT_EQUALS(a[1], 1);
+    TS_ASSERT_EQUALS(a[2], 2);
+    TS_ASSERT_EQUALS(a[3], 3);
   }
 
   void test_ary_operator(void)
@@ -728,11 +773,6 @@ public:
     foo.push_back(100);
   }
 
-  void test_swap_move()
-  {
-    printf("X");
-  }
-
   void test_default_constructor(void)
   {
     flex::allocation_guard::enable();
@@ -827,14 +867,39 @@ public:
 
   void test_move_constructor()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    vec a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    vec b(std::move(a));
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    TS_ASSERT_EQUALS(b[0],0);
+    TS_ASSERT_EQUALS(b[1],1);
+    TS_ASSERT_EQUALS(b[2],2);
+    TS_ASSERT_EQUALS(b[3],3);
+#endif
   }
 
   void test_initializer_constructor()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    vec a({ 0, 1, 2, 3 });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 0);
+    TS_ASSERT_EQUALS(a[1], 1);
+    TS_ASSERT_EQUALS(a[2], 2);
+    TS_ASSERT_EQUALS(a[3], 3);
   }
-
 
   void test_relational_operators(void)
   {

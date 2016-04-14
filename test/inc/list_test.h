@@ -1845,11 +1845,6 @@ public:
     TS_ASSERT(is_container_valid(b));
   }
 
-  void test_swap_move()
-  {
-    printf("X");
-  }
-
   void test_unique(void)
   {
     list_obj a;

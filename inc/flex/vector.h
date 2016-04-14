@@ -129,7 +129,6 @@ namespace flex
     void resize(size_type n, const value_type& val = value_type());
     size_type size() const;
     void swap(vector<T, Alloc>& obj);
-
   protected:
     vector(pointer new_begin, pointer new_end, size_type capacity);
 
@@ -225,6 +224,22 @@ namespace flex
     std::uninitialized_copy(obj.mBegin, obj.mEnd, mBegin);
   }
 
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline vector<T, Alloc>::vector(vector<T, Alloc> && obj) :
+  base_type()
+  {
+    swap(obj);
+  }
+#endif
+
+  template<class T, class Alloc>
+  inline vector<T, Alloc>::vector(std::initializer_list<value_type> il) :
+      base_type(il.size())
+  {
+    std::uninitialized_copy(il.begin(), il.end(), mBegin);
+  }
+
   template<class T, class Alloc>
   inline void vector<T, Alloc>::assign(size_type n, const T& val)
   {
@@ -304,6 +319,12 @@ namespace flex
         mEnd = std::uninitialized_copy(it, last, mEnd);
       }
     }
+  }
+
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::assign(std::initializer_list<value_type> il)
+  {
+    assign(il.begin(), il.end());
   }
 
   template<class T, class Alloc>
@@ -632,6 +653,22 @@ namespace flex
   inline vector<T, Alloc>& vector<T, Alloc>::operator=(const vector<T, Alloc>& obj)
   {
     assign(obj.begin(), obj.end());
+    return *this;
+  }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline vector<T, Alloc>& vector<T, Alloc>::operator=(vector<T, Alloc>&& obj)
+  {
+    swap(obj);
+    return *this;
+  }
+#endif
+
+  template<class T, class Alloc>
+  inline vector<T, Alloc>& vector<T, Alloc>::operator=(std::initializer_list<value_type> il)
+  {
+    assign(il.begin(), il.end());
     return *this;
   }
 

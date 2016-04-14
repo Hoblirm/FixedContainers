@@ -1050,11 +1050,6 @@ public:
     TS_ASSERT(b == ring_obj(OBJ_DATA, OBJ_DATA + 9));
   }
 
-  void test_swap_move()
-  {
-    printf("X");
-  }
-
   void test_assignment_operator(void)
   {
     //Light-weight test, as this simply calls the assign() method.

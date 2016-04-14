@@ -34,9 +34,19 @@ namespace flex
     template<typename InputIterator> fixed_vector(InputIterator first, InputIterator last);
     fixed_vector(const fixed_vector<T, N, Alloc> & obj);
     fixed_vector(const vector<T, Alloc> & obj);
+    fixed_vector(std::initializer_list<value_type> il);
+#ifdef FLEX_HAS_CXX11
+    fixed_vector(fixed_vector<T, N, Alloc> && obj);
+    fixed_vector(vector<T, Alloc> && obj);
+#endif
 
     fixed_vector<T, N, Alloc>& operator=(const fixed_vector<T, N, Alloc>& obj);
     fixed_vector<T, N, Alloc>& operator=(const vector<T, Alloc>& obj);
+    fixed_vector<T, N, Alloc>& operator=(std::initializer_list<value_type> il);
+#ifdef FLEX_HAS_CXX11
+    fixed_vector<T, N, Alloc>& operator=(fixed_vector<T, N, Alloc>&& obj);
+    fixed_vector<T, N, Alloc>& operator=(vector<T, Alloc>&& obj);
+#endif
 
   private:
 #ifdef FLEX_HAS_CXX11
@@ -93,6 +103,31 @@ namespace flex
   }
 
   template<class T, size_t N, class Alloc>
+  inline fixed_vector<T, N, Alloc>::fixed_vector(std::initializer_list<value_type> il) :
+      vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + il.size(), N)
+  {
+    std::uninitialized_copy(il.begin(), il.end(), mBegin);
+  }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, size_t N, class Alloc>
+  inline fixed_vector<T, N, Alloc>::fixed_vector(fixed_vector<T, N, Alloc> && obj) :
+  vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
+  {
+    std::uninitialized_copy(std::make_move_iterator(obj.mBegin), std::make_move_iterator(obj.mEnd), mBegin);
+    obj.clear();
+  }
+
+  template<class T, size_t N, class Alloc>
+  inline fixed_vector<T, N, Alloc>::fixed_vector(vector<T, Alloc> && obj) :
+  vector<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), N)
+  {
+    std::uninitialized_copy(std::make_move_iterator(obj.begin()),std::make_move_iterator(obj.end()), mBegin);
+    obj.clear();
+  }
+#endif
+
+  template<class T, size_t N, class Alloc>
   inline fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(const fixed_vector<T, N, Alloc>& obj)
   {
     assign(obj.begin(), obj.end());
@@ -106,6 +141,32 @@ namespace flex
     return *this;
   }
 
-} //namespace flex
+  template<class T, size_t N, class Alloc>
+  inline fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(std::initializer_list<value_type> il)
+  {
+    assign(il.begin(), il.end());
+    return *this;
+  }
+
+#ifdef FLEX_HAS_CXX11
+template<class T, size_t N, class Alloc>
+inline fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(fixed_vector<T, N, Alloc>&& obj)
+{
+  assign(std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+  obj.clear();
+  return *this;
+}
+
+template<class T, size_t N, class Alloc>
+inline fixed_vector<T, N, Alloc>& fixed_vector<T, N, Alloc>::operator=(vector<T, Alloc>&& obj)
+{
+  assign(std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+  obj.clear();
+  return *this;
+}
+#endif
+
+}
+ //namespace flex
 
 #endif /* FLEX_FIXED_VECTOR_H */

@@ -1837,6 +1837,16 @@ public:
     TS_ASSERT(is_container_valid(a));
   }
 
+  void test_assignment_operator_move()
+  {
+    printf("X");
+  }
+
+  void test_assignment_operator_base_move()
+  {
+    printf("X");
+  }
+
   void test_pop_back(void)
   {
     fixed_list_obj a;

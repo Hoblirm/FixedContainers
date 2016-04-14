@@ -1,6 +1,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include <flex/fixed_vector.h>
+#include <flex/allocator_debug.h>
 
 struct obj
 {
@@ -8,13 +9,48 @@ struct obj
   static const int INIT_KEY = 858599509;
 
   obj() :
-      val(DEFAULT_VAL), init(INIT_KEY)
+      val(DEFAULT_VAL), init(INIT_KEY), move_only(false), was_copied(false)
   {
   }
 
   obj(int i) :
-      val(i), init(INIT_KEY)
+      val(i), init(INIT_KEY), move_only(false), was_copied(false)
   {
+  }
+
+  obj(const obj& o) :
+      val(o.val), init(INIT_KEY), move_only(o.move_only), was_copied(true)
+  {
+
+  }
+
+  obj& operator=(const obj& o)
+  {
+    val = o.val;
+    move_only = o.move_only;
+    was_copied = true;
+    return *this;
+  }
+
+#ifdef FLEX_HAS_CXX11
+  obj(const obj&& o) :
+  val(o.val), init(INIT_KEY), move_only(o.move_only), was_copied(o.was_copied)
+  {
+
+  }
+
+  obj& operator=(const obj&& o)
+  {
+    val = o.val;
+    move_only = o.move_only;
+    was_copied = o.was_copied;
+    return *this;
+  }
+#endif
+
+  operator int() const
+  {
+    return val;
   }
 
   ~obj()
@@ -22,20 +58,13 @@ struct obj
     init = 0;
   }
 
-  obj& operator=(const obj& o)
-  {
-    val = o.val;
-    return *this;
-  }
-
-  operator int() const
-  {
-    return val;
-  }
-
   int val;
   int init;
+  bool move_only;
+  bool was_copied;
 };
+
+typedef flex::fixed_vector<obj, 16, flex::allocator_debug<obj> > vec;
 
 const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
     -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
@@ -67,13 +96,39 @@ public:
     flex::allocation_guard::disable();
   }
 
-  bool is_container_valid(const flex::vector<obj>& c)
+  template<class Alloc>
+  void mark_move_only(flex::vector<obj, Alloc>& c)
+  {
+#ifdef FLEX_HAS_CXX11
+    for (int i = 0; i < c.size(); ++i)
+    {
+      c[i].move_only = true;
+    }
+#endif
+  }
+  template<class Alloc>
+  void clear_copy_flags(flex::vector<obj, Alloc>& c)
+  {
+    for (int i = 0; i < c.size(); ++i)
+    {
+      c[i].was_copied = false;
+    }
+  }
+
+  //TODO: Make all tests containers use allocator_debug so this Alloc template isn't necessary.
+  template<class Alloc>
+  bool is_container_valid(const flex::vector<obj, Alloc>& c)
   {
     for (int i = 0; i < c.size(); ++i)
     {
       if (c[i].init != obj::INIT_KEY)
       {
-        printf("Error: Expected (c[%d] == object::INIT_KEY), found (%d != %d)\n", i, c[i].init, obj::INIT_KEY);
+        printf("Error: Expected (c[%d] == obj::INIT_KEY), found (%d != %d)\n", i, c[i].init, obj::INIT_KEY);
+        return false;
+      }
+      if (c[i].move_only && c[i].was_copied)
+      {
+        printf("Error: Expected (!(c[%d].move_only && c[%d].was_copied))", i, i);
         return false;
       }
     }
@@ -81,7 +136,7 @@ public:
     {
       if (c[i].init == obj::INIT_KEY)
       {
-        printf("Error: Expected (c[%d] != object::INIT_KEY), found (%d == %d)\n", i, c[i].init, obj::INIT_KEY);
+        printf("Error: Expected (c[%d] != obj::INIT_KEY), found (%d == %d)\n", i, c[i].init, obj::INIT_KEY);
         return false;
       }
     }
@@ -344,6 +399,70 @@ public:
     TS_ASSERT_EQUALS(foo[2], 17);
   }
 
+  void test_assignment_operator_move()
+  {
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    vec a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    vec b;
+    b = std::move(a);
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    TS_ASSERT_EQUALS(b[0],0);
+    TS_ASSERT_EQUALS(b[1],1);
+    TS_ASSERT_EQUALS(b[2],2);
+    TS_ASSERT_EQUALS(b[3],3);
+#endif
+  }
+
+  void test_assignment_operator_move_base()
+  {
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    allocation_guard::disable();
+    flex::vector<obj,flex::allocator_debug<obj> > a =
+    { 0, 1, 2, 3};
+    allocation_guard::enable();
+    clear_copy_flags(a);
+    vec b;
+    b = std::move(a);
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    TS_ASSERT_EQUALS(b[0],0);
+    TS_ASSERT_EQUALS(b[1],1);
+    TS_ASSERT_EQUALS(b[2],2);
+    TS_ASSERT_EQUALS(b[3],3);
+#endif
+  }
+
+  void test_assignment_operator_initializer()
+  {
+    /*
+     * Case1: Normal condition
+     */
+    vec a;
+    a =
+    { 0, 1, 2, 3};
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 0);
+    TS_ASSERT_EQUALS(a[1], 1);
+    TS_ASSERT_EQUALS(a[2], 2);
+    TS_ASSERT_EQUALS(a[3], 3);
+  }
+
   void test_push_back_and_pop_back(void)
   {
     fixed_vector<obj, 8> myvector;
@@ -558,12 +677,38 @@ public:
 
   void test_move_constructor()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    vec a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    vec b(std::move(a));
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    TS_ASSERT_EQUALS(b[0],0);
+    TS_ASSERT_EQUALS(b[1],1);
+    TS_ASSERT_EQUALS(b[2],2);
+    TS_ASSERT_EQUALS(b[3],3);
+#endif
   }
 
   void test_initializer_constructor()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    vec a( { 0, 1, 2, 3 });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 0);
+    TS_ASSERT_EQUALS(a[1], 1);
+    TS_ASSERT_EQUALS(a[2], 2);
+    TS_ASSERT_EQUALS(a[3], 3);
   }
 
   void assignment_method(vector<obj>& x)

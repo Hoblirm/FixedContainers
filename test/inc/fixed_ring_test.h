@@ -989,6 +989,16 @@ public:
     }
   }
 
+  void test_assignment_operator_move()
+  {
+    printf("X");
+  }
+
+  void test_assignment_operator_base_move()
+  {
+    printf("X");
+  }
+
   void test_pop_back(void)
   {
     ring_obj a;
