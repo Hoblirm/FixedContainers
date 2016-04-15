@@ -2,61 +2,27 @@
 
 #include <flex/fixed_ring.h>
 #include <flex/allocator_debug.h>
+#include <flex/obj_debug.h>
 
 class fixed_ring_test: public CxxTest::TestSuite
 {
 
-  struct obj
-  {
-    static const int DEFAULT_VAL = 1;
-    static const int INIT_KEY = 858599509;
+  typedef flex::fixed_ring<flex::obj_debug, 128, flex::allocator_debug<flex::obj_debug> > ring_obj;
 
-    obj() :
-        val(DEFAULT_VAL), init(INIT_KEY)
-    {
-    }
-
-    obj(int i) :
-        val(i), init(INIT_KEY)
-    {
-    }
-
-    ~obj()
-    {
-      init = 0;
-    }
-
-    obj& operator=(const obj& o)
-    {
-      val = o.val;
-      return *this;
-    }
-
-    operator int() const
-    {
-      return val;
-    }
-
-    int val;
-    int init;
-  };
-
-  typedef flex::fixed_ring<obj, 128> ring_obj;
-
-  const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
-      -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
-      414986917, -1084506988, -1274438196, -407784340, -1476797751, 952482371, 1659351065, -1840296979, 1174260466,
-      -830555035, 1187249412, -1439716735, -606656096, 1968778085, -468774603, -741213671, -1792595459, -1043591241,
-      -399781674, 1441797965, -539577554, -1712941906, 893437261, 1243708130, -276655685, 169167272, 1548266128,
-      2134938409, -165983522, 65335344, 777222631, -1975346548, 1736737965, -1297235370, -1778585082, -445115751,
-      77287795, -904742465, 1566979049, -1276550055, -1523151595, -1877472326, -1965521838, 309774311, 285638537,
-      1694499811, 395062486, -599472639, -562348494, 622523556, 1991792880, 1485225099, -26143183, 1213635789,
-      -1867261885, 1401932595, 1643956672, 1152265615, -206296253, -1341812088, -928119996, 1335888378, -2127839732,
-      -805081880, -461979923, 258594093, 1322814281, -1856950276, 763906168, -110775798, 29138078, -728231554,
-      -1738124420, -1130024844, 2112808498, -2147190929, -46681067, -1746560845, -1931350352, -2121713887, -2077836858,
-      -68560373, 542144249, -964249373, 672765407, 1240222082, -170251308, 573136605, 522427348, -1842488270,
-      -803442179, 1214800559, -439290856, -850489475, -371113959, -528653948, -1466750983, -299654597, -1095361209,
-      912904732 };
+  const flex::obj_debug OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954,
+      -262399995, -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990,
+      1141698902, 414986917, -1084506988, -1274438196, -407784340, -1476797751, 952482371, 1659351065, -1840296979,
+      1174260466, -830555035, 1187249412, -1439716735, -606656096, 1968778085, -468774603, -741213671, -1792595459,
+      -1043591241, -399781674, 1441797965, -539577554, -1712941906, 893437261, 1243708130, -276655685, 169167272,
+      1548266128, 2134938409, -165983522, 65335344, 777222631, -1975346548, 1736737965, -1297235370, -1778585082,
+      -445115751, 77287795, -904742465, 1566979049, -1276550055, -1523151595, -1877472326, -1965521838, 309774311,
+      285638537, 1694499811, 395062486, -599472639, -562348494, 622523556, 1991792880, 1485225099, -26143183,
+      1213635789, -1867261885, 1401932595, 1643956672, 1152265615, -206296253, -1341812088, -928119996, 1335888378,
+      -2127839732, -805081880, -461979923, 258594093, 1322814281, -1856950276, 763906168, -110775798, 29138078,
+      -728231554, -1738124420, -1130024844, 2112808498, -2147190929, -46681067, -1746560845, -1931350352, -2121713887,
+      -2077836858, -68560373, 542144249, -964249373, 672765407, 1240222082, -170251308, 573136605, 522427348,
+      -1842488270, -803442179, 1214800559, -439290856, -850489475, -371113959, -528653948, -1466750983, -299654597,
+      -1095361209, 912904732 };
 
   const size_t SIZE_COUNT = 10;
   const size_t SIZES[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 128 };
@@ -75,21 +41,46 @@ public:
     flex::allocation_guard::disable();
   }
 
-  bool is_container_valid(const flex::ring<obj>& c)
+  void mark_move_only(flex::ring<flex::obj_debug, flex::allocator_debug<flex::obj_debug> >& c)
+  {
+#ifdef FLEX_HAS_CXX11
+    for (int i = 0; i < c.size(); ++i)
+    {
+      c[i].move_only = true;
+    }
+#endif
+  }
+
+  void clear_copy_flags(flex::ring<flex::obj_debug, flex::allocator_debug<flex::obj_debug> >& c)
   {
     for (int i = 0; i < c.size(); ++i)
     {
-      if (c[i].init != obj::INIT_KEY)
+      c[i].was_copied = false;
+    }
+  }
+
+  bool is_container_valid(const flex::ring<flex::obj_debug, flex::allocator_debug<flex::obj_debug> >& c)
+  {
+    for (int i = 0; i < c.size(); ++i)
+    {
+      if (c[i].init != flex::obj_debug::INIT_KEY)
       {
-        printf("Error: Expected (c[%d] == obj::INIT_KEY), found (%d != %d)\n", i, c[i].init, obj::INIT_KEY);
+        printf("Error: Expected (c[%d] == flex::obj_debug::INIT_KEY), found (%d != %d)\n", i, c[i].init,
+            flex::obj_debug::INIT_KEY);
+        return false;
+      }
+      if (c[i].move_only && c[i].was_copied)
+      {
+        printf("Error: Expected (!(c[%d].move_only && c[%d].was_copied))", i, i);
         return false;
       }
     }
     for (int i = c.size(); i < c.capacity(); ++i)
     {
-      if (c[i].init == obj::INIT_KEY)
+      if (c[i].init == flex::obj_debug::INIT_KEY)
       {
-        printf("Error: Expected (c[%d] != obj::INIT_KEY), found (%d == %d)\n", i, c[i].init, obj::INIT_KEY);
+        printf("Error: Expected (c[%d] != flex::obj_debug::INIT_KEY), found (%d == %d)\n", i, c[i].init,
+            flex::obj_debug::INIT_KEY);
         return false;
       }
     }
@@ -120,7 +111,7 @@ public:
       TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
       for (int i = 0; i < a.size(); ++i)
       {
-        TS_ASSERT_EQUALS(a[i], obj::DEFAULT_VAL);
+        TS_ASSERT_EQUALS(a[i], flex::obj_debug::DEFAULT_VAL);
       }
 
     } //for: SIZE_COUNT
@@ -130,7 +121,7 @@ public:
   {
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      const obj fill_val = OBJ_DATA[SIZES[s] - 1];
+      const flex::obj_debug fill_val = OBJ_DATA[SIZES[s] - 1];
 
       /*
        * Case1: Verify fill constructor assigns value parameter for primitives.
@@ -204,12 +195,38 @@ public:
 
   void test_move_constructor()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    ring_obj a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    ring_obj b(std::move(a));
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    TS_ASSERT_EQUALS(b[0],0);
+    TS_ASSERT_EQUALS(b[1],1);
+    TS_ASSERT_EQUALS(b[2],2);
+    TS_ASSERT_EQUALS(b[3],3);
+#endif
   }
 
   void test_initializer_constructor()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    ring_obj a( { 0, 1, 2, 3 });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 0);
+    TS_ASSERT_EQUALS(a[1], 1);
+    TS_ASSERT_EQUALS(a[2], 2);
+    TS_ASSERT_EQUALS(a[3], 3);
   }
 
   void test_assign_fill(void)
@@ -220,7 +237,7 @@ public:
     ring_obj a;
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      const obj fill_val = OBJ_DATA[SIZES[s] - 1];
+      const flex::obj_debug fill_val = OBJ_DATA[SIZES[s] - 1];
       a.assign(SIZES[s], fill_val);
       TS_ASSERT(is_container_valid(a));
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
@@ -237,7 +254,7 @@ public:
      */
     for (int s = SIZE_COUNT - 1; s != -1; --s)
     {
-      const obj fill_val = OBJ_DATA[SIZES[s] - 1];
+      const flex::obj_debug fill_val = OBJ_DATA[SIZES[s] - 1];
       const size_t prev_capacity = a.capacity();
       a.assign(SIZES[s], fill_val);
       TS_ASSERT(is_container_valid(a));
@@ -315,7 +332,7 @@ public:
        */
       for (int i = 0; i < SIZES[s]; i++)
       {
-        const obj val = -i;
+        const flex::obj_debug val = -i;
         a.at(i) = val;
         TS_ASSERT_EQUALS(a.at(i), val);
       }
@@ -638,7 +655,7 @@ public:
     {
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
       size_t current_size = a.size();
-      const obj val = 19;
+      const flex::obj_debug val = 19;
 
       /*
        * Case1: Test insert at end
@@ -700,7 +717,7 @@ public:
     {
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
       size_t current_size = a.size();
-      const obj val = 19;
+      const flex::obj_debug val = 19;
 
       /*
        * Case1: Test insert at end
@@ -899,7 +916,7 @@ public:
   void test_resize(void)
   {
     ring_obj a;
-    const obj val = 19;
+    const flex::obj_debug val = 19;
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
       /*
@@ -991,12 +1008,50 @@ public:
 
   void test_assignment_operator_move()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    ring_obj a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    ring_obj b;
+    b = std::move(a);
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    TS_ASSERT_EQUALS(b[0],0);
+    TS_ASSERT_EQUALS(b[1],1);
+    TS_ASSERT_EQUALS(b[2],2);
+    TS_ASSERT_EQUALS(b[3],3);
+#endif
   }
 
-  void test_assignment_operator_base_move()
+  void test_assignment_operator_move_base()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    allocation_guard::disable();
+    flex::ring<flex::obj_debug,flex::allocator_debug<flex::obj_debug> > a =
+    { 0, 1, 2, 3};
+    allocation_guard::enable();
+    clear_copy_flags(a);
+    ring_obj b;
+    b = std::move(a);
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    TS_ASSERT_EQUALS(b[0],0);
+    TS_ASSERT_EQUALS(b[1],1);
+    TS_ASSERT_EQUALS(b[2],2);
+    TS_ASSERT_EQUALS(b[3],3);
+#endif
   }
 
   void test_pop_back(void)

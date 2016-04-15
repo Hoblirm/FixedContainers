@@ -33,9 +33,19 @@ namespace flex
     template<typename InputIterator> fixed_ring(InputIterator first, InputIterator last);
     fixed_ring(const fixed_ring<T, N, Alloc> & obj);
     fixed_ring(const ring<T, Alloc> & obj);
+    fixed_ring(std::initializer_list<value_type> il);
+#ifdef FLEX_HAS_CXX11
+    fixed_ring(fixed_ring<T, N, Alloc> && obj);
+    fixed_ring(ring<T, Alloc> && obj);
+#endif
 
     fixed_ring<T, N, Alloc>& operator=(const fixed_ring<T, N, Alloc>& obj);
     fixed_ring<T, N, Alloc>& operator=(const ring<T, Alloc>& obj);
+    fixed_ring<T, N, Alloc>& operator=(std::initializer_list<value_type> il);
+#ifdef FLEX_HAS_CXX11
+    fixed_ring<T, N, Alloc>& operator=(fixed_ring<T, N, Alloc>&& obj);
+    fixed_ring<T, N, Alloc>& operator=(ring<T, Alloc>&& obj);
+#endif
 
   private:
 
@@ -94,6 +104,31 @@ namespace flex
   }
 
   template<class T, size_t N, class Alloc>
+  inline fixed_ring<T, N, Alloc>::fixed_ring(std::initializer_list<value_type> il) :
+      ring<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + il.size(), (pointer) mBuffer + N)
+  {
+    std::uninitialized_copy(il.begin(), il.end(), mBegin);
+  }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, size_t N, class Alloc>
+  inline fixed_ring<T, N, Alloc>::fixed_ring(fixed_ring<T, N, Alloc> && obj) :
+  ring<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), (pointer) mBuffer + N)
+  {
+    std::uninitialized_copy(std::make_move_iterator(obj.mBegin), std::make_move_iterator(obj.mEnd), mBegin);
+    obj.clear();
+  }
+
+  template<class T, size_t N, class Alloc>
+  inline fixed_ring<T, N, Alloc>::fixed_ring(ring<T, Alloc> && obj) :
+  ring<T, Alloc>((pointer) mBuffer, (pointer) mBuffer + std::distance(obj.mBegin, obj.mEnd), (pointer) mBuffer + N)
+  {
+    std::uninitialized_copy(std::make_move_iterator(obj.begin()),std::make_move_iterator(obj.end()), mBegin);
+    obj.clear();
+  }
+#endif
+
+  template<class T, size_t N, class Alloc>
   inline fixed_ring<T, N, Alloc>& fixed_ring<T, N, Alloc>::operator=(const fixed_ring<T, N, Alloc>& obj)
   {
     assign(obj.begin(), obj.end());
@@ -107,6 +142,32 @@ namespace flex
     return *this;
   }
 
-} //namespace flex
+  template<class T, size_t N, class Alloc>
+  inline fixed_ring<T, N, Alloc>& fixed_ring<T, N, Alloc>::operator=(std::initializer_list<value_type> il)
+  {
+    assign(il.begin(), il.end());
+    return *this;
+  }
+
+#ifdef FLEX_HAS_CXX11
+template<class T, size_t N, class Alloc>
+inline fixed_ring<T, N, Alloc>& fixed_ring<T, N, Alloc>::operator=(fixed_ring<T, N, Alloc>&& obj)
+{
+  assign(std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+  obj.clear();
+  return *this;
+}
+
+template<class T, size_t N, class Alloc>
+inline fixed_ring<T, N, Alloc>& fixed_ring<T, N, Alloc>::operator=(ring<T, Alloc>&& obj)
+{
+  assign(std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+  obj.clear();
+  return *this;
+}
+#endif
+
+}
+ //namespace flex
 
 #endif /* FLEX_FIXED_RING_H */

@@ -12,13 +12,48 @@ class ring_test: public CxxTest::TestSuite
     static const int INIT_KEY = 858599509;
 
     obj() :
-        val(DEFAULT_VAL), init(INIT_KEY)
+        val(DEFAULT_VAL), init(INIT_KEY), move_only(false), was_copied(false)
     {
     }
 
     obj(int i) :
-        val(i), init(INIT_KEY)
+        val(i), init(INIT_KEY), move_only(false), was_copied(false)
     {
+    }
+
+    obj(const obj& o) :
+        val(o.val), init(INIT_KEY), move_only(o.move_only), was_copied(true)
+    {
+
+    }
+
+    obj& operator=(const obj& o)
+    {
+      val = o.val;
+      move_only = o.move_only;
+      was_copied = true;
+      return *this;
+    }
+
+#ifdef FLEX_HAS_CXX11
+    obj(const obj&& o) :
+    val(o.val), init(INIT_KEY), move_only(o.move_only), was_copied(o.was_copied)
+    {
+
+    }
+
+    obj& operator=(const obj&& o)
+    {
+      val = o.val;
+      move_only = o.move_only;
+      was_copied = o.was_copied;
+      return *this;
+    }
+#endif
+
+    operator int() const
+    {
+      return val;
     }
 
     ~obj()
@@ -26,19 +61,10 @@ class ring_test: public CxxTest::TestSuite
       init = 0;
     }
 
-    obj& operator=(const obj& o)
-    {
-      val = o.val;
-      return *this;
-    }
-
-    operator int() const
-    {
-      return val;
-    }
-
     int val;
     int init;
+    bool move_only;
+    bool was_copied;
   };
 
   typedef flex::ring<obj, flex::allocator_debug<obj> > ring_obj;
@@ -80,6 +106,24 @@ public:
     TS_ASSERT(flex::allocator_debug<obj>::mAllocatedPointers.empty());
   }
 
+  void mark_move_only(ring_obj& c)
+  {
+#ifdef FLEX_HAS_CXX11
+    for (int i = 0; i < c.size(); ++i)
+    {
+      c[i].move_only = true;
+    }
+#endif
+  }
+
+  void clear_copy_flags(ring_obj& c)
+  {
+    for (int i = 0; i < c.size(); ++i)
+    {
+      c[i].was_copied = false;
+    }
+  }
+
   bool is_container_valid(const ring_obj& c)
   {
     for (int i = 0; i < c.size(); ++i)
@@ -87,6 +131,11 @@ public:
       if (c[i].init != obj::INIT_KEY)
       {
         printf("Error: Expected (c[%d] == obj::INIT_KEY), found (%d != %d)\n", i, c[i].init, obj::INIT_KEY);
+        return false;
+      }
+      if (c[i].move_only && c[i].was_copied)
+      {
+        printf("Error: Expected (!(c[%d].move_only && c[%d].was_copied))", i, i);
         return false;
       }
     }
@@ -230,12 +279,38 @@ public:
 
   void test_move_constructor()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    ring_obj a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    ring_obj b(std::move(a));
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    TS_ASSERT_EQUALS(b[0],0);
+    TS_ASSERT_EQUALS(b[1],1);
+    TS_ASSERT_EQUALS(b[2],2);
+    TS_ASSERT_EQUALS(b[3],3);
+#endif
   }
 
   void test_initializer_constructor()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    ring_obj a( { 0, 1, 2, 3 });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 0);
+    TS_ASSERT_EQUALS(a[1], 1);
+    TS_ASSERT_EQUALS(a[2], 2);
+    TS_ASSERT_EQUALS(a[3], 3);
   }
 
   void test_assign_fill(void)
@@ -319,7 +394,17 @@ public:
 
   void test_assign_initializer()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    ring_obj a;
+    a.assign( { 0, 1, 2, 3 });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 0);
+    TS_ASSERT_EQUALS(a[1], 1);
+    TS_ASSERT_EQUALS(a[2], 2);
+    TS_ASSERT_EQUALS(a[3], 3);
   }
 
   void test_at(void)
@@ -1068,12 +1153,41 @@ public:
 
   void test_assignment_operator_move()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    ring_obj a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    ring_obj b;
+    b = std::move(a);
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    TS_ASSERT_EQUALS(b[0],0);
+    TS_ASSERT_EQUALS(b[1],1);
+    TS_ASSERT_EQUALS(b[2],2);
+    TS_ASSERT_EQUALS(b[3],3);
+#endif
   }
 
   void test_assignment_operator_initializer()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    ring_obj a;
+    a =
+    { 0, 1, 2, 3};
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 0);
+    TS_ASSERT_EQUALS(a[1], 1);
+    TS_ASSERT_EQUALS(a[2], 2);
+    TS_ASSERT_EQUALS(a[3], 3);
   }
 
   void test_pop_back(void)

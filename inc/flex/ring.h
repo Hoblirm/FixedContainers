@@ -76,10 +76,14 @@ namespace flex
     ring(int size, const value_type& val);
     template<typename InputIterator> ring(InputIterator first, InputIterator last);
     ring(const ring<T, Alloc> & obj);
-
+    ring(std::initializer_list<value_type> il);
+#ifdef FLEX_HAS_CXX11
+    ring(ring<T, Alloc> && obj);
+#endif
     void assign(size_type size, const value_type& val);
     void assign(int size, const value_type& val);
     template<typename InputIterator> void assign(InputIterator first, InputIterator last);
+    void assign(std::initializer_list<value_type> il);
 
     reference at(size_type n);
     const_reference at(size_type n) const;
@@ -109,6 +113,10 @@ namespace flex
     template<typename InputIterator> void insert(iterator position, InputIterator first, InputIterator last);
     size_type max_size() const;
     ring<T, Alloc>& operator=(const ring<T, Alloc>& obj);
+    ring<T, Alloc>& operator=(std::initializer_list<value_type> il);
+#ifdef FLEX_HAS_CXX11
+    ring<T, Alloc>& operator=(ring<T, Alloc>&& obj);
+#endif
     reference operator[](size_type n);
     const_reference operator[](size_type n) const;
     void pop_back();
@@ -229,6 +237,23 @@ namespace flex
   }
 
   template<class T, class Alloc>
+  inline ring<T, Alloc>::ring(std::initializer_list<value_type> il) :
+      base_type(il.size())
+  {
+    //Using the mBegin.mPtr is a bit more efficient, as we know the newly allocated data doesn't wrap.
+    std::uninitialized_copy(il.begin(), il.end(), mBegin.mPtr);
+  }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline ring<T, Alloc>::ring(ring<T, Alloc> && obj) :
+  base_type()
+  {
+    swap(obj);
+  }
+#endif
+
+  template<class T, class Alloc>
   inline void ring<T, Alloc>::assign(size_type n, const value_type& val)
   {
     if (n > capacity())
@@ -300,6 +325,12 @@ namespace flex
         mEnd.mPtr = std::uninitialized_copy(it, last, mEnd).mPtr;
       }
     }
+  }
+
+  template<class T, class Alloc>
+  inline void ring<T, Alloc>::assign(std::initializer_list<value_type> il)
+  {
+    assign(il.begin(), il.end());
   }
 
   template<class T, class Alloc>
@@ -653,6 +684,22 @@ namespace flex
     assign(obj.begin(), obj.end());
     return *this;
   }
+
+  template<class T, class Alloc>
+  inline ring<T, Alloc>& ring<T, Alloc>::operator=(std::initializer_list<value_type> il)
+  {
+    assign(il.begin(), il.end());
+    return *this;
+  }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline ring<T, Alloc>& ring<T, Alloc>::operator=(ring<T, Alloc>&& obj)
+  {
+    swap(obj);
+    return *this;
+  }
+#endif
 
   template<class T, class Alloc>
   inline typename ring<T, Alloc>::reference ring<T, Alloc>::operator[](size_type n)
