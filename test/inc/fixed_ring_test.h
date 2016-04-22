@@ -2,14 +2,14 @@
 
 #include <flex/fixed_ring.h>
 #include <flex/allocator_debug.h>
-#include <flex/obj_debug.h>
+#include <flex/debug/obj.h>
 
 class fixed_ring_test: public CxxTest::TestSuite
 {
 
-  typedef flex::fixed_ring<flex::obj_debug, 128, flex::allocator_debug<flex::obj_debug> > ring_obj;
+  typedef flex::fixed_ring<flex::debug::obj, 128, flex::allocator_debug<flex::debug::obj> > ring_obj;
 
-  const flex::obj_debug OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954,
+  const flex::debug::obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954,
       -262399995, -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990,
       1141698902, 414986917, -1084506988, -1274438196, -407784340, -1476797751, 952482371, 1659351065, -1840296979,
       1174260466, -830555035, 1187249412, -1439716735, -606656096, 1968778085, -468774603, -741213671, -1792595459,
@@ -41,7 +41,7 @@ public:
     flex::allocation_guard::disable();
   }
 
-  void mark_move_only(flex::ring<flex::obj_debug, flex::allocator_debug<flex::obj_debug> >& c)
+  void mark_move_only(flex::ring<flex::debug::obj, flex::allocator_debug<flex::debug::obj> >& c)
   {
 #ifdef FLEX_HAS_CXX11
     for (int i = 0; i < c.size(); ++i)
@@ -51,7 +51,7 @@ public:
 #endif
   }
 
-  void clear_copy_flags(flex::ring<flex::obj_debug, flex::allocator_debug<flex::obj_debug> >& c)
+  void clear_copy_flags(flex::ring<flex::debug::obj, flex::allocator_debug<flex::debug::obj> >& c)
   {
     for (int i = 0; i < c.size(); ++i)
     {
@@ -59,14 +59,14 @@ public:
     }
   }
 
-  bool is_container_valid(const flex::ring<flex::obj_debug, flex::allocator_debug<flex::obj_debug> >& c)
+  bool is_container_valid(const flex::ring<flex::debug::obj, flex::allocator_debug<flex::debug::obj> >& c)
   {
     for (int i = 0; i < c.size(); ++i)
     {
-      if (c[i].init != flex::obj_debug::INIT_KEY)
+      if (c[i].init != flex::debug::obj::INIT_KEY)
       {
-        printf("Error: Expected (c[%d] == flex::obj_debug::INIT_KEY), found (%d != %d)\n", i, c[i].init,
-            flex::obj_debug::INIT_KEY);
+        printf("Error: Expected (c[%d] == flex::debug::obj::INIT_KEY), found (%d != %d)\n", i, c[i].init,
+            flex::debug::obj::INIT_KEY);
         return false;
       }
       if (c[i].move_only && c[i].was_copied)
@@ -77,10 +77,10 @@ public:
     }
     for (int i = c.size(); i < c.capacity(); ++i)
     {
-      if (c[i].init == flex::obj_debug::INIT_KEY)
+      if (c[i].init == flex::debug::obj::INIT_KEY)
       {
-        printf("Error: Expected (c[%d] != flex::obj_debug::INIT_KEY), found (%d == %d)\n", i, c[i].init,
-            flex::obj_debug::INIT_KEY);
+        printf("Error: Expected (c[%d] != flex::debug::obj::INIT_KEY), found (%d == %d)\n", i, c[i].init,
+            flex::debug::obj::INIT_KEY);
         return false;
       }
     }
@@ -111,7 +111,7 @@ public:
       TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
       for (int i = 0; i < a.size(); ++i)
       {
-        TS_ASSERT_EQUALS(a[i], flex::obj_debug::DEFAULT_VAL);
+        TS_ASSERT_EQUALS(a[i], flex::debug::obj::DEFAULT_VAL);
       }
 
     } //for: SIZE_COUNT
@@ -121,7 +121,7 @@ public:
   {
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      const flex::obj_debug fill_val = OBJ_DATA[SIZES[s] - 1];
+      const flex::debug::obj fill_val = OBJ_DATA[SIZES[s] - 1];
 
       /*
        * Case1: Verify fill constructor assigns value parameter for primitives.
@@ -237,7 +237,7 @@ public:
     ring_obj a;
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
-      const flex::obj_debug fill_val = OBJ_DATA[SIZES[s] - 1];
+      const flex::debug::obj fill_val = OBJ_DATA[SIZES[s] - 1];
       a.assign(SIZES[s], fill_val);
       TS_ASSERT(is_container_valid(a));
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
@@ -254,7 +254,7 @@ public:
      */
     for (int s = SIZE_COUNT - 1; s != -1; --s)
     {
-      const flex::obj_debug fill_val = OBJ_DATA[SIZES[s] - 1];
+      const flex::debug::obj fill_val = OBJ_DATA[SIZES[s] - 1];
       const size_t prev_capacity = a.capacity();
       a.assign(SIZES[s], fill_val);
       TS_ASSERT(is_container_valid(a));
@@ -332,7 +332,7 @@ public:
        */
       for (int i = 0; i < SIZES[s]; i++)
       {
-        const flex::obj_debug val = -i;
+        const flex::debug::obj val = -i;
         a.at(i) = val;
         TS_ASSERT_EQUALS(a.at(i), val);
       }
@@ -655,7 +655,7 @@ public:
     {
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
       size_t current_size = a.size();
-      const flex::obj_debug val = 19;
+      const flex::debug::obj val = 19;
 
       /*
        * Case1: Test insert at end
@@ -717,7 +717,7 @@ public:
     {
       a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
       size_t current_size = a.size();
-      const flex::obj_debug val = 19;
+      const flex::debug::obj val = 19;
 
       /*
        * Case1: Test insert at end
@@ -916,7 +916,7 @@ public:
   void test_resize(void)
   {
     ring_obj a;
-    const flex::obj_debug val = 19;
+    const flex::debug::obj val = 19;
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
       /*
@@ -1036,7 +1036,7 @@ public:
      * Case1: Normal condition.
      */
     allocation_guard::disable();
-    flex::ring<flex::obj_debug,flex::allocator_debug<flex::obj_debug> > a =
+    flex::ring<flex::debug::obj,flex::allocator_debug<flex::debug::obj> > a =
     { 0, 1, 2, 3};
     allocation_guard::enable();
     clear_copy_flags(a);
