@@ -2,6 +2,7 @@
 
 #include "flex/fixed_pool.h"
 #include "flex/fixed_vector.h"
+#include "flex/debug/obj.h"
 
 using namespace flex;
 
@@ -9,47 +10,7 @@ class fixed_pool_test: public CxxTest::TestSuite
 {
 public:
 
-  struct obj
-  {
-    static const int DEFAULT_VAL = 1;
-    static const int INIT_KEY = 858599509;
-
-    obj() :
-        link_ptr(NULL), val(DEFAULT_VAL), init(INIT_KEY)
-    {
-    }
-
-    obj(int i) :
-        link_ptr(NULL), val(i), init(INIT_KEY)
-    {
-    }
-
-    ~obj()
-    {
-      init = 0;
-    }
-
-    obj& operator=(const obj& o)
-    {
-      val = o.val;
-      return *this;
-    }
-
-    operator int() const
-    {
-      return val;
-    }
-
-    //The pool uses the first eight bytes of each object to link all its available memory with pointers.
-    //We create a placeholder here so the remaining data is not overwritten.  This allows us to read the object
-    //after calling the pool's deallocate method.  Reading objects after they are returned to the pool is
-    //useful for testing the pool's validity.
-    void* link_ptr;
-
-    int val;
-    int init;
-  };
-
+  typedef flex::debug::obj obj;
   typedef flex::fixed_pool<obj, 16> pool_obj;
 
   void setUp()

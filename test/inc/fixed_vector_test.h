@@ -1,69 +1,10 @@
 #include <cxxtest/TestSuite.h>
 
-#include <flex/fixed_vector.h>
-#include <flex/debug/allocator.h>
+#include "flex/fixed_vector.h"
+#include "flex/debug/allocator.h"
+#include "flex/debug/obj.h"
 
-struct obj
-{
-  static const int DEFAULT_VAL = 1;
-  static const int INIT_KEY = 858599509;
-
-  obj() :
-      val(DEFAULT_VAL), init(INIT_KEY), move_only(false), was_copied(false)
-  {
-  }
-
-  obj(int i) :
-      val(i), init(INIT_KEY), move_only(false), was_copied(false)
-  {
-  }
-
-  obj(const obj& o) :
-      val(o.val), init(INIT_KEY), move_only(o.move_only), was_copied(true)
-  {
-
-  }
-
-  obj& operator=(const obj& o)
-  {
-    val = o.val;
-    move_only = o.move_only;
-    was_copied = true;
-    return *this;
-  }
-
-#ifdef FLEX_HAS_CXX11
-  obj(const obj&& o) :
-  val(o.val), init(INIT_KEY), move_only(o.move_only), was_copied(o.was_copied)
-  {
-
-  }
-
-  obj& operator=(const obj&& o)
-  {
-    val = o.val;
-    move_only = o.move_only;
-    was_copied = o.was_copied;
-    return *this;
-  }
-#endif
-
-  operator int() const
-  {
-    return val;
-  }
-
-  ~obj()
-  {
-    init = 0;
-  }
-
-  int val;
-  int init;
-  bool move_only;
-  bool was_copied;
-};
-
+typedef flex::debug::obj obj;
 typedef flex::fixed_vector<obj, 16, flex::debug::allocator<obj> > vec;
 
 const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,

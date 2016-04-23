@@ -1,46 +1,13 @@
 #include <cxxtest/TestSuite.h>
 
-#include <flex/list.h>
-#include <flex/debug/allocator.h>
+#include "flex/list.h"
+#include "flex/debug/allocator.h"
+#include "flex/debug/obj.h"
 
 class list_test: public CxxTest::TestSuite
 {
 
-  struct obj
-  {
-    static const int DEFAULT_VAL = 1;
-    static const int INIT_KEY = 858599509;
-
-    obj() :
-        val(DEFAULT_VAL), init(INIT_KEY)
-    {
-    }
-
-    obj(int i) :
-        val(i), init(INIT_KEY)
-    {
-    }
-
-    ~obj()
-    {
-      init = 0;
-    }
-
-    obj& operator=(const obj& o)
-    {
-      val = o.val;
-      return *this;
-    }
-
-    operator int() const
-    {
-      return val;
-    }
-
-    int val;
-    int init;
-  };
-
+  typedef flex::debug::obj obj;
   typedef flex::list<obj, flex::debug::allocator<flex::list<obj>::node_type> > list_obj;
 
   const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,

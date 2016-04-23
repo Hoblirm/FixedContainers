@@ -1,12 +1,13 @@
 #include <cxxtest/TestSuite.h>
 
-#include <flex/fixed_ring.h>
-#include <flex/debug/allocator.h>
-#include <flex/debug/obj.h>
+#include "flex/fixed_ring.h"
+#include "flex/debug/allocator.h"
+#include "flex/debug/obj.h"
 
 class fixed_ring_test: public CxxTest::TestSuite
 {
 
+  typedef flex::debug::obj obj;
   typedef flex::fixed_ring<flex::debug::obj, 128, flex::debug::allocator<flex::debug::obj> > ring_obj;
 
   const flex::debug::obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954,
