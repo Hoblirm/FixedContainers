@@ -1,7 +1,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include <flex/list.h>
-#include <flex/allocator_debug.h>
+#include <flex/debug/allocator.h>
 
 class list_test: public CxxTest::TestSuite
 {
@@ -41,7 +41,7 @@ class list_test: public CxxTest::TestSuite
     int init;
   };
 
-  typedef flex::list<obj, flex::allocator_debug<flex::list<obj>::node_type> > list_obj;
+  typedef flex::list<obj, flex::debug::allocator<flex::list<obj>::node_type> > list_obj;
 
   const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
       -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
@@ -65,7 +65,7 @@ public:
 
   void setUp()
   {
-    flex::allocator_debug<flex::list<obj>::node_type>::clear();
+    flex::debug::allocator<flex::list<obj>::node_type>::clear();
     errno = 0;
   }
 
@@ -74,10 +74,10 @@ public:
     TS_ASSERT(!errno);
 
     //This ensures that all objs constructed by the container have their destructors called.
-    TS_ASSERT(flex::allocator_debug<flex::list<obj>::node_type>::mConstructedPointers.empty());
+    TS_ASSERT(flex::debug::allocator<flex::list<obj>::node_type>::mConstructedPointers.empty());
 
     //This ensures that all memory allocated by the container is properly freed.
-    TS_ASSERT(flex::allocator_debug<flex::list<obj>::node_type>::mAllocatedPointers.empty());
+    TS_ASSERT(flex::debug::allocator<flex::list<obj>::node_type>::mAllocatedPointers.empty());
   }
 
   bool is_container_valid(list_obj& list)

@@ -1,13 +1,13 @@
 #include <cxxtest/TestSuite.h>
 
 #include <flex/fixed_ring.h>
-#include <flex/allocator_debug.h>
+#include <flex/debug/allocator.h>
 #include <flex/debug/obj.h>
 
 class fixed_ring_test: public CxxTest::TestSuite
 {
 
-  typedef flex::fixed_ring<flex::debug::obj, 128, flex::allocator_debug<flex::debug::obj> > ring_obj;
+  typedef flex::fixed_ring<flex::debug::obj, 128, flex::debug::allocator<flex::debug::obj> > ring_obj;
 
   const flex::debug::obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954,
       -262399995, -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990,
@@ -41,7 +41,7 @@ public:
     flex::allocation_guard::disable();
   }
 
-  void mark_move_only(flex::ring<flex::debug::obj, flex::allocator_debug<flex::debug::obj> >& c)
+  void mark_move_only(flex::ring<flex::debug::obj, flex::debug::allocator<flex::debug::obj> >& c)
   {
 #ifdef FLEX_HAS_CXX11
     for (int i = 0; i < c.size(); ++i)
@@ -51,7 +51,7 @@ public:
 #endif
   }
 
-  void clear_copy_flags(flex::ring<flex::debug::obj, flex::allocator_debug<flex::debug::obj> >& c)
+  void clear_copy_flags(flex::ring<flex::debug::obj, flex::debug::allocator<flex::debug::obj> >& c)
   {
     for (int i = 0; i < c.size(); ++i)
     {
@@ -59,7 +59,7 @@ public:
     }
   }
 
-  bool is_container_valid(const flex::ring<flex::debug::obj, flex::allocator_debug<flex::debug::obj> >& c)
+  bool is_container_valid(const flex::ring<flex::debug::obj, flex::debug::allocator<flex::debug::obj> >& c)
   {
     for (int i = 0; i < c.size(); ++i)
     {
@@ -1036,7 +1036,7 @@ public:
      * Case1: Normal condition.
      */
     allocation_guard::disable();
-    flex::ring<flex::debug::obj,flex::allocator_debug<flex::debug::obj> > a =
+    flex::ring<flex::debug::obj,flex::debug::allocator<flex::debug::obj> > a =
     { 0, 1, 2, 3};
     allocation_guard::enable();
     clear_copy_flags(a);

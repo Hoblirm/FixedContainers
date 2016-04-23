@@ -50,11 +50,11 @@ public:
     int init;
   };
 
-  typedef flex::pool<obj, flex::allocator_debug<flex::pool<obj>::node_type> > pool_obj;
+  typedef flex::pool<obj, flex::debug::allocator<flex::pool<obj>::node_type> > pool_obj;
 
   void setUp()
   {
-    flex::allocator_debug<flex::pool<obj>::node_type>::clear();
+    flex::debug::allocator<flex::pool<obj>::node_type>::clear();
     errno = 0;
   }
 
@@ -63,10 +63,10 @@ public:
     TS_ASSERT(!errno);
 
     //This ensures that all objs constructed by the container have their destructors called.
-    TS_ASSERT(flex::allocator_debug<flex::pool<obj>::node_type>::mConstructedPointers.empty());
+    TS_ASSERT(flex::debug::allocator<flex::pool<obj>::node_type>::mConstructedPointers.empty());
 
     //This ensures that all memory allocated by the container is properly freed.
-    TS_ASSERT(flex::allocator_debug<flex::pool<obj>::node_type>::mAllocatedPointers.empty());
+    TS_ASSERT(flex::debug::allocator<flex::pool<obj>::node_type>::mAllocatedPointers.empty());
   }
 
   bool is_container_valid(pool_obj& c)

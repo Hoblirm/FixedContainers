@@ -1,7 +1,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include <flex/fixed_vector.h>
-#include <flex/allocator_debug.h>
+#include <flex/debug/allocator.h>
 
 struct obj
 {
@@ -64,7 +64,7 @@ struct obj
   bool was_copied;
 };
 
-typedef flex::fixed_vector<obj, 16, flex::allocator_debug<obj> > vec;
+typedef flex::fixed_vector<obj, 16, flex::debug::allocator<obj> > vec;
 
 const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
     -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
@@ -115,7 +115,7 @@ public:
     }
   }
 
-  //TODO: Make all tests containers use allocator_debug so this Alloc template isn't necessary.
+  //TODO: Make all tests containers use debug::allocator so this Alloc template isn't necessary.
   template<class Alloc>
   bool is_container_valid(const flex::vector<obj, Alloc>& c)
   {
@@ -429,7 +429,7 @@ public:
      * Case1: Normal condition.
      */
     allocation_guard::disable();
-    flex::vector<obj,flex::allocator_debug<obj> > a =
+    flex::vector<obj,flex::debug::allocator<obj> > a =
     { 0, 1, 2, 3};
     allocation_guard::enable();
     clear_copy_flags(a);

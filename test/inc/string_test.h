@@ -1,17 +1,17 @@
 #include <cxxtest/TestSuite.h>
 
 #include <flex/string.h>
-#include <flex/allocator_debug.h>
+#include <flex/debug/allocator.h>
 
 class string_test: public CxxTest::TestSuite
 {
-  typedef flex::basic_string<char, flex::allocator_debug<char> > str;
+  typedef flex::basic_string<char, flex::debug::allocator<char> > str;
 
 public:
 
   void setUp()
   {
-    flex::allocator_debug<char>::clear();
+    flex::debug::allocator<char>::clear();
     errno = 0;
   }
 
@@ -20,10 +20,10 @@ public:
     TS_ASSERT(!errno);
 
     //This ensures that all objs constructed by the container have their destructors called.
-    TS_ASSERT(flex::allocator_debug<char>::mConstructedPointers.empty());
+    TS_ASSERT(flex::debug::allocator<char>::mConstructedPointers.empty());
 
     //This ensures that all memory allocated by the container is properly freed.
-    TS_ASSERT(flex::allocator_debug<char>::mAllocatedPointers.empty());
+    TS_ASSERT(flex::debug::allocator<char>::mAllocatedPointers.empty());
   }
 
   bool is_container_valid(const str& c)

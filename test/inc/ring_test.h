@@ -1,7 +1,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include <flex/ring.h>
-#include <flex/allocator_debug.h>
+#include <flex/debug/allocator.h>
 
 class ring_test: public CxxTest::TestSuite
 {
@@ -67,7 +67,7 @@ class ring_test: public CxxTest::TestSuite
     bool was_copied;
   };
 
-  typedef flex::ring<obj, flex::allocator_debug<obj> > ring_obj;
+  typedef flex::ring<obj, flex::debug::allocator<obj> > ring_obj;
 
   const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
       -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
@@ -91,7 +91,7 @@ public:
 
   void setUp()
   {
-    flex::allocator_debug<obj>::clear();
+    flex::debug::allocator<obj>::clear();
     errno = 0;
   }
 
@@ -100,10 +100,10 @@ public:
     TS_ASSERT(!errno);
 
     //This ensures that all objs constructed by the container have their destructors called.
-    TS_ASSERT(flex::allocator_debug<obj>::mConstructedPointers.empty());
+    TS_ASSERT(flex::debug::allocator<obj>::mConstructedPointers.empty());
 
     //This ensures that all memory allocated by the container is properly freed.
-    TS_ASSERT(flex::allocator_debug<obj>::mAllocatedPointers.empty());
+    TS_ASSERT(flex::debug::allocator<obj>::mAllocatedPointers.empty());
   }
 
   void mark_move_only(ring_obj& c)

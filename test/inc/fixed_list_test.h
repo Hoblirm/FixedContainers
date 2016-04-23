@@ -1,7 +1,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include <flex/fixed_list.h>
-#include <flex/allocator_debug.h>
+#include <flex/debug/allocator.h>
 
 class fixed_list_test: public CxxTest::TestSuite
 {
