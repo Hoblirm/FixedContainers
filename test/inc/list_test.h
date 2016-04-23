@@ -47,6 +47,24 @@ public:
     TS_ASSERT(flex::debug::allocator<flex::list<obj>::node_type>::mAllocatedPointers.empty());
   }
 
+  void mark_move_only(list_obj& c)
+  {
+#ifdef FLEX_HAS_CXX11
+    for (list_obj::iterator it = c.begin(); it != c.end(); ++it)
+    {
+      it->move_only = true;
+    }
+#endif
+  }
+
+  void clear_copy_flags(list_obj& c)
+  {
+    for (list_obj::iterator it = c.begin(); it != c.end(); ++it)
+    {
+      it->was_copied = false;
+    }
+  }
+
   bool is_container_valid(list_obj& list)
   {
     //This checks to ensure the list is valid.  This checks three main attributes for validity.
@@ -64,7 +82,7 @@ public:
     {
       if (prev.mNode != it.mNode->mPrev)
       {
-        printf("Error: Expected (prev.mNode == it.mNode->mPrev) when n=%zu, found (%p != %p)\n", prev.mNode,
+        printf("Error: Expected (prev.mNode == it.mNode->mPrev) when n=%zu, found (%p != %p)\n", n, prev.mNode,
             it.mNode->mPrev);
         return false;
       }
@@ -72,6 +90,12 @@ public:
       if (it->init != obj::INIT_KEY)
       {
         printf("Error: Expected (it->init == obj::INIT_KEY), found (%d == %d)\n", it->init, obj::INIT_KEY);
+        return false;
+      }
+
+      if (it->move_only && it->was_copied)
+      {
+        printf("Error: Expected (!(it->move_only && it->was_copied)) when n=%zu", n);
         return false;
       }
 
@@ -254,12 +278,40 @@ public:
 
   void test_move_constructor()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    list_obj a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    list_obj b(std::move(a));
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    list_obj::iterator it = b.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
+#endif
   }
 
   void test_initializer_constructor()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    list_obj a( { 0, 1, 2, 3 });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    list_obj::iterator it = a.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
   }
 
   void test_assign_fill(void)
@@ -342,7 +394,18 @@ public:
 
   void test_assign_initializer()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    list_obj a;
+    a.assign( { 0, 1, 2, 3 });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    list_obj::iterator it = a.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
   }
 
   void test_back(void)
@@ -1895,12 +1958,44 @@ public:
 
   void test_assignment_operator_move()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    list_obj a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    list_obj b;
+    b = std::move(a);
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    list_obj::iterator it = b.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
+#endif
+
   }
 
   void test_assignment_operator_initializer()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    list_obj a;
+    a =
+    { 0, 1, 2, 3};
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    list_obj::iterator it = a.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
   }
 
   void test_pop_back(void)

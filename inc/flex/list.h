@@ -32,11 +32,17 @@ namespace flex
     list(int size, const T& val);
     template<typename InputIterator> list(InputIterator first, InputIterator last);
     list(const list<T, Alloc> & obj);
+#ifdef FLEX_HAS_CXX11
+    list(list<T, Alloc>&& x);
+#endif
+    list(std::initializer_list<value_type> il);
+
     ~list();
 
     void assign(size_t size, const_reference val);
     void assign(int size, const_reference val);
     template<typename InputIterator> void assign(InputIterator first, InputIterator last);
+    void assign(std::initializer_list<value_type> il);
 
     reference back();
     const_reference back() const;
@@ -74,6 +80,10 @@ namespace flex
     template<typename Compare> void merge(this_type& x, Compare comp);
 
     list<T, Alloc>& operator=(const list<T, Alloc>& obj);
+#ifdef FLEX_HAS_CXX11
+    list<T, Alloc>& operator=(list<T, Alloc>&& x);
+#endif
+    list<T, Alloc>& operator=(std::initializer_list<value_type> il);
 
     void pop_back();
     void pop_front();
@@ -184,6 +194,24 @@ namespace flex
     insert(begin(), obj.cbegin(), obj.cend());
   }
 
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline list<T, Alloc>::list(list<T, Alloc> && obj):
+  mFixed(false), mSize(0), mNodePool(NULL)
+  {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
+    swap(obj);
+  }
+#endif
+
+  template<class T, class Alloc>
+  inline list<T, Alloc>::list(std::initializer_list<value_type> il) :
+      mFixed(false), mSize(0), mNodePool(NULL)
+  {
+    mAnchor.mNext = mAnchor.mPrev = &mAnchor;
+    insert(begin(), il.begin(), il.end());
+  }
+
   template<class T, class Alloc>
   inline list<T, Alloc>::~list()
   {
@@ -248,6 +276,12 @@ namespace flex
     {
       erase(iterator(node_ptr), iterator(&mAnchor));
     }
+  }
+
+  template<class T, class Alloc>
+  inline void list<T, Alloc>::assign(std::initializer_list<value_type> il)
+  {
+    assign(il.begin(), il.end());
   }
 
   template<class T, class Alloc>
@@ -677,6 +711,22 @@ namespace flex
   inline list<T, Alloc>& list<T, Alloc>::operator=(const list<T, Alloc>& obj)
   {
     assign(obj.begin(), obj.end());
+    return *this;
+  }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline list<T, Alloc>& list<T, Alloc>::operator=(list<T, Alloc>&& obj)
+  {
+    swap(obj);
+    return *this;
+  }
+#endif
+
+  template<class T, class Alloc>
+  inline list<T, Alloc>& list<T, Alloc>::operator=(std::initializer_list<value_type> il)
+  {
+    assign(il.begin(), il.end());
     return *this;
   }
 

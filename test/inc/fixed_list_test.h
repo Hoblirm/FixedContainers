@@ -7,7 +7,7 @@
 class fixed_list_test: public CxxTest::TestSuite
 {
   typedef flex::debug::obj obj;
-  typedef flex::fixed_list<obj, 128> fixed_list_obj;
+  typedef flex::fixed_list<obj, 128, flex::debug::allocator<flex::list<obj>::node_type> > fixed_list_obj;
 
   const obj OBJ_DATA[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 39535304, 2113617954, -262399995,
       -1776526244, 2007130159, -751355444, -1850306681, 1670328314, 174975647, 1520325186, 752193990, 1141698902,
@@ -41,7 +41,25 @@ public:
     flex::allocation_guard::disable();
   }
 
-  bool is_container_valid(fixed_list_obj& fixed_list)
+  void mark_move_only(flex::list<obj, flex::debug::allocator<flex::list<obj>::node_type> >& c)
+  {
+#ifdef FLEX_HAS_CXX11
+    for (fixed_list_obj::iterator it = c.begin(); it != c.end(); ++it)
+    {
+      it->move_only = true;
+    }
+#endif
+  }
+
+  void clear_copy_flags(flex::list<obj, flex::debug::allocator<flex::list<obj>::node_type> >& c)
+  {
+    for (fixed_list_obj::iterator it = c.begin(); it != c.end(); ++it)
+    {
+      it->was_copied = false;
+    }
+  }
+
+  bool is_container_valid(flex::list<obj, flex::debug::allocator<flex::list<obj>::node_type> >& fixed_list)
   {
     //This checks to ensure the fixed_list is valid.  This checks three main attributes for validity.
     //1. Ensures prev & next pointers on all nodes agree with each other.
@@ -58,7 +76,7 @@ public:
     {
       if (prev.mNode != it.mNode->mPrev)
       {
-        printf("Error: Expected (prev.mNode == it.mNode->mPrev) when n=%zu, found (%p != %p)\n", prev.mNode,
+        printf("Error: Expected (prev.mNode == it.mNode->mPrev) when n=%zu, found (%p != %p)\n", n, prev.mNode,
             it.mNode->mPrev);
         return false;
       }
@@ -66,6 +84,12 @@ public:
       if (it->init != obj::INIT_KEY)
       {
         printf("Error: Expected (it->init == obj::INIT_KEY), found (%d == %d)\n", it->init, obj::INIT_KEY);
+        return false;
+      }
+
+      if (it->move_only && it->was_copied)
+      {
+        printf("Error: Expected (!(it->move_only && it->was_copied)) when n=%zu", n);
         return false;
       }
 
@@ -221,12 +245,40 @@ public:
 
   void test_move_constructor()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    fixed_list_obj a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    fixed_list_obj b(std::move(a));
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    fixed_list_obj::iterator it = b.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
+#endif
   }
 
   void test_initializer_constructor()
   {
-    printf("X");
+    /*
+     * Case1: Normal condition
+     */
+    fixed_list_obj a( { 0, 1, 2, 3 });
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    fixed_list_obj::iterator it = a.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
   }
 
   void test_assign_fill(void)
@@ -1805,12 +1857,69 @@ public:
 
   void test_assignment_operator_move()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    fixed_list_obj a =
+    { 0, 1, 2, 3};
+    clear_copy_flags(a);
+    fixed_list_obj b;
+    b = std::move(a);
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    fixed_list_obj::iterator it = b.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
+#endif
   }
 
-  void test_assignment_operator_base_move()
+  void test_assignment_operator_move_base()
   {
-    printf("X");
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Normal condition.
+     */
+    allocation_guard::disable();
+    flex::list<obj,flex::debug::allocator<flex::list<obj>::node_type> > a =
+    { 0, 1, 2, 3};
+    allocation_guard::enable();
+    clear_copy_flags(a);
+    fixed_list_obj b;
+    b = std::move(a);
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(a.size(),0);
+    TS_ASSERT_EQUALS(b.size(),4);
+    fixed_list_obj::iterator it = b.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
+#endif
+  }
+
+  void test_assignment_operator_initializer()
+  {
+    /*
+     * Case1: Normal condition
+     */
+    fixed_list_obj a;
+    a =
+    { 0, 1, 2, 3};
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    fixed_list_obj::iterator it = a.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
   }
 
   void test_pop_back(void)

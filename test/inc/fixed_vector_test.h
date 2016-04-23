@@ -47,6 +47,7 @@ public:
     }
 #endif
   }
+
   template<class Alloc>
   void clear_copy_flags(flex::vector<obj, Alloc>& c)
   {

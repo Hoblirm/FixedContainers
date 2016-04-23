@@ -38,9 +38,19 @@ namespace flex
     template<typename InputIterator> fixed_list(InputIterator first, InputIterator last);
     fixed_list(const fixed_list<T, N, Alloc> & obj);
     fixed_list(const list<T, Alloc> & obj);
+    fixed_list(std::initializer_list<value_type> il);
+#ifdef FLEX_HAS_CXX11
+    fixed_list(fixed_list<T, N, Alloc> && obj);
+    fixed_list(list<T, Alloc> && obj);
+#endif
 
     fixed_list<T, N, Alloc>& operator=(const fixed_list<T, N, Alloc>& obj);
     fixed_list<T, N, Alloc>& operator=(const list<T, Alloc>& obj);
+    fixed_list<T, N, Alloc>& operator=(std::initializer_list<value_type> il);
+#ifdef FLEX_HAS_CXX11
+    fixed_list<T, N, Alloc>& operator=(fixed_list<T, N, Alloc>&& obj);
+    fixed_list<T, N, Alloc>& operator=(list<T, Alloc>&& obj);
+#endif
 
   private:
 #ifdef FLEX_HAS_CXX11
@@ -97,6 +107,31 @@ namespace flex
   }
 
   template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>::fixed_list(std::initializer_list<value_type> il) :
+      list<T, Alloc>((node_type*) mBuffer, ((node_type*) mBuffer) + N)
+  {
+    insert(begin(), il.begin(), il.end());
+  }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>::fixed_list(fixed_list<T, N, Alloc> && obj) :
+  list<T, Alloc>((node_type*) mBuffer, ((node_type*) mBuffer) + N)
+  {
+    insert(begin(),std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+    obj.clear();
+  }
+
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>::fixed_list(list<T, Alloc> && obj) :
+  list<T, Alloc>((node_type*) mBuffer, ((node_type*) mBuffer) + N)
+  {
+    insert(begin(),std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+    obj.clear();
+  }
+#endif
+
+  template<class T, size_t N, class Alloc>
   inline fixed_list<T, N, Alloc>& fixed_list<T, N, Alloc>::operator=(const fixed_list<T, N, Alloc>& obj)
   {
     assign(obj.begin(), obj.end());
@@ -110,6 +145,32 @@ namespace flex
     return *this;
   }
 
-} //namespace flex
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>& fixed_list<T, N, Alloc>::operator=(std::initializer_list<value_type> il)
+  {
+    assign(il.begin(), il.end());
+    return *this;
+  }
+
+#ifdef FLEX_HAS_CXX11
+template<class T, size_t N, class Alloc>
+inline fixed_list<T, N, Alloc>& fixed_list<T, N, Alloc>::operator=(fixed_list<T, N, Alloc>&& obj)
+{
+  assign(std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+  obj.clear();
+  return *this;
+}
+
+template<class T, size_t N, class Alloc>
+inline fixed_list<T, N, Alloc>& fixed_list<T, N, Alloc>::operator=(list<T, Alloc>&& obj)
+{
+  assign(std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+  obj.clear();
+  return *this;
+}
+#endif
+
+}
+ //namespace flex
 
 #endif /* FLEX_FIXED_LIST_H */
