@@ -247,6 +247,16 @@ namespace flex
 #endif
 #endif
 
+#if FLEX_HAS_CXX11
+#define FLEX_MOVE(x)              std::move(x)
+#define FLEX_COPY_OR_MOVE(x,y,z)              std::move(x,y,z)
+#define FLEX_MOVE_ITERATOR(x)       std::make_move_iterator(x)
+#else
+#define FLEX_MOVE(x)              (x)
+#define FLEX_COPY_OR_MOVE(x,y,z)              std::copy(x,y,z)
+#define FLEX_MOVE_ITERATOR(x)       (x)
+#endif
+
 /*
  * std::initializer_list
  */
@@ -255,18 +265,6 @@ namespace flex
 #else
 namespace std
 {
-  template<class Iterator>
-  inline Iterator& make_move_iterator(Iterator& it) FLEX_NOEXCEPT
-  {
-    return it;
-  }
-
-  template<class ValueType>
-  inline ValueType& move(ValueType& val) FLEX_NOEXCEPT
-  {
-    return val;
-  }
-
   // See the C++11 Standard, section 18.9.
   template<class E>
   class initializer_list

@@ -307,12 +307,16 @@ public:
     TS_ASSERT_EQUALS(myvector.size(), 10);
 
     // erase the 6th element
+    mark_move_only(myvector);
+    clear_copy_flags(myvector);
     vec::iterator it = myvector.erase(myvector.begin() + 5);
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(*it, 7);
     TS_ASSERT_EQUALS(myvector.size(), 9);
 
     // erase the first 3 elements:
+    mark_move_only(myvector);
+    clear_copy_flags(myvector);
     it = myvector.erase(myvector.begin(), myvector.begin() + 3);
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(*it, 4);
@@ -348,6 +352,8 @@ public:
     vec::iterator it;
 
     it = myvector.begin();
+    mark_move_only(myvector);
+    clear_copy_flags(myvector);
     it = myvector.insert(it, 200);
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(myvector.size(), 4);
@@ -356,6 +362,8 @@ public:
     TS_ASSERT_EQUALS(myvector[2], 100);
     TS_ASSERT_EQUALS(myvector[3], 100);
 
+    mark_move_only(myvector);
+    clear_copy_flags(myvector);
     myvector.insert(it, 2, obj(300));
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(myvector.size(), 6);
@@ -369,6 +377,8 @@ public:
     // "it" no longer valid, get a new one:
     it = myvector.begin();
     vec anothervector(2, obj(400));
+    mark_move_only(myvector);
+    clear_copy_flags(myvector);
     myvector.insert(it + 2, anothervector.begin(), anothervector.end());
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(myvector.size(), 8);
@@ -382,6 +392,8 @@ public:
     TS_ASSERT_EQUALS(myvector[7], 100);
 
     int myints[] = { 501, 502, 503, 12, 13, 14, 15, 16, 17 };
+    mark_move_only(myvector);
+    clear_copy_flags(myvector);
     myvector.insert(myvector.begin(), myints, myints + 3);
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(myvector.size(), 11);
@@ -413,7 +425,84 @@ public:
   void test_insert_move(void)
   {
 #ifdef FLEX_HAS_CXX11
-    printf("X");
+    vec a;
+    vec::iterator it;
+
+    a.assign(OBJ_DATA, OBJ_DATA + 16);
+    size_t current_size = a.size();
+    obj val = 19;
+
+    /*
+     * Case1: Test insert at end
+     */
+    clear_copy_flags(a);
+    it = a.insert(a.end(), std::move(val));
+    mark_move_only(a);
+    TS_ASSERT(is_container_valid(a));
+    ++current_size;
+    TS_ASSERT_EQUALS(*it, val);
+    TS_ASSERT_EQUALS(a.size(), current_size);
+    for (int i = 0; i < a.size() - 1; ++i)
+    {
+      TS_ASSERT_EQUALS(a[i], OBJ_DATA[i]);
+    }
+    TS_ASSERT_EQUALS(a[a.size() - 1], val);
+
+    /*
+     * Case2: Test insert at begin
+     */
+    clear_copy_flags(a);
+    it = a.insert(a.begin(), std::move(val));
+    mark_move_only(a);
+    TS_ASSERT(is_container_valid(a));
+    ++current_size;
+    TS_ASSERT_EQUALS(*it, val);
+    TS_ASSERT_EQUALS(a.size(), current_size);
+    TS_ASSERT_EQUALS(a[0], val);
+    for (int i = 1; i < a.size() - 1; ++i)
+    {
+      TS_ASSERT_EQUALS(a[i], OBJ_DATA[i - 1]);
+    }
+    TS_ASSERT_EQUALS(a[a.size() - 1], val);
+
+    /*
+     * Case3: Test insert in middle
+     */
+    int mid_index = current_size / 2;
+    clear_copy_flags(a);
+    it = a.insert(a.begin() + mid_index, std::move(val));
+    mark_move_only(a);
+    TS_ASSERT(is_container_valid(a));
+    ++current_size;
+    TS_ASSERT_EQUALS(*it, val);
+    TS_ASSERT_EQUALS(a.size(), current_size);
+    TS_ASSERT_EQUALS(a[0], val);
+    for (int i = 1; i < mid_index; ++i)
+    {
+      TS_ASSERT_EQUALS(a[i], OBJ_DATA[i - 1]);
+    }
+    TS_ASSERT_EQUALS(a[mid_index], val);
+    for (int i = mid_index + 1; i < a.size() - 1; ++i)
+    {
+      TS_ASSERT_EQUALS(a[i], OBJ_DATA[i - 2]);
+    }
+    TS_ASSERT_EQUALS(a[a.size() - 1], val);
+
+    /*
+     * Case 4: Test insert for value within container
+     */
+    vec b(OBJ_DATA, OBJ_DATA + 8);
+    b.reserve(16);
+    clear_copy_flags(b);
+    b.insert(b.begin(), std::move(*(b.end() - 1)));
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 9);
+    TS_ASSERT_EQUALS(b[0], OBJ_DATA[7]);
+    for (int i = 1; i < b.size(); ++i)
+    {
+      TS_ASSERT_EQUALS(b[i], OBJ_DATA[i - 1]);
+    }
 #endif
   }
 
@@ -561,19 +650,25 @@ public:
     int size = 0;
     TS_ASSERT_EQUALS(myvector.size(), size);
     int sum(0);
-    myvector.push_back(100);
+    obj a(100);
+    myvector.push_back(a);
     TS_ASSERT(is_container_valid(myvector));
     ++size;
     TS_ASSERT_EQUALS(myvector.size(), size);
-    myvector.push_back(200);
+    mark_move_only(myvector);
+    clear_copy_flags(myvector);
+    obj b(200);
+    myvector.push_back(b);
     TS_ASSERT(is_container_valid(myvector));
     ++size;
     TS_ASSERT_EQUALS(myvector.size(), size);
-    myvector.push_back(300);
+    mark_move_only(myvector);
+    clear_copy_flags(myvector);
+    obj c(300);
+    myvector.push_back(c);
     ++size;
     TS_ASSERT_EQUALS(myvector.size(), size);
     TS_ASSERT(is_container_valid(myvector));
-
     while (!myvector.empty())
     {
       sum += myvector.back();

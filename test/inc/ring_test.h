@@ -580,6 +580,8 @@ public:
       /*
        * Case3: Test erase at begin
        */
+      mark_move_only(a);
+      clear_copy_flags(a);
       it = a.erase(a.begin());
       TS_ASSERT(is_container_valid(a));
       --current_size;
@@ -594,6 +596,8 @@ public:
        * Case4: Test erase in middle
        */
       int mid_index = current_size / 2;
+      mark_move_only(a);
+      clear_copy_flags(a);
       it = a.erase(a.begin() + mid_index);
       TS_ASSERT(is_container_valid(a));
       --current_size;
@@ -644,6 +648,8 @@ public:
       /*
        * Case3: Test erase at begin
        */
+      mark_move_only(a);
+      clear_copy_flags(a);
       it = a.erase(a.begin(), a.begin() + 2);
       TS_ASSERT(is_container_valid(a));
       current_size -= 2;
@@ -658,6 +664,8 @@ public:
        * Case4: Test erase in middle
        */
       int mid_index = current_size / 2;
+      mark_move_only(a);
+      clear_copy_flags(a);
       it = a.erase(a.begin() + mid_index, a.begin() + mid_index + 2);
       TS_ASSERT(is_container_valid(a));
       current_size -= 2;
@@ -741,6 +749,8 @@ public:
       /*
        * Case2: Test insert at begin
        */
+      mark_move_only(a);
+      clear_copy_flags(a);
       it = a.insert(a.begin(), val);
       TS_ASSERT(is_container_valid(a));
       ++current_size;
@@ -757,6 +767,8 @@ public:
        * Case3: Test insert in middle
        */
       int mid_index = current_size / 2;
+      mark_move_only(a);
+      clear_copy_flags(a);
       it = a.insert(a.begin() + mid_index, val);
       TS_ASSERT(is_container_valid(a));
       ++current_size;
@@ -793,7 +805,87 @@ public:
   void test_insert_move(void)
   {
 #ifdef FLEX_HAS_CXX11
-    printf("X");
+    ring_obj a;
+    ring_obj::iterator it;
+
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
+      size_t current_size = a.size();
+      obj val = 19;
+
+      /*
+       * Case1: Test insert at end
+       */
+      clear_copy_flags(a);
+      it = a.insert(a.end(), std::move(val));
+      mark_move_only(a);
+      TS_ASSERT(is_container_valid(a));
+      ++current_size;
+      TS_ASSERT_EQUALS(*it, val);
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      for (int i = 0; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], OBJ_DATA[i]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 1], val);
+
+      /*
+       * Case2: Test insert at begin
+       */
+      clear_copy_flags(a);
+      it = a.insert(a.begin(), std::move(val));
+      mark_move_only(a);
+      TS_ASSERT(is_container_valid(a));
+      ++current_size;
+      TS_ASSERT_EQUALS(*it, val);
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a[0], val);
+      for (int i = 1; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], OBJ_DATA[i - 1]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 1], val);
+
+      /*
+       * Case3: Test insert in middle
+       */
+      int mid_index = current_size / 2;
+      clear_copy_flags(a);
+      it = a.insert(a.begin() + mid_index, std::move(val));
+      mark_move_only(a);
+      TS_ASSERT(is_container_valid(a));
+      ++current_size;
+      TS_ASSERT_EQUALS(*it, val);
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a[0], val);
+      for (int i = 1; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], OBJ_DATA[i - 1]);
+      }
+      TS_ASSERT_EQUALS(a[mid_index], val);
+      for (int i = mid_index + 1; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(a[i], OBJ_DATA[i - 2]);
+      }
+      TS_ASSERT_EQUALS(a[a.size() - 1], val);
+    } //for: SIZE_COUNT
+
+    /*
+     * Case 4: Test insert for value within container
+     */
+    ring_obj b(OBJ_DATA, OBJ_DATA + 8);
+    b.reserve(16);
+    clear_copy_flags(b);
+    b.insert(b.begin(), std::move(*(b.end() - 1)));
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 9);
+    TS_ASSERT_EQUALS(b[0], OBJ_DATA[7]);
+    for (int i = 1; i < b.size(); ++i)
+    {
+      TS_ASSERT_EQUALS(b[i], OBJ_DATA[i - 1]);
+    }
 #endif
   }
 
@@ -824,6 +916,8 @@ public:
       /*
        * Case2: Test insert at begin
        */
+      mark_move_only(a);
+      clear_copy_flags(a);
       a.insert(a.begin(), 2, val);
       TS_ASSERT(is_container_valid(a));
       current_size += 2;
@@ -841,6 +935,8 @@ public:
        * Case3: Test insert in middle
        */
       int mid_index = current_size / 2;
+      mark_move_only(a);
+      clear_copy_flags(a);
       a.insert(a.begin() + mid_index, 2, val);
       TS_ASSERT(is_container_valid(a));
       current_size += 2;
@@ -890,6 +986,8 @@ public:
       /*
        * Case2: Test insert at begin
        */
+      mark_move_only(a);
+      clear_copy_flags(a);
       a.insert(a.begin(), b.begin(), b.end());
       TS_ASSERT(is_container_valid(a));
       current_size += 2;
@@ -907,6 +1005,8 @@ public:
        * Case3: Test insert in middle
        */
       int mid_index = current_size / 2;
+      mark_move_only(a);
+      clear_copy_flags(a);
       a.insert(a.begin() + mid_index, b.begin(), b.end());
       TS_ASSERT(is_container_valid(a));
       current_size += 2;
@@ -1249,6 +1349,8 @@ public:
       a.clear();
       for (int i = 0; i < SIZES[s]; ++i)
       {
+        mark_move_only(a);
+        clear_copy_flags(a);
         a.push_back(OBJ_DATA[i]);
         TS_ASSERT(is_container_valid(a));
         TS_ASSERT_EQUALS(a.back(), OBJ_DATA[i]);
@@ -1267,6 +1369,8 @@ public:
       a.push_front(OBJ_DATA[0]);
       for (int i = 2; i < SIZES[s]; ++i)
       {
+        mark_move_only(a);
+        clear_copy_flags(a);
         a.push_back(OBJ_DATA[i]);
         TS_ASSERT(is_container_valid(a));
         TS_ASSERT_EQUALS(a.back(), OBJ_DATA[i]);
@@ -1315,6 +1419,8 @@ public:
       for (int i = 0; i < SIZES[s]; ++i)
       {
         const unsigned data_index = SIZES[s] - 1 - i;
+        mark_move_only(a);
+        clear_copy_flags(a);
         a.push_front(OBJ_DATA[data_index]);
         TS_ASSERT(is_container_valid(a));
         TS_ASSERT_EQUALS(a.front(), OBJ_DATA[data_index]);

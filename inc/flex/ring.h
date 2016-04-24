@@ -108,6 +108,9 @@ namespace flex
     bool full() const;
     allocator_type get_allocator() const;
     iterator insert(iterator position, const value_type& val);
+#ifdef FLEX_HAS_CXX11
+    iterator insert(iterator position, value_type&& val);
+#endif
     void insert(iterator position, size_type n, const value_type& val);
     void insert(iterator position, int n, const value_type& val);
     template<typename InputIterator> void insert(iterator position, InputIterator first, InputIterator last);
@@ -426,7 +429,7 @@ namespace flex
   {
     //This copy will simply shift everything after position over to the left by one.
     //This will effectively overwrite position, erasing it from the container.
-    std::copy(position + 1, mEnd, position);
+    FLEX_COPY_OR_MOVE(position + 1, mEnd, position);
     (--mEnd)->~T();
     return position;
   }
@@ -438,7 +441,7 @@ namespace flex
     {
       //Move all the elements after the erased range to the front of the range.  This
       //will overwrite the erased elements, and the size will be set accordingly.
-      std::copy(last, mEnd, first);
+      FLEX_COPY_OR_MOVE(last, mEnd, first);
 
       iterator new_end = mEnd - (last - first);
       flex::destruct_range(new_end, mEnd);
@@ -509,14 +512,14 @@ namespace flex
       pointer new_begin = Allocate(new_capacity);
 
       //Copy all values to the left of position.
-      pointer new_end = std::uninitialized_copy(mBegin, position, new_begin);
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(position), new_begin);
 
       //Copy the inserted parameter val.
       iterator new_position(new_end, new_begin, new_begin + new_capacity);
       new ((void*) new_end) T(val);
 
       //Copy all values that come after position.
-      new_end = std::uninitialized_copy(position, mEnd, ++new_end);
+      new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd), ++new_end);
 
       DeallocateAndReassign(new_begin, new_end, new_capacity);
       return new_position;
@@ -567,13 +570,101 @@ namespace flex
         //at least one spot available after the end.
         iterator back = prev_end;
         --back;
-        new ((void*) prev_end.mPtr) T(*back);
-        std::copy_backward(position, back, prev_end);
+        new ((void*) prev_end.mPtr) T(FLEX_MOVE(*back));
+        std::copy_backward(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(back), prev_end);
         *position = *valPtr;
       }
       return position;
     }
   }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline typename ring<T, Alloc>::iterator ring<T, Alloc>::insert(iterator position, value_type&& val)
+  {
+    //Increment is performed first as it allows a much faster capacity check. The
+    //drawback is that the iterator needs to be reverted if reallocation occurs.
+    const iterator prev_end = mEnd;
+    ++mEnd;
+
+    if (mEnd.mPtr == mBegin.mPtr)
+    {
+      //Capacity has been exceeded. Put container back in a valid
+      //state and reallocate.
+      mEnd.mPtr = prev_end.mPtr;
+
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + 1;
+      size_t new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = Allocate(new_capacity);
+
+      //Copy all values to the left of position.
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(position), new_begin);
+
+      //Copy the inserted parameter val.
+      iterator new_position(new_end, new_begin, new_begin + new_capacity);
+      new ((void*) new_end) T(FLEX_MOVE(val));
+
+      //Copy all values that come after position.
+      new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd), ++new_end);
+
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
+      return new_position;
+    }
+    else
+    {
+      if (position == prev_end)
+      {
+        //End of container case must be checked, as in this case position gets constructed.
+        new ((void*) position.mPtr) value_type(FLEX_MOVE(val));
+      }
+      else
+      {
+        const value_type* valPtr = &val;
+
+        // Handle the case in which val is a reference within the container.
+        if ((valPtr >= mBegin.mLeftBound) && (valPtr <= mBegin.mRightBound))
+        {
+          //Container looks like: [ *** End *** Begin *** Position ***]
+          if (position.mPtr > mEnd.mPtr)
+          {
+            //If val is greater than position, or less than mEnd it must be incremented.
+            if ((valPtr >= position.mPtr) || (valPtr < mEnd.mPtr))
+            {
+              if (valPtr == mBegin.mRightBound)
+              {
+                valPtr = mBegin.mLeftBound;
+              }
+              else
+              {
+                ++valPtr;
+              }
+            }
+          }
+          else
+          {
+            //Possible container formats : [ *** Begin *** Position *** End ***]
+            //                             [ *** Position *** End *** Begin ***]
+
+            //If val is between position and mEnd, then it must be incremented.
+            if ((valPtr >= position.mPtr) && (valPtr < mEnd.mPtr))
+            ++valPtr;
+          }
+        }
+
+        //This copy backwards will shift all the elements after position to the right
+        //by one space.  This is valid since the capacity check above ensures we have
+        //at least one spot available after the end.
+        iterator back = prev_end;
+        --back;
+        new ((void*) prev_end.mPtr) T(FLEX_MOVE(*back));
+        std::copy_backward(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(back), prev_end);
+        *position = FLEX_MOVE(*valPtr);
+      }
+      return position;
+    }
+  }
+#endif
 
   template<class T, class Alloc>
   inline void ring<T, Alloc>::insert(iterator position, size_type n, const value_type& val)
@@ -586,13 +677,13 @@ namespace flex
       pointer new_begin = Allocate(new_capacity);
 
       //Copy all values to the left of position.
-      pointer new_end = std::uninitialized_copy(mBegin, position, new_begin);
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(position), new_begin);
 
       //Fill the parameter val.
       std::uninitialized_fill_n(new_end, n, val);
 
       //Copy all values that come after position.
-      new_end = std::uninitialized_copy(position, mEnd, new_end + n);
+      new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd), new_end + n);
 
       DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
@@ -602,14 +693,14 @@ namespace flex
 
       if (n < rhs_n)
       {
-        std::uninitialized_copy(mEnd - n, mEnd, mEnd);
-        std::copy_backward(position, mEnd - n, mEnd);
+        std::uninitialized_copy(FLEX_MOVE_ITERATOR(mEnd - n), FLEX_MOVE_ITERATOR(mEnd), mEnd);
+        std::copy_backward(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd - n), mEnd);
         std::fill(position, position + n, val);
       }
       else
       {
         //Shift existing values to the right.
-        std::uninitialized_copy(position, mEnd, mEnd + n - rhs_n);
+        std::uninitialized_copy(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd), mEnd + n - rhs_n);
 
         //Fill in the values that go into uninitialized data.
         std::uninitialized_fill_n(mEnd, n - rhs_n, val);
@@ -640,13 +731,13 @@ namespace flex
       pointer new_begin = Allocate(new_capacity);
 
       //Copy all values to the left of position.
-      pointer new_end = std::uninitialized_copy(mBegin, position, new_begin);
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(position), new_begin);
 
       //Copy the inserted range.
       new_end = std::uninitialized_copy(first, last, new_end);
 
       //Copy all values that come after position.
-      new_end = std::uninitialized_copy(position, mEnd, new_end);
+      new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd), new_end);
 
       DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
@@ -656,8 +747,8 @@ namespace flex
 
       if (n < rhs_n)
       {
-        std::uninitialized_copy(mEnd - n, mEnd, mEnd);
-        std::copy_backward(position, mEnd - n, mEnd);
+        std::uninitialized_copy(FLEX_MOVE_ITERATOR(mEnd - n), FLEX_MOVE_ITERATOR(mEnd), mEnd);
+        std::copy_backward(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd - n), mEnd);
         std::copy(first, last, position);
         mEnd += n;
       }
@@ -666,7 +757,8 @@ namespace flex
         InputIterator it = first;
         std::advance(it, rhs_n);
         std::uninitialized_copy(it, last, mEnd);
-        mEnd.mPtr = std::uninitialized_copy(position, mEnd, mEnd + n - rhs_n).mPtr;
+        mEnd.mPtr =
+            std::uninitialized_copy(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd), mEnd + n - rhs_n).mPtr;
         std::copy(first, it, position);
       }
     }
@@ -753,8 +845,7 @@ namespace flex
       pointer new_begin = Allocate(new_capacity);
 
       //Copy all values.
-      pointer new_end = std::uninitialized_copy(std::make_move_iterator(mBegin), std::make_move_iterator(mEnd),
-          new_begin);
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(mEnd), new_begin);
       new ((void*) new_end) T(val);
       ++new_end;
 
@@ -786,8 +877,7 @@ namespace flex
 
       //Copy all values.
       new ((void*) new_begin) T(val);
-      pointer new_end = std::uninitialized_copy(std::make_move_iterator(mBegin), std::make_move_iterator(mEnd),
-          (new_begin + 1));
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(mEnd), (new_begin + 1));
 
       DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
@@ -818,7 +908,7 @@ namespace flex
       pointer new_begin = Allocate(new_capacity);
 
       //Copy all values.
-      pointer new_end = std::uninitialized_copy(std::make_move_iterator(mBegin), std::make_move_iterator(mEnd), new_begin);
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(mEnd), new_begin);
       new ((void*) new_end) T(std::move(val));
       ++new_end;
 
@@ -850,7 +940,7 @@ namespace flex
 
       //Copy all values.
       new ((void*) new_begin) T(std::move(val));
-      pointer new_end = std::uninitialized_copy(std::make_move_iterator(mBegin), std::make_move_iterator(mEnd), (new_begin + 1));
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(mEnd), (new_begin + 1));
 
       DeallocateAndReassign(new_begin, new_end, new_capacity);
     }
