@@ -114,6 +114,9 @@ namespace flex
     void splice(iterator position, this_type& x, iterator first, iterator last);
 
     void swap(list<T, Alloc>& obj);
+#ifdef FLEX_HAS_CXX11
+    void swap(list<T, Alloc>&& obj);
+#endif
     void unique();
     template<typename BinaryPredicate> void unique(BinaryPredicate binary_pred);
 
@@ -200,7 +203,7 @@ namespace flex
   mFixed(false), mSize(0), mNodePool(NULL)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
-    swap(obj);
+    swap(std::move(obj));
   }
 #endif
 
@@ -718,7 +721,7 @@ namespace flex
   template<class T, class Alloc>
   inline list<T, Alloc>& list<T, Alloc>::operator=(list<T, Alloc>&& obj)
   {
-    swap(obj);
+    swap(std::move(obj));
     return *this;
   }
 #endif
@@ -1096,6 +1099,24 @@ namespace flex
       }
     }
   }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline void list<T, Alloc>::swap(list<T, Alloc>&& obj)
+  {
+    if ((!mFixed) && (!obj.fixed()))
+    {
+      base_node_type::swap(mAnchor, obj.mAnchor);
+      std::swap(mSize, obj.mSize);
+      std::swap(mNodePool, obj.mNodePool);
+    }
+    else
+    {
+      assign(std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+      obj.clear();
+    }
+  }
+#endif
 
   template<typename T, typename Alloc>
   inline void list<T, Alloc>::unique()

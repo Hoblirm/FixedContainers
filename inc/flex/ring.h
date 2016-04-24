@@ -132,6 +132,9 @@ namespace flex
     void shrink_to_fit();
     size_type size() const;
     void swap(ring<T, Alloc>& obj);
+#ifdef FLEX_HAS_CXX11
+    void swap(ring<T, Alloc>&& obj);
+#endif
 
   protected:
     ring(pointer new_begin, pointer new_end, pointer right_bound);
@@ -249,7 +252,7 @@ namespace flex
   inline ring<T, Alloc>::ring(ring<T, Alloc> && obj) :
   base_type()
   {
-    swap(obj);
+    swap(std::move(obj));
   }
 #endif
 
@@ -696,7 +699,7 @@ namespace flex
   template<class T, class Alloc>
   inline ring<T, Alloc>& ring<T, Alloc>::operator=(ring<T, Alloc>&& obj)
   {
-    swap(obj);
+    swap(std::move(obj));
     return *this;
   }
 #endif
@@ -899,6 +902,23 @@ namespace flex
       }
     }
   }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline void ring<T, Alloc>::swap(ring<T, Alloc>&& obj)
+  {
+    if ((!mFixed) && (!obj.fixed()))
+    {
+      std::swap(mBegin, obj.mBegin);
+      std::swap(mEnd, obj.mEnd);
+    }
+    else
+    {
+      assign(std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+      obj.clear();
+    }
+  }
+#endif
 
   template<class T, class Alloc>
   inline ring<T, Alloc>::ring(pointer new_begin, pointer new_end, pointer right_bound) :

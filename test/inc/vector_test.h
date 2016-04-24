@@ -825,6 +825,23 @@ public:
     TS_ASSERT_EQUALS(b[1],1);
     TS_ASSERT_EQUALS(b[2],2);
     TS_ASSERT_EQUALS(b[3],3);
+
+    /*
+     * Case2: Fixed parameter.
+     */
+    flex::fixed_vector<obj,16,vec::allocator_type> c =
+    { 0, 1, 2, 3};
+    clear_copy_flags(c);
+    vec d(std::move(c));
+    mark_move_only(d);
+    TS_ASSERT(is_container_valid(c));
+    TS_ASSERT(is_container_valid(d));
+    TS_ASSERT_EQUALS(c.size(),0);
+    TS_ASSERT_EQUALS(d.size(),4);
+    TS_ASSERT_EQUALS(d[0],0);
+    TS_ASSERT_EQUALS(d[1],1);
+    TS_ASSERT_EQUALS(d[2],2);
+    TS_ASSERT_EQUALS(d[3],3);
 #endif
   }
 
@@ -833,7 +850,7 @@ public:
     /*
      * Case1: Normal condition
      */
-    vec a({ 0, 1, 2, 3 });
+    vec a( { 0, 1, 2, 3 });
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 4);
     TS_ASSERT_EQUALS(a[0], 0);

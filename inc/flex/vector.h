@@ -129,6 +129,10 @@ namespace flex
     void resize(size_type n, const value_type& val = value_type());
     size_type size() const;
     void swap(vector<T, Alloc>& obj);
+#ifdef FLEX_HAS_CXX11
+    void swap(vector<T, Alloc>&& obj);
+#endif
+
   protected:
     vector(pointer new_begin, pointer new_end, size_type capacity);
 
@@ -229,7 +233,7 @@ namespace flex
   inline vector<T, Alloc>::vector(vector<T, Alloc> && obj) :
   base_type()
   {
-    swap(obj);
+    swap(std::move(obj));
   }
 #endif
 
@@ -660,7 +664,7 @@ namespace flex
   template<class T, class Alloc>
   inline vector<T, Alloc>& vector<T, Alloc>::operator=(vector<T, Alloc>&& obj)
   {
-    swap(obj);
+    swap(std::move(obj));
     return *this;
   }
 #endif
@@ -809,6 +813,24 @@ namespace flex
       }
     }
   }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::swap(vector<T, Alloc>&& obj)
+  {
+    if ((!mFixed) && (!obj.fixed()))
+    {
+      std::swap(mBegin, obj.mBegin);
+      std::swap(mEnd, obj.mEnd);
+      std::swap(mCapacity, obj.mCapacity);
+    }
+    else
+    {
+      assign(std::make_move_iterator(obj.begin()), std::make_move_iterator(obj.end()));
+      obj.clear();
+    }
+  }
+#endif
 
   template<class T, class Alloc>
   inline vector<T, Alloc>::vector(pointer new_begin, pointer new_end, size_type capacity) :

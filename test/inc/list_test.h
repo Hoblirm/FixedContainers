@@ -296,6 +296,24 @@ public:
     TS_ASSERT_EQUALS(*it++, 1);
     TS_ASSERT_EQUALS(*it++, 2);
     TS_ASSERT_EQUALS(*it++, 3);
+
+    /*
+     * Case1: Fixed parameter.
+     */
+    flex::fixed_list<obj,16,list_obj::allocator_type> c =
+    { 0, 1, 2, 3};
+    clear_copy_flags(c);
+    list_obj d(std::move(c));
+    mark_move_only(d);
+    TS_ASSERT(is_container_valid(c));
+    TS_ASSERT(is_container_valid(d));
+    TS_ASSERT_EQUALS(c.size(),0);
+    TS_ASSERT_EQUALS(d.size(),4);
+    it = d.begin();
+    TS_ASSERT_EQUALS(*it++, 0);
+    TS_ASSERT_EQUALS(*it++, 1);
+    TS_ASSERT_EQUALS(*it++, 2);
+    TS_ASSERT_EQUALS(*it++, 3);
 #endif
   }
 
