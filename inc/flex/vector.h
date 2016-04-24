@@ -108,6 +108,9 @@ namespace flex
     const_reference front() const;
     allocator_type get_allocator() const;
     iterator insert(iterator position, const value_type& val);
+#ifdef FLEX_HAS_CXX11
+    //iterator insert(iterator position, value_type&& val);
+#endif
     void insert(iterator position, size_type n, const value_type& val);
     void insert(iterator position, int n, const value_type& val);
     template<typename InputIterator> void insert(iterator position, InputIterator first, InputIterator last);
@@ -121,6 +124,9 @@ namespace flex
     const_reference operator[](size_type n) const;
     void pop_back();
     void push_back(const value_type& val);
+#ifdef FLEX_HAS_CXX11
+    //void push_back(value_type&& val);
+#endif
     reverse_iterator rbegin();
     const_reverse_iterator rbegin() const;
     reverse_iterator rend();

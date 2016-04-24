@@ -840,6 +840,84 @@ public:
     } //for: SIZE_COUNT
   }
 
+  void test_insert_move(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    list_obj a;
+    list_obj::iterator it;
+
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
+      clear_copy_flags(a);
+      size_t current_size = a.size();
+      obj val = 19;
+
+      /*
+       * Case1: Test insert at end
+       */
+      it = a.insert(a.end(), std::move(val));
+      ++current_size;
+      TS_ASSERT_EQUALS(*it, val);
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      it = a.begin();
+      for (int i = 0; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, OBJ_DATA[i]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, val);
+
+      /*
+       * Case2: Test insert at begin
+       */
+      it = a.insert(a.begin(), std::move(val));
+      ++current_size;
+      TS_ASSERT_EQUALS(*it, val);
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a.front(), val);
+      it = ++a.begin();
+      for (int i = 1; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, OBJ_DATA[i - 1]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, val);
+
+      /*
+       * Case3: Test insert in middle
+       */
+      int mid_index = current_size / 2;
+      it = a.begin();
+      for (int i = 0; i < mid_index; ++i)
+      {
+        ++it;
+      }
+      it = a.insert(it, std::move(val));
+      ++current_size;
+      TS_ASSERT_EQUALS(*it, val);
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a.front(), val);
+      it = ++a.begin();
+      for (int i = 1; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, OBJ_DATA[i - 1]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, val);
+      ++it;
+      for (int i = mid_index + 1; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, OBJ_DATA[i - 2]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, val);
+      mark_move_only(a);
+      TS_ASSERT(is_container_valid(a));
+    } //for: SIZE_COUNT
+#endif
+  }
+
   void test_insert_fill(void)
   {
     list_obj a;
@@ -2080,7 +2158,32 @@ public:
       TS_ASSERT(a == list_obj(OBJ_DATA, OBJ_DATA + SIZES[s]));
       TS_ASSERT(is_container_valid(a));
     }
+  }
 
+  void test_push_back_move(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    list_obj a;
+
+    /*
+     * Case 1: Normal condition.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign((int*) NULL, (int*) NULL);
+      for (int i = 0; i < SIZES[s]; ++i)
+      {
+        obj tmp = OBJ_DATA[i];
+        tmp.was_copied = false;
+        a.push_back(std::move(tmp));
+        TS_ASSERT_EQUALS(a.back(), OBJ_DATA[i]);
+        TS_ASSERT_EQUALS(a.size(), i + 1);
+      }
+      TS_ASSERT(a == list_obj(OBJ_DATA, OBJ_DATA + SIZES[s]));
+      mark_move_only(a);
+      TS_ASSERT(is_container_valid(a));
+    }
+#endif
   }
 
   void test_push_front(void)
@@ -2103,6 +2206,33 @@ public:
       TS_ASSERT(a == list_obj(OBJ_DATA, OBJ_DATA + SIZES[s]));
       TS_ASSERT(is_container_valid(a));
     }
+  }
+
+  void test_push_front_move(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    list_obj a;
+
+    /*
+     * Case 1: Normal condition.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign((int*) NULL, (int*) NULL);
+      for (int i = 0; i < SIZES[s]; ++i)
+      {
+        const unsigned data_index = SIZES[s] - 1 - i;
+        obj tmp = OBJ_DATA[data_index];
+        tmp.was_copied = false;
+        a.push_front(std::move(tmp));
+        TS_ASSERT_EQUALS(a.front(), OBJ_DATA[data_index]);
+        TS_ASSERT_EQUALS(a.size(), i + 1);
+      }
+      TS_ASSERT(a == list_obj(OBJ_DATA, OBJ_DATA + SIZES[s]));
+      mark_move_only(a);
+      TS_ASSERT(is_container_valid(a));
+    }
+#endif
   }
 
   void test_equality_operator(void)

@@ -790,6 +790,13 @@ public:
     }
   }
 
+  void test_insert_move(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    printf("X");
+#endif
+  }
+
   void test_insert_fill(void)
   {
     ring_obj a;
@@ -1269,6 +1276,13 @@ public:
     }
   }
 
+  void test_push_back_move(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    printf("X");
+#endif
+  }
+
   void test_push_front(void)
   {
     ring_obj a;
@@ -1289,6 +1303,13 @@ public:
       }
       TS_ASSERT(a == ring_obj(OBJ_DATA, OBJ_DATA + SIZES[s]));
     }
+  }
+
+  void test_push_front_move(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    printf("X");
+#endif
   }
 
   void test_equality_operator(void)

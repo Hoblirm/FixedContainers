@@ -410,6 +410,13 @@ public:
     }
   }
 
+  void test_insert_move(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    printf("X");
+#endif
+  }
+
   void test_max_size(void)
   {
     vec a;
@@ -577,6 +584,13 @@ public:
     }
     TS_ASSERT_EQUALS(sum, 600);
   }
+
+  void test_push_back_move(void)
+   {
+ #ifdef FLEX_HAS_CXX11
+     printf("X");
+ #endif
+   }
 
   void test_rbegin_and_rend(void)
   {

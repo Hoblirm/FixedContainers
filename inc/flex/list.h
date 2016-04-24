@@ -71,6 +71,9 @@ namespace flex
     const_reference front() const;
     bool full() const;
     iterator insert(iterator position, const_reference val);
+#ifdef FLEX_HAS_CXX11
+    iterator insert(iterator position, value_type&& val);
+#endif
     void insert(iterator position, size_type n, const_reference val);
     void insert(iterator position, int n, const_reference val);
     template<typename InputIterator> void insert(iterator position, InputIterator first, InputIterator last);
@@ -89,6 +92,10 @@ namespace flex
     void pop_front();
     void push_back(const_reference val);
     void push_front(const_reference val);
+#ifdef FLEX_HAS_CXX11
+    void push_back(value_type&& val);
+    void push_front(value_type&& val);
+#endif
 
     reverse_iterator rbegin();
     const_reverse_iterator rbegin() const;
@@ -134,6 +141,10 @@ namespace flex
 
     node_type* AllocateNode();
     node_type* RetrieveNode(const value_type& val);
+#ifdef FLEX_HAS_CXX11
+    node_type* RetrieveNode(value_type&& val);
+#endif
+
     size_type GetNodePoolSize();
     void FillNodePool(size_type n);
     void PushToNodePool(node_type* ptr);
@@ -445,6 +456,25 @@ namespace flex
 
     return iterator(new_node);
   }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline typename list<T, Alloc>::iterator list<T, Alloc>::insert(iterator position, value_type&& val)
+  {
+    node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
+
+
+    node_type* new_node = RetrieveNode(std::move(val));
+    ++mSize;
+
+    new_node->mPrev = position.mNode->mPrev;
+    new_node->mPrev->mNext = new_node;
+    new_node->mNext = position.mNode;
+    position.mNode->mPrev = new_node;
+
+    return iterator(new_node);
+  }
+#endif
 
   template<class T, class Alloc>
   inline void list<T, Alloc>::insert(iterator position, size_type n, const_reference val)
@@ -778,6 +808,34 @@ namespace flex
     mAnchor.mNext->mPrev = new_node;
     mAnchor.mNext = new_node;
   }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline void list<T, Alloc>::push_back(value_type&& val)
+  {
+    node_type* new_node = RetrieveNode(std::move(val));
+    ++mSize;
+
+    new_node->mPrev = mAnchor.mPrev;
+    new_node->mNext = &mAnchor;
+
+    mAnchor.mPrev->mNext = new_node;
+    mAnchor.mPrev = new_node;
+  }
+
+  template<class T, class Alloc>
+  inline void list<T, Alloc>::push_front(value_type&& val)
+  {
+    node_type* new_node = RetrieveNode(std::move(val));
+    ++mSize;
+
+    new_node->mNext = mAnchor.mNext;
+    new_node->mPrev = &mAnchor;
+
+    mAnchor.mNext->mPrev = new_node;
+    mAnchor.mNext = new_node;
+  }
+#endif
 
   template<class T, class Alloc>
   inline typename list<T, Alloc>::reverse_iterator list<T, Alloc>::rbegin()
@@ -1208,6 +1266,26 @@ namespace flex
     }
     return ptr;
   }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline list_node<T>* list<T, Alloc>::RetrieveNode(value_type&& val)
+  {
+    node_type* ptr;
+    if (NULL == mNodePool)
+    {
+      ptr = AllocateNode();
+      new ((void*) &ptr->mValue) value_type(std::move(val));
+    }
+    else
+    {
+      ptr = mNodePool;
+      new ((void*) &ptr->mValue) value_type(std::move(val));
+      mNodePool = static_cast<node_type*>(mNodePool->mNext);
+    }
+    return ptr;
+  }
+#endif
 
   template<class T, class Alloc>
   inline typename list<T, Alloc>::size_type list<T, Alloc>::GetNodePoolSize()
