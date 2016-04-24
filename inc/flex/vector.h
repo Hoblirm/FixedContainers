@@ -125,7 +125,7 @@ namespace flex
     void pop_back();
     void push_back(const value_type& val);
 #ifdef FLEX_HAS_CXX11
-    //void push_back(value_type&& val);
+    void push_back(value_type&& val);
 #endif
     reverse_iterator rbegin();
     const_reverse_iterator rbegin() const;
@@ -711,7 +711,7 @@ namespace flex
       T* new_begin = Allocate(new_capacity);
 
       //Copy all values.
-      T* new_end = std::uninitialized_copy(mBegin, mEnd, new_begin);
+      T* new_end = std::uninitialized_copy(std::make_move_iterator(mBegin), std::make_move_iterator(mEnd), new_begin);
       new ((void*) new_end) T(val);
       ++new_end;
 
@@ -727,6 +727,36 @@ namespace flex
       ++mEnd;
     }
   }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::push_back(value_type&& val)
+  {
+    if (mEnd == mCapacity)
+    {
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + 1;
+      size_type new_capacity = GetNewCapacity(new_size);
+      T* new_begin = Allocate(new_capacity);
+
+      //Copy all values.
+      T* new_end = std::uninitialized_copy(std::make_move_iterator(mBegin), std::make_move_iterator(mEnd), new_begin);
+      new ((void*) new_end) T(std::move(val));
+      ++new_end;
+
+      //Deallocate and reassign.
+      DestroyAndDeallocate();
+      mBegin = new_begin;
+      mEnd = new_end;
+      mCapacity = mBegin + new_capacity;
+    }
+    else
+    {
+      new ((void*) mEnd) T(std::move(val));
+      ++mEnd;
+    }
+  }
+#endif
 
   template<class T, class Alloc>
   inline typename vector<T, Alloc>::reverse_iterator vector<T, Alloc>::rbegin()

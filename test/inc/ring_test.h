@@ -1279,7 +1279,26 @@ public:
   void test_push_back_move(void)
   {
 #ifdef FLEX_HAS_CXX11
-    printf("X");
+    ring_obj a;
+
+    /*
+     * Case 1: Normal condition.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.clear();
+      for (int i = 0; i < SIZES[s]; ++i)
+      {
+        obj tmp = OBJ_DATA[i];
+        tmp.was_copied = false;
+        a.push_back(std::move(tmp));
+        mark_move_only(a);
+        TS_ASSERT(is_container_valid(a));
+        TS_ASSERT_EQUALS(a.back(), OBJ_DATA[i]);
+        TS_ASSERT_EQUALS(a.size(), i + 1);
+      }
+      TS_ASSERT(a == ring_obj(OBJ_DATA, OBJ_DATA + SIZES[s]));
+    }
 #endif
   }
 
@@ -1308,7 +1327,27 @@ public:
   void test_push_front_move(void)
   {
 #ifdef FLEX_HAS_CXX11
-    printf("X");
+    ring_obj a;
+
+    /*
+     * Case 1: Normal condition.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.clear();
+      for (int i = 0; i < SIZES[s]; ++i)
+      {
+        const unsigned data_index = SIZES[s] - 1 - i;
+        obj tmp = OBJ_DATA[data_index];
+        tmp.was_copied = false;
+        a.push_front(std::move(tmp));
+        mark_move_only(a);
+        TS_ASSERT(is_container_valid(a));
+        TS_ASSERT_EQUALS(a.front(), OBJ_DATA[data_index]);
+        TS_ASSERT_EQUALS(a.size(), i + 1);
+      }
+      TS_ASSERT(a == ring_obj(OBJ_DATA, OBJ_DATA + SIZES[s]));
+    }
 #endif
   }
 

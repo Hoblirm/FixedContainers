@@ -586,11 +586,27 @@ public:
   }
 
   void test_push_back_move(void)
-   {
- #ifdef FLEX_HAS_CXX11
-     printf("X");
- #endif
-   }
+  {
+#ifdef FLEX_HAS_CXX11
+    vec a;
+
+    /*
+     * Case 1: Normal condition.
+     */
+    for (int i = 0; i < 16; ++i)
+    {
+      obj tmp = OBJ_DATA[i];
+      tmp.was_copied = false;
+      a.push_back(std::move(tmp));
+      mark_move_only(a);
+      TS_ASSERT(is_container_valid(a));
+      TS_ASSERT_EQUALS(a.back(), OBJ_DATA[i]);
+      TS_ASSERT_EQUALS(a.size(), i + 1);
+    }
+    TS_ASSERT(a == vec(OBJ_DATA, OBJ_DATA + 16));
+
+#endif
+  }
 
   void test_rbegin_and_rend(void)
   {

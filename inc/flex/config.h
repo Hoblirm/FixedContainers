@@ -255,6 +255,18 @@ namespace flex
 #else
 namespace std
 {
+  template<class Iterator>
+  inline Iterator& make_move_iterator(Iterator& it) FLEX_NOEXCEPT
+  {
+    return it;
+  }
+
+  template<class ValueType>
+  inline ValueType& move(ValueType& val) FLEX_NOEXCEPT
+  {
+    return val;
+  }
+
   // See the C++11 Standard, section 18.9.
   template<class E>
   class initializer_list
