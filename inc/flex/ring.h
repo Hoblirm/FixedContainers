@@ -179,7 +179,7 @@ namespace flex
   inline ring_base<T, Alloc>::~ring_base()
   {
     flex::destruct_range(mBegin, mEnd);
-    if (!mFixed && (NULL != mBegin.mPtr))
+    if (!mFixed )
     {
       //Once again, the allocated size is one more than capacity.  Increment capacity by one when deallocating.
       mAllocator.deallocate(mBegin.mLeftBound, (mBegin.mRightBound - mBegin.mLeftBound) + 1);

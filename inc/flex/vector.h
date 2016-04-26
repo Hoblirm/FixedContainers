@@ -176,7 +176,7 @@ namespace flex
   inline vector_base<T, Alloc>::~vector_base()
   {
     flex::destruct_range(mBegin, mEnd);
-    if (!mFixed && (NULL != mBegin))
+    if (!mFixed )
     {
       mAllocator.deallocate(mBegin, mCapacity - mBegin);
     }
