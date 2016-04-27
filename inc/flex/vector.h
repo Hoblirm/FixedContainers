@@ -98,6 +98,10 @@ namespace flex
     const_reverse_iterator crend() const;
     size_type capacity() const;
     void clear();
+#ifdef FLEX_HAS_CXX11
+    template<class...Args> iterator emplace(iterator position, Args&&... val);
+    template<class...Args> void emplace_back(Args&&... val);
+#endif
     bool empty() const;
     iterator end();
     const_iterator end() const;
@@ -176,7 +180,7 @@ namespace flex
   inline vector_base<T, Alloc>::~vector_base()
   {
     flex::destruct_range(mBegin, mEnd);
-    if (!mFixed )
+    if (!mFixed)
     {
       mAllocator.deallocate(mBegin, mCapacity - mBegin);
     }
@@ -412,6 +416,93 @@ namespace flex
     mEnd = mBegin;
   }
 
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  template<class... Args>
+  inline typename vector<T, Alloc>::iterator vector<T, Alloc>::emplace(iterator position, Args&&... args)
+  {
+    if (mEnd == mCapacity)
+    {
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + 1;
+      size_type new_capacity = GetNewCapacity(new_size);
+      T* new_begin = Allocate(new_capacity);
+
+      //Copy all values to the left of position.
+      T* new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(position), new_begin);
+
+      //Copy the inserted parameter val.
+      T* new_position = new_end;
+      new ((void*) new_end) value_type(std::forward<Args>(args)...);
+
+      //Copy all values that come after position.
+      new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd), ++new_end);
+
+      DestroyAndDeallocate();
+
+      mBegin = new_begin;
+      mEnd = new_end;
+      mCapacity = mBegin + new_capacity;
+      return new_position;
+    }
+    else
+    {
+      if (position == mEnd)
+      {
+        //End of container case must be checked, as in this case position gets constructed.
+        ::new ((void*) position) value_type(std::forward<Args>(args)...);
+      }
+      else
+      {
+        //If we are inserting into the middle of the list, we are going to perform an assignment
+        //instead of a construct, aka placement new.  Since we are doing an assignment, we are
+        //forced to make a temporary object.  It makes the most sense to build the temporary object
+        //now, as the arguments may contain references that may get invalidated by the copy_backward()
+        //performed below.
+        value_type tmp = value_type(std::forward<Args>(args)...);
+
+        //This copy backwards will shift all the elements after position to the right
+        //by one space.  This is valid since the capacity check above ensures we have
+        //at least one spot available after the end.
+        new ((void*) mEnd) value_type(FLEX_MOVE(*(mEnd - 1)));
+        std::copy_backward(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd - 1), mEnd);
+        *position = std::move(tmp);
+      }
+      ++mEnd;
+      return position;
+    }
+  }
+
+  template<class T, class Alloc>
+  template<class... Args>
+  inline void vector<T, Alloc>::emplace_back(Args&&... args)
+  {
+    if (mEnd == mCapacity)
+    {
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + 1;
+      size_type new_capacity = GetNewCapacity(new_size);
+      T* new_begin = Allocate(new_capacity);
+
+      //Copy all values.
+      T* new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(mEnd), new_begin);
+      new ((void*) new_end) value_type(std::forward<Args>(args)...);
+      ++new_end;
+
+      //Deallocate and reassign.
+      DestroyAndDeallocate();
+      mBegin = new_begin;
+      mEnd = new_end;
+      mCapacity = mBegin + new_capacity;
+    }
+    else
+    {
+      new ((void*) mEnd) value_type(std::forward<Args>(args)...);
+      ++mEnd;
+    }
+  }
+#endif
+
   template<class T, class Alloc>
   inline bool vector<T, Alloc>::empty() const
   {
@@ -436,7 +527,7 @@ namespace flex
     //This copy will simply shift everything after position over to the left by one.
     //This will effectively overwrite position, erasing it from the container.
     FLEX_COPY_OR_MOVE(position + 1, mEnd, position);
-    (--mEnd)->~T();
+    (--mEnd)->~value_type();
     return position;
   }
 
@@ -494,7 +585,7 @@ namespace flex
 
       //Copy the inserted parameter val.
       T* new_position = new_end;
-      new ((void*) new_end) T(val);
+      new ((void*) new_end) value_type(val);
 
       //Copy all values that come after position.
       new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd), ++new_end);
@@ -523,7 +614,7 @@ namespace flex
         //This copy backwards will shift all the elements after position to the right
         //by one space.  This is valid since the capacity check above ensures we have
         //at least one spot available after the end.
-        new ((void*) mEnd) T(FLEX_MOVE(*(mEnd - 1)));
+        new ((void*) mEnd) value_type(FLEX_MOVE(*(mEnd - 1)));
         std::copy_backward(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd - 1), mEnd);
         *position = *it;
       }
@@ -548,7 +639,7 @@ namespace flex
 
       //Copy the inserted parameter val.
       T* new_position = new_end;
-      new ((void*) new_end) T(FLEX_MOVE(val));
+      new ((void*) new_end) value_type(FLEX_MOVE(val));
 
       //Copy all values that come after position.
       new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd), ++new_end);
@@ -577,7 +668,7 @@ namespace flex
         //This copy backwards will shift all the elements after position to the right
         //by one space.  This is valid since the capacity check above ensures we have
         //at least one spot available after the end.
-        new ((void*) mEnd) T(FLEX_MOVE(*(mEnd - 1)));
+        new ((void*) mEnd) value_type(FLEX_MOVE(*(mEnd - 1)));
         std::copy_backward(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd - 1), mEnd);
         *position = FLEX_MOVE(*it);
       }
@@ -752,7 +843,7 @@ namespace flex
   template<class T, class Alloc>
   inline void vector<T, Alloc>::pop_back()
   {
-    (--mEnd)->~T();
+    (--mEnd)->~value_type();
   }
 
   template<class T, class Alloc>
@@ -767,7 +858,7 @@ namespace flex
 
       //Copy all values.
       T* new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(mEnd), new_begin);
-      new ((void*) new_end) T(val);
+      new ((void*) new_end) value_type(val);
       ++new_end;
 
       //Deallocate and reassign.
@@ -778,7 +869,7 @@ namespace flex
     }
     else
     {
-      new ((void*) mEnd) T(val);
+      new ((void*) mEnd) value_type(val);
       ++mEnd;
     }
   }
@@ -796,7 +887,7 @@ namespace flex
 
       //Copy all values.
       T* new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(mEnd), new_begin);
-      new ((void*) new_end) T(std::move(val));
+      new ((void*) new_end) value_type(std::move(val));
       ++new_end;
 
       //Deallocate and reassign.
@@ -807,7 +898,7 @@ namespace flex
     }
     else
     {
-      new ((void*) mEnd) T(std::move(val));
+      new ((void*) mEnd) value_type(std::move(val));
       ++mEnd;
     }
   }

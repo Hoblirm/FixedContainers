@@ -20,6 +20,11 @@ namespace flex
       {
       }
 
+      obj(int i, bool) :
+          val(i), init(INIT_KEY), move_only(false), was_copied(false)
+      {
+      }
+
       obj(const obj& o) :
           val(o.val), init(INIT_KEY), move_only(o.move_only), was_copied(true)
       {
