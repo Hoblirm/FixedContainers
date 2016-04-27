@@ -98,9 +98,9 @@ namespace flex
     size_type capacity() const;
     void clear();
 #ifdef FLEX_HAS_CXX11
-    template<class...Args> iterator emplace(iterator position, Args&&... val);
-    template<class...Args> void emplace_back(Args&&... val);
-    template<class...Args> void emplace_front(Args&&... val);
+    template<class...Args> iterator emplace(iterator position, Args&&... args);
+    template<class...Args> void emplace_back(Args&&... args);
+    template<class...Args> void emplace_front(Args&&... args);
 #endif
     bool empty() const;
     iterator erase(iterator position);

@@ -36,36 +36,33 @@ namespace flex
     list(list<T, Alloc>&& x);
 #endif
     list(std::initializer_list<value_type> il);
-
     ~list();
 
     void assign(size_t size, const_reference val);
     void assign(int size, const_reference val);
     template<typename InputIterator> void assign(InputIterator first, InputIterator last);
     void assign(std::initializer_list<value_type> il);
-
     reference back();
     const_reference back() const;
-
     iterator begin();
     const_iterator begin() const;
     const_iterator cbegin() const;
     const_iterator cend() const;
     const_reverse_iterator crbegin() const;
     const_reverse_iterator crend() const;
-
     size_type capacity();
     void clear();
+#ifdef FLEX_HAS_CXX11
+    template<class...Args> iterator emplace(iterator position, Args&&... val);
+    template<class...Args> void emplace_back(Args&&... val);
+    template<class...Args> void emplace_front(Args&&... val);
+#endif
     bool empty() const;
-
     iterator end();
     const_iterator end() const;
-
     iterator erase(iterator position);
     iterator erase(iterator first, iterator last);
-
     bool fixed() const;
-
     reference front();
     allocator_type get_allocator() const;
     const_reference front() const;
@@ -77,17 +74,14 @@ namespace flex
     void insert(iterator position, size_type n, const_reference val);
     void insert(iterator position, int n, const_reference val);
     template<typename InputIterator> void insert(iterator position, InputIterator first, InputIterator last);
-
     size_type max_size() const;
     void merge(this_type& x);
     template<typename Compare> void merge(this_type& x, Compare comp);
-
     list<T, Alloc>& operator=(const list<T, Alloc>& obj);
 #ifdef FLEX_HAS_CXX11
     list<T, Alloc>& operator=(list<T, Alloc>&& x);
 #endif
     list<T, Alloc>& operator=(std::initializer_list<value_type> il);
-
     void pop_back();
     void pop_front();
     void push_back(const_reference val);
@@ -96,37 +90,28 @@ namespace flex
     void push_back(value_type&& val);
     void push_front(value_type&& val);
 #endif
-
     reverse_iterator rbegin();
     const_reverse_iterator rbegin() const;
     reverse_iterator rend();
     const_reverse_iterator rend() const;
-
     void remove(const T& x);
     template<typename Predicate> void remove_if(Predicate pred);
-
     void reserve(size_type n);
     void resize(size_type n, const value_type& val = value_type());
-
     void reverse(void);
-
     void shrink_to_fit();
     size_t size() const;
-
     void sort();
     template<typename Compare> void sort(Compare comp);
-
     void splice(iterator position, this_type& x);
     void splice(iterator position, this_type& x, iterator i);
     void splice(iterator position, this_type& x, iterator first, iterator last);
-
     void swap(list<T, Alloc>& obj);
 #ifdef FLEX_HAS_CXX11
     void swap(list<T, Alloc>&& obj);
 #endif
     void unique();
     template<typename BinaryPredicate> void unique(BinaryPredicate binary_pred);
-
   protected:
 
     list(node_type* first, node_type* last);
@@ -143,6 +128,7 @@ namespace flex
     node_type* RetrieveNode(const value_type& val);
 #ifdef FLEX_HAS_CXX11
     node_type* RetrieveNode(value_type&& val);
+    template<class...Args> node_type* RetrieveNode(Args&&... args);
 #endif
 
     size_type GetNodePoolSize();
@@ -358,6 +344,54 @@ namespace flex
     erase(begin(), end());
   }
 
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  template<class...Args>
+  inline typename list<T, Alloc>::iterator list<T, Alloc>::emplace(iterator position, Args&&... args)
+  {
+    node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
+
+    node_type* new_node = RetrieveNode(std::forward<Args>(args)...);
+    ++mSize;
+
+    new_node->mPrev = position.mNode->mPrev;
+    new_node->mPrev->mNext = new_node;
+    new_node->mNext = position.mNode;
+    position.mNode->mPrev = new_node;
+
+    return iterator(new_node);
+  }
+
+  template<class T, class Alloc>
+  template<class...Args>
+  inline void list<T, Alloc>::emplace_back(Args&&... args)
+  {
+    node_type* new_node = RetrieveNode(std::forward<Args>(args)...);
+    ++mSize;
+
+    new_node->mPrev = mAnchor.mPrev;
+    new_node->mNext = &mAnchor;
+
+    mAnchor.mPrev->mNext = new_node;
+    mAnchor.mPrev = new_node;
+  }
+
+  template<class T, class Alloc>
+  template<class...Args>
+  inline void list<T, Alloc>::emplace_front(Args&&... args)
+  {
+    node_type* new_node = RetrieveNode(std::forward<Args>(args)...);
+    ++mSize;
+
+    new_node->mNext = mAnchor.mNext;
+    new_node->mPrev = &mAnchor;
+
+    mAnchor.mNext->mPrev = new_node;
+    mAnchor.mNext = new_node;
+  }
+
+#endif
+
   template<class T, class Alloc>
   inline bool list<T, Alloc>::empty() const
   {
@@ -462,7 +496,6 @@ namespace flex
   inline typename list<T, Alloc>::iterator list<T, Alloc>::insert(iterator position, value_type&& val)
   {
     node_type* lhs = static_cast<node_type*>(position.mNode->mPrev);
-
 
     node_type* new_node = RetrieveNode(std::move(val));
     ++mSize;
@@ -1281,6 +1314,25 @@ namespace flex
     {
       ptr = mNodePool;
       new ((void*) &ptr->mValue) value_type(std::move(val));
+      mNodePool = static_cast<node_type*>(mNodePool->mNext);
+    }
+    return ptr;
+  }
+
+  template<class T, class Alloc>
+  template<class...Args>
+  inline list_node<T>* list<T, Alloc>::RetrieveNode(Args&&... args)
+  {
+    node_type* ptr;
+    if (NULL == mNodePool)
+    {
+      ptr = AllocateNode();
+      new ((void*) &ptr->mValue) value_type(std::forward<Args>(args)...);
+    }
+    else
+    {
+      ptr = mNodePool;
+      new ((void*) &ptr->mValue) value_type(std::forward<Args>(args)...);
       mNodePool = static_cast<node_type*>(mNodePool->mNext);
     }
     return ptr;

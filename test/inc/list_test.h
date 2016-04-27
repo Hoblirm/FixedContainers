@@ -534,6 +534,129 @@ public:
     } //for: SIZE_COUNT
   }
 
+  void test_emplace(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    list_obj a;
+    list_obj::iterator it;
+
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign(OBJ_DATA, OBJ_DATA + SIZES[s]);
+      size_t current_size = a.size();
+      const int val = 19;
+
+      /*
+       * Case1: Test insert at end
+       */
+      it = a.emplace(a.end(), val, true);
+      ++current_size;
+      TS_ASSERT_EQUALS(*it, val);
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      it = a.begin();
+      for (int i = 0; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, OBJ_DATA[i]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, val);
+
+      /*
+       * Case2: Test insert at begin
+       */
+      it = a.emplace(a.begin(), val, true);
+      ++current_size;
+      TS_ASSERT_EQUALS(*it, val);
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a.front(), val);
+      it = ++a.begin();
+      for (int i = 1; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, OBJ_DATA[i - 1]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, val);
+
+      /*
+       * Case3: Test insert in middle
+       */
+      int mid_index = current_size / 2;
+      it = a.begin();
+      for (int i = 0; i < mid_index; ++i)
+      {
+        ++it;
+      }
+      it = a.emplace(it, val,true);
+      ++current_size;
+      TS_ASSERT_EQUALS(*it, val);
+      TS_ASSERT_EQUALS(a.size(), current_size);
+      TS_ASSERT_EQUALS(a.front(), val);
+      it = ++a.begin();
+      for (int i = 1; i < mid_index; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, OBJ_DATA[i - 1]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, val);
+      ++it;
+      for (int i = mid_index + 1; i < a.size() - 1; ++i)
+      {
+        TS_ASSERT_EQUALS(*it, OBJ_DATA[i - 2]);
+        ++it;
+      }
+      TS_ASSERT_EQUALS(*it, val);
+      TS_ASSERT(is_container_valid(a));
+    } //for: SIZE_COUNT
+#endif
+  }
+
+  void test_emplace_back(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    list_obj a;
+
+    /*
+     * Case 1: Normal condition.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign((int*) NULL, (int*) NULL);
+      for (int i = 0; i < SIZES[s]; ++i)
+      {
+        a.emplace_back(OBJ_DATA[i].val,true);
+        TS_ASSERT_EQUALS(a.back(), OBJ_DATA[i]);
+        TS_ASSERT_EQUALS(a.size(), i + 1);
+      }
+      TS_ASSERT(a == list_obj(OBJ_DATA, OBJ_DATA + SIZES[s]));
+      TS_ASSERT(is_container_valid(a));
+    }
+#endif
+  }
+
+  void test_emplace_front(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    list_obj a;
+
+    /*
+     * Case 1: Normal condition.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.assign((int*) NULL, (int*) NULL);
+      for (int i = 0; i < SIZES[s]; ++i)
+      {
+        const unsigned data_index = SIZES[s] - 1 - i;
+        a.emplace_front(OBJ_DATA[data_index].val,true);
+        TS_ASSERT_EQUALS(a.front(), OBJ_DATA[data_index]);
+        TS_ASSERT_EQUALS(a.size(), i + 1);
+      }
+      TS_ASSERT(a == list_obj(OBJ_DATA, OBJ_DATA + SIZES[s]));
+      TS_ASSERT(is_container_valid(a));
+    }
+#endif
+  }
+
   void test_empty(void)
   {
     /*
