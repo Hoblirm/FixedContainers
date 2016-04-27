@@ -376,6 +376,7 @@ public:
 
 #endif
   }
+
   void test_empty(void)
   {
     vec myvector;

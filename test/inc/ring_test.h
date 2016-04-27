@@ -526,6 +526,133 @@ public:
     } //for: SIZE_COUNT
   }
 
+  void test_emplace(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    ring_obj a;
+    ring_obj::iterator it;
+
+    a.assign(OBJ_DATA, OBJ_DATA + 16);
+    size_t current_size = a.size();
+    const int val = 19;
+    /*
+     * Case1: Test insert at end
+     */
+    it = a.emplace(a.end(), val, true);
+    TS_ASSERT(is_container_valid(a));
+    ++current_size;
+    TS_ASSERT_EQUALS(*it, val);
+    TS_ASSERT_EQUALS(a.size(), current_size);
+    for (int i = 0; i < a.size() - 1; ++i)
+    {
+      TS_ASSERT_EQUALS(a[i], OBJ_DATA[i]);
+    }
+    TS_ASSERT_EQUALS(a[a.size() - 1], val);
+
+    /*
+     * Case2: Test insert at begin
+     */
+    mark_move_only(a);
+    clear_copy_flags(a);
+    it = a.emplace(a.begin(), val, true);
+    TS_ASSERT(is_container_valid(a));
+    ++current_size;
+    TS_ASSERT_EQUALS(*it, val);
+    TS_ASSERT_EQUALS(a.size(), current_size);
+    TS_ASSERT_EQUALS(a[0], val);
+    for (int i = 1; i < a.size() - 1; ++i)
+    {
+      TS_ASSERT_EQUALS(a[i], OBJ_DATA[i - 1]);
+    }
+    TS_ASSERT_EQUALS(a[a.size() - 1], val);
+
+    /*
+     * Case3: Test insert in middle
+     */
+    int mid_index = current_size / 2;
+    mark_move_only(a);
+    clear_copy_flags(a);
+    it = a.emplace(a.begin() + mid_index, val, true);
+    TS_ASSERT(is_container_valid(a));
+    ++current_size;
+    TS_ASSERT_EQUALS(*it, val);
+    TS_ASSERT_EQUALS(a.size(), current_size);
+    TS_ASSERT_EQUALS(a[0], val);
+    for (int i = 1; i < mid_index; ++i)
+    {
+      TS_ASSERT_EQUALS(a[i], OBJ_DATA[i - 1]);
+    }
+    TS_ASSERT_EQUALS(a[mid_index], val);
+    for (int i = mid_index + 1; i < a.size() - 1; ++i)
+    {
+      TS_ASSERT_EQUALS(a[i], OBJ_DATA[i - 2]);
+    }
+    TS_ASSERT_EQUALS(a[a.size() - 1], val);
+
+    /*
+     * Case 4: Test insert for value within container
+     */
+    ring_obj b(OBJ_DATA, OBJ_DATA + 8);
+    b.reserve(16);
+    b.emplace(b.begin(), (b.end() - 1)->val,true);
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 9);
+    TS_ASSERT_EQUALS(b[0], OBJ_DATA[7]);
+    for (int i = 1; i < b.size(); ++i)
+    {
+      TS_ASSERT_EQUALS(b[i], OBJ_DATA[i - 1]);
+    }
+#endif
+  }
+
+  void test_emplace_back(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    ring_obj a;
+
+    /*
+     * Case 1: Normal condition.
+     */
+    for (int i = 0; i < 16; ++i)
+    {
+      mark_move_only(a);
+      clear_copy_flags(a);
+      a.emplace_back(OBJ_DATA[i].val,true);
+      TS_ASSERT(is_container_valid(a));
+      TS_ASSERT_EQUALS(a.back(), OBJ_DATA[i]);
+      TS_ASSERT_EQUALS(a.size(), i + 1);
+    }
+    TS_ASSERT(a == ring_obj(OBJ_DATA, OBJ_DATA + 16));
+
+#endif
+  }
+
+  void test_emplace_front(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    ring_obj a;
+
+    /*
+     * Case 1: Normal condition.
+     */
+    for (unsigned s = 0; s < SIZE_COUNT; ++s)
+    {
+      a.clear();
+      for (int i = 0; i < SIZES[s]; ++i)
+      {
+        const unsigned data_index = SIZES[s] - 1 - i;
+        mark_move_only(a);
+        clear_copy_flags(a);
+        a.emplace_front(OBJ_DATA[data_index].val,true);
+        TS_ASSERT(is_container_valid(a));
+        TS_ASSERT_EQUALS(a.front(), OBJ_DATA[data_index]);
+        TS_ASSERT_EQUALS(a.size(), i + 1);
+      }
+      TS_ASSERT(a == ring_obj(OBJ_DATA, OBJ_DATA + SIZES[s]));
+    }
+#endif
+  }
+
   void test_empty(void)
   {
     /*

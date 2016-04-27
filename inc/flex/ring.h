@@ -97,6 +97,11 @@ namespace flex
     const_reverse_iterator crend() const;
     size_type capacity() const;
     void clear();
+#ifdef FLEX_HAS_CXX11
+    template<class...Args> iterator emplace(iterator position, Args&&... val);
+    template<class...Args> void emplace_back(Args&&... val);
+    template<class...Args> void emplace_front(Args&&... val);
+#endif
     bool empty() const;
     iterator erase(iterator position);
     iterator erase(iterator first, iterator last);
@@ -179,7 +184,7 @@ namespace flex
   inline ring_base<T, Alloc>::~ring_base()
   {
     flex::destruct_range(mBegin, mEnd);
-    if (!mFixed )
+    if (!mFixed)
     {
       //Once again, the allocated size is one more than capacity.  Increment capacity by one when deallocating.
       mAllocator.deallocate(mBegin.mLeftBound, (mBegin.mRightBound - mBegin.mLeftBound) + 1);
@@ -417,6 +422,135 @@ namespace flex
     flex::destruct_range(mBegin, mEnd);
     mEnd.mPtr = mBegin.mPtr;
   }
+
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  template<class... Args>
+  inline typename ring<T, Alloc>::iterator ring<T, Alloc>::emplace(iterator position, Args&&... args)
+  {
+    //Increment is performed first as it allows a much faster capacity check. The
+    //drawback is that the iterator needs to be reverted if reallocation occurs.
+    const iterator prev_end = mEnd;
+    ++mEnd;
+
+    if (mEnd.mPtr == mBegin.mPtr)
+    {
+      //Capacity has been exceeded. Put container back in a valid
+      //state and reallocate.
+      mEnd.mPtr = prev_end.mPtr;
+
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + 1;
+      size_t new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = Allocate(new_capacity);
+
+      //Copy all values to the left of position.
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(position), new_begin);
+
+      //Copy the inserted parameter val.
+      iterator new_position(new_end, new_begin, new_begin + new_capacity);
+      new ((void*) new_end) T(std::forward<Args>(args)...);
+
+      //Copy all values that come after position.
+      new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(mEnd), ++new_end);
+
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
+      return new_position;
+    }
+    else
+    {
+      if (position == prev_end)
+      {
+        //End of container case must be checked, as in this case position gets constructed.
+        new ((void*) position.mPtr) value_type(std::forward<Args>(args)...);
+      }
+      else
+      {
+        //If we are inserting into the middle of the list, we are going to perform an assignment
+        //instead of a construct, aka placement new.  Since we are doing an assignment, we are
+        //forced to make a temporary object.  It makes the most sense to build the temporary object
+        //now, as the arguments may contain references that may get invalidated by the copy_backward()
+        //performed below.
+        value_type tmp = value_type(std::forward<Args>(args)...);
+
+        //This copy backwards will shift all the elements after position to the right
+        //by one space.  This is valid since the capacity check above ensures we have
+        //at least one spot available after the end.
+        iterator back = prev_end;
+        --back;
+        new ((void*) prev_end.mPtr) T(FLEX_MOVE(*back));
+        std::copy_backward(FLEX_MOVE_ITERATOR(position), FLEX_MOVE_ITERATOR(back), prev_end);
+        *position = std::move(tmp);
+      }
+      return position;
+    }
+  }
+
+  template<class T, class Alloc>
+  template<class... Args>
+  inline void ring<T, Alloc>::emplace_back(Args&&... args)
+  {
+    //Increment is performed first as it allows a much faster capacity check. The
+    //drawback is that the iterator needs to be reverted if reallocation occurs.
+    const pointer prev_end = mEnd.mPtr;
+    ++mEnd;
+
+    if (mEnd.mPtr == mBegin.mPtr)
+    {
+      //Capacity has been exceeded. Put container back in a valid
+      //state and reallocate.
+      mEnd.mPtr = prev_end;
+
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + 1;
+      size_type new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = Allocate(new_capacity);
+
+      //Copy all values.
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(mEnd), new_begin);
+      new ((void*) new_end) T(std::forward<Args>(args)...);
+      ++new_end;
+
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
+    }
+    else
+    {
+      new ((void*) prev_end) T(std::forward<Args>(args)...);
+    }
+  }
+
+  template<class T, class Alloc>
+  template<class... Args>
+  inline void ring<T, Alloc>::emplace_front(Args&&... args)
+  {
+    //Decrement is performed first as it allows a much faster capacity check. The
+    //drawback is that the iterator needs to be incremented if reallocation occurs.
+    --mBegin;
+
+    if (mBegin.mPtr == mEnd.mPtr)
+    {
+      //Capacity has been exceeded. Put container back in a valid
+      //state and reallocate.
+      ++mBegin;
+
+      //Allocate memory with sufficient capacity.
+      size_type new_size = size() + 1;
+      size_type new_capacity = GetNewCapacity(new_size);
+      pointer new_begin = Allocate(new_capacity);
+
+      //Copy all values.
+      new ((void*) new_begin) T(std::forward<Args>(args)...);
+      pointer new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(mEnd), (new_begin + 1));
+
+      DeallocateAndReassign(new_begin, new_end, new_capacity);
+    }
+    else
+    {
+      new ((void*) mBegin.mPtr) T(std::forward<Args>(args)...);
+    }
+  }
+
+#endif
 
   template<class T, class Alloc>
   inline bool ring<T, Alloc>::empty() const
