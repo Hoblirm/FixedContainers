@@ -886,6 +886,24 @@ public:
     TS_ASSERT_EQUALS(myvector[11], obj::DEFAULT_VAL);
   }
 
+  void test_shrink_to_fit(void)
+  {
+    vec a(OBJ_DATA, OBJ_DATA + 16);
+    a.shrink_to_fit();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), a.capacity());
+
+    a.assign(OBJ_DATA, OBJ_DATA + 8);
+    a.shrink_to_fit();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), a.capacity());
+
+    a.clear();
+    a.shrink_to_fit();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), a.capacity());
+  }
+
   void test_size(void)
   {
     const size_t size = 3;

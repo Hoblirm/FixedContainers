@@ -137,6 +137,7 @@ namespace flex
     const_reverse_iterator rend() const;
     void reserve(size_type n);
     void resize(size_type n, const value_type& val = value_type());
+    void shrink_to_fit();
     size_type size() const;
     void swap(vector<T, Alloc>& obj);
 #ifdef FLEX_HAS_CXX11
@@ -961,6 +962,38 @@ namespace flex
     else if (n > size())
     {
       insert(mEnd, n - size(), val);
+    }
+  }
+
+  template<class T, class Alloc>
+  inline void vector<T, Alloc>::shrink_to_fit()
+  {
+    if (!mFixed)
+    {
+      size_type n = size();
+      if (capacity() > n)
+      {
+        pointer new_begin, new_end;
+        size_type new_capacity;
+        if (n)
+        {
+          //Allocate memory with sufficient capacity.
+          new_capacity = size();
+          new_begin = Allocate(new_capacity);
+
+          //Copy all values.
+          new_end = std::uninitialized_copy(mBegin, mEnd, new_begin);
+        }
+        else
+        {
+          new_begin = new_end = NULL;
+          new_capacity = 0;
+        }
+        DestroyAndDeallocate();
+        mBegin = new_begin;
+        mEnd = new_end;
+        mCapacity = mBegin + new_capacity;
+      }
     }
   }
 

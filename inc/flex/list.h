@@ -978,7 +978,7 @@ namespace flex
   template<class T, class Alloc>
   inline void list<T, Alloc>::shrink_to_fit()
   {
-    if (FLEX_LIKELY(!mFixed))
+    if (!mFixed)
     {
       PurgeNodePool();
     }
