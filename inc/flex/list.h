@@ -1289,14 +1289,13 @@ namespace flex
     if (NULL == mNodePool)
     {
       ptr = AllocateNode();
-      new ((void*) &ptr->mValue) value_type(val);
     }
     else
     {
       ptr = mNodePool;
-      new ((void*) &ptr->mValue) value_type(val);
       mNodePool = static_cast<node_type*>(mNodePool->mNext);
     }
+    new ((void*) &ptr->mValue) value_type(val);
     return ptr;
   }
 
@@ -1308,14 +1307,13 @@ namespace flex
     if (NULL == mNodePool)
     {
       ptr = AllocateNode();
-      new ((void*) &ptr->mValue) value_type(std::move(val));
     }
     else
     {
       ptr = mNodePool;
-      new ((void*) &ptr->mValue) value_type(std::move(val));
       mNodePool = static_cast<node_type*>(mNodePool->mNext);
     }
+    new ((void*) &ptr->mValue) value_type(std::move(val));
     return ptr;
   }
 
@@ -1327,14 +1325,13 @@ namespace flex
     if (NULL == mNodePool)
     {
       ptr = AllocateNode();
-      new ((void*) &ptr->mValue) value_type(std::forward<Args>(args)...);
     }
     else
     {
       ptr = mNodePool;
-      new ((void*) &ptr->mValue) value_type(std::forward<Args>(args)...);
       mNodePool = static_cast<node_type*>(mNodePool->mNext);
     }
+    new ((void*) &ptr->mValue) value_type(std::forward<Args>(args)...);
     return ptr;
   }
 #endif

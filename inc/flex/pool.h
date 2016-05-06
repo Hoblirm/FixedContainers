@@ -47,8 +47,12 @@ namespace flex
     ~pool();
 
     void* allocate();
+#ifdef FLEX_HAS_CXX11
+    template<class...Args> pointer construct(Args&&... val);
+#else
     pointer construct();
     pointer construct(const value_type& val);
+#endif
     void destruct(pointer ptr);
     void deallocate(void* ptr);
     bool empty() const;
@@ -115,6 +119,16 @@ namespace flex
     }
   }
 
+#ifdef FLEX_HAS_CXX11
+  template<class T, class Alloc>
+  template<class... Args>
+  inline typename pool<T, Alloc>::pointer pool<T, Alloc>::construct(Args&&... args)
+  {
+    void* ptr = allocate();
+    new (ptr) value_type(std::forward<Args>(args)...);
+    return (pointer) ptr;
+  }
+#else
   template<class T, class Alloc>
   inline typename pool<T, Alloc>::pointer pool<T, Alloc>::construct()
   {
@@ -130,6 +144,7 @@ namespace flex
     new (ptr) value_type(val);
     return (pointer) ptr;
   }
+#endif
 
   template<class T, class Alloc>
   inline void pool<T, Alloc>::deallocate(void* ptr)
