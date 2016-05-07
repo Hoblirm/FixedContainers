@@ -41,6 +41,7 @@ namespace flex
 
     pointer Allocate(size_type n);
     void DestroyAndDeallocate();
+    size_type GetNewCapacity(size_type min);
   };
 
   template<class T, class Alloc = allocator<T> >
@@ -70,6 +71,7 @@ namespace flex
     using base_type::mFixed;
     using base_type::Allocate;
     using base_type::DestroyAndDeallocate;
+    using base_type::GetNewCapacity;
 
     vector();
     explicit vector(size_type size, const value_type& val = value_type());
@@ -147,9 +149,6 @@ namespace flex
   protected:
     vector(pointer new_begin, pointer new_end, size_type capacity);
 
-  private:
-    size_type GetNewCapacity(size_type min);
-
   };
 
   /*
@@ -174,7 +173,16 @@ namespace flex
       mFixed(true), mBegin(new_begin), mEnd(new_end), mCapacity(mBegin + capacity)
 
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(mEnd > mCapacity, "flex::fixed_vector - constructor() size exceeds capacity");
+#ifndef FLEX_RELEASE
+    if (FLEX_UNLIKELY(mEnd > mCapacity))
+    {
+      size_type n = new_end - new_begin;
+      mFixed = false;
+      mBegin = Allocate(n);
+      mEnd = mCapacity = mBegin + n;
+      flex::error_msg("flex::fixed_vector - constructor() size exceeds capacity");
+    }
+#endif
   }
 
   template<class T, class Alloc>
@@ -190,7 +198,6 @@ namespace flex
   template<class T, class Alloc>
   inline typename vector_base<T, Alloc>::pointer vector_base<T, Alloc>::Allocate(size_type n)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_vector - capacity exceeded");
     return mAllocator.allocate(n);
   }
 
@@ -198,7 +205,33 @@ namespace flex
   inline void vector_base<T, Alloc>::DestroyAndDeallocate()
   {
     flex::destruct_range(mBegin, mEnd);
+
+#ifndef FLEX_RELEASE
+    if (FLEX_UNLIKELY(mFixed))
+    {
+      mFixed = false;
+      flex::error_msg("flex::fixed_vector - capacity exceeded");
+    }
+    else
+#endif
     mAllocator.deallocate(mBegin, mCapacity - mBegin);
+  }
+
+  template<class T, class Alloc>
+  inline typename vector_base<T, Alloc>::size_type vector_base<T, Alloc>::GetNewCapacity(size_type min_size)
+  {
+    // This needs to return a value of at least currentCapacity and at least 1.
+    size_type new_capacity = ((mCapacity - mBegin) > 0) ? (2 * (mCapacity - mBegin)) : 1;
+
+    // If we are still less than the min_size, just set to the min_size.
+    if (new_capacity < min_size)
+    {
+      return min_size;
+    }
+    else
+    {
+      return new_capacity;
+    }
   }
 
   /*
@@ -682,6 +715,7 @@ namespace flex
   template<class T, class Alloc>
   inline void vector<T, Alloc>::insert(iterator position, size_type n, const value_type& val)
   {
+
     if (n > 0)
     {
       if ((mEnd + n) > mCapacity)
@@ -690,7 +724,6 @@ namespace flex
         size_type new_size = size() + n;
         size_type new_capacity = GetNewCapacity(new_size);
         T* new_begin = Allocate(new_capacity);
-
         //Copy all values to the left of position.
         T* new_end = std::uninitialized_copy(FLEX_MOVE_ITERATOR(mBegin), FLEX_MOVE_ITERATOR(position), new_begin);
 
@@ -708,7 +741,6 @@ namespace flex
       }
       else
       {
-
         const size_type rhs_n = static_cast<size_type>(mEnd - position);
 
         if (n < rhs_n)
@@ -1051,23 +1083,6 @@ namespace flex
   inline vector<T, Alloc>::vector(pointer new_begin, pointer new_end, size_type capacity) :
       base_type(new_begin, new_end, capacity)
   {
-  }
-
-  template<class T, class Alloc>
-  inline typename vector<T, Alloc>::size_type vector<T, Alloc>::GetNewCapacity(size_type min_size)
-  {
-    // This needs to return a value of at least currentCapacity and at least 1.
-    size_type new_capacity = (capacity() > 0) ? (2 * capacity()) : 1;
-
-    // If we are still less than the min_size, just set to the min_size.
-    if (new_capacity < min_size)
-    {
-      return min_size;
-    }
-    else
-    {
-      return new_capacity;
-    }
   }
 
   template<class T, class Alloc>

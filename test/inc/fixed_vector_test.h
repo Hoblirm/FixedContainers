@@ -91,14 +91,12 @@ public:
     fixed_vector<obj, 5> second;
     vector<obj> third;
 
-    TS_ASSERT_THROWS(first.assign(8, (obj )100), std::out_of_range);
     first.assign(7, (obj) 100);             // 7 ints with a value of 100
     TS_ASSERT(is_container_valid(first));
 
     fixed_vector<obj, 7>::iterator it;
     it = first.begin() + 1;
 
-    TS_ASSERT_THROWS(second.assign(it, first.end()), std::out_of_range);
     second.assign(it, first.end() - 1); // the 5 central values of first
     TS_ASSERT(is_container_valid(second));
 
@@ -128,6 +126,17 @@ public:
     TS_ASSERT_EQUALS(third[0], 1776);
     TS_ASSERT_EQUALS(third[1], 7);
     TS_ASSERT_EQUALS(third[2], 4);
+
+    /*
+     * Case2: Container overflow
+     */
+    fixed_vector<obj, 4> c;
+    TS_ASSERT(!errno);
+    c.assign({0,1,2,3,4,5,6,7});
+    TS_ASSERT(errno);
+    errno=0;
+    TS_ASSERT(is_container_valid(c));
+    TS_ASSERT_EQUALS(c.size(),8);
   }
 
   void test_capacity(void)
@@ -206,7 +215,6 @@ public:
   void test_insert(void)
   {
     fixed_vector<obj, 1> emptyvec;
-    TS_ASSERT_THROWS(emptyvec.insert(emptyvec.begin(), 2, (obj )2), std::out_of_range);
     fixed_vector<obj, 16> myvector(3, (obj) 100);
     TS_ASSERT(is_container_valid(myvector));
     fixed_vector<obj, 16>::iterator it;
@@ -220,7 +228,6 @@ public:
     TS_ASSERT_EQUALS(myvector[2], 100);
     TS_ASSERT_EQUALS(myvector[3], 100);
 
-    TS_ASSERT_THROWS(myvector.insert(it, 13, (obj )300), std::out_of_range);
     myvector.insert(it, 2, (obj) 300);
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(myvector.size(), 6);
@@ -247,7 +254,6 @@ public:
     TS_ASSERT_EQUALS(myvector[7], 100);
 
     int myarray[] = { 501, 502, 503, 12, 13, 14, 15, 16, 17 };
-    TS_ASSERT_THROWS(myvector.insert(myvector.begin(), myarray, myarray + 9), std::out_of_range);
     myvector.insert(myvector.begin(), myarray, myarray + 3);
     TS_ASSERT(is_container_valid(myvector));
     TS_ASSERT_EQUALS(myvector.size(), 11);
@@ -315,7 +321,6 @@ public:
     TS_ASSERT_EQUALS(foo[2], 17);
 
     fixed_vector<obj, 16> larger(16);
-    TS_ASSERT_THROWS(foo = larger, std::out_of_range);
 
     foo.assign(3, (obj) 0);
     foo[0] = 1;
@@ -538,8 +543,6 @@ public:
     bar.push_back(100);
     bar.push_back(100);
     bar.push_back(100);
-
-    TS_ASSERT_THROWS(bar.swap(foo), std::out_of_range);
   }
 
   void test_default_constructor(void)
@@ -550,14 +553,11 @@ public:
     TS_ASSERT_EQUALS(a.capacity(), 3);
   }
 
-  void invalid_fill_constructor(void)
-  {
-    fixed_vector<obj, 3> a(4);
-    TS_ASSERT(is_container_valid(a));
-  }
-
   void test_default_fill_constructor(void)
   {
+    /*
+     * Case1: Default case
+     */
     fixed_vector<obj, 3> a(2);
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 2);
@@ -565,7 +565,16 @@ public:
     TS_ASSERT_EQUALS(a[0], obj::DEFAULT_VAL);
     TS_ASSERT_EQUALS(a[1], obj::DEFAULT_VAL);
 
-    TS_ASSERT_THROWS(invalid_fill_constructor(), std::out_of_range);
+    /*
+     * Case2: Size exceeds capacity
+     */
+    TS_ASSERT(!errno);
+    fixed_vector < obj, 3 > b(4);
+    TS_ASSERT(errno);
+    errno = 0;
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.capacity(), 4);
+    TS_ASSERT_EQUALS(b.size(), 4);
   }
 
   void test_fill_constructor(void)
