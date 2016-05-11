@@ -101,18 +101,28 @@ public:
 
   void test_default_fill_constructor(void)
   {
+    /*
+     * Case1: Size exceeds capacity
+     */
+    TS_ASSERT(!errno);
+    ring_obj a(256);
+    TS_ASSERT(errno);
+    errno = 0;
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 256);
+
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
       /*
-       * Case1: Verify fill constructor with primitive elements.
+       * Case2: Verify fill constructor with primitive elements.
        */
-      ring_obj a(SIZES[s]);
-      TS_ASSERT(is_container_valid(a));
-      TS_ASSERT_EQUALS(a.size(), SIZES[s]);
-      TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
-      for (int i = 0; i < a.size(); ++i)
+      ring_obj b(SIZES[s]);
+      TS_ASSERT(is_container_valid(b));
+      TS_ASSERT_EQUALS(b.size(), SIZES[s]);
+      TS_ASSERT_LESS_THAN_EQUALS(b.size(), b.capacity());
+      for (int i = 0; i < b.size(); ++i)
       {
-        TS_ASSERT_EQUALS(a[i], flex::debug::obj::DEFAULT_VAL);
+        TS_ASSERT_EQUALS(b[i], flex::debug::obj::DEFAULT_VAL);
       }
 
     } //for: SIZE_COUNT
@@ -233,9 +243,20 @@ public:
   void test_assign_fill(void)
   {
     /*
-     * Case1: Verify assign can increase size.
+     * Case1: Size exceeds capacity
      */
     ring_obj a;
+    TS_ASSERT(!errno);
+    a.assign(256, OBJ_DATA[0]);
+    TS_ASSERT(errno);
+    errno = 0;
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 256);
+
+    /*
+     * Case2: Verify assign can increase size.
+     */
+
     for (unsigned s = 0; s < SIZE_COUNT; ++s)
     {
       const flex::debug::obj fill_val = OBJ_DATA[SIZES[s] - 1];
@@ -243,7 +264,7 @@ public:
       TS_ASSERT(is_container_valid(a));
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
       TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
-      TS_ASSERT_EQUALS(a.capacity(), 128);
+      TS_ASSERT_EQUALS(a.capacity(), 256);
       for (int i = 0; i < a.size(); i++)
       {
         TS_ASSERT_EQUALS(a[i], fill_val);
@@ -261,7 +282,7 @@ public:
       TS_ASSERT(is_container_valid(a));
       TS_ASSERT_EQUALS(a.size(), SIZES[s]);
       TS_ASSERT_LESS_THAN_EQUALS(a.size(), a.capacity());
-      TS_ASSERT_EQUALS(a.capacity(), 128);
+      TS_ASSERT_EQUALS(a.capacity(), 256);
       for (int i = 0; i < a.size(); i++)
       {
         TS_ASSERT_EQUALS(a[i], fill_val);

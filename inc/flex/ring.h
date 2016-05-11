@@ -177,7 +177,20 @@ namespace flex
       mFixed(true), mBegin(new_begin, new_begin, right_bound), mEnd(new_end, new_begin, right_bound)
 
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(new_end > right_bound, "flex::fixed_ring - constructor() size exceeds capacity");
+#ifndef FLEX_RELEASE
+    if (FLEX_UNLIKELY(new_end > right_bound))
+    {
+      size_type n = new_end - new_begin;
+      mFixed = false;
+      new_begin = Allocate(n);
+      new_end = new_begin + n;
+
+      mBegin.mPtr = mBegin.mLeftBound = mEnd.mLeftBound = new_begin;
+      mEnd.mPtr = mBegin.mRightBound = mEnd.mRightBound = new_end;
+
+      flex::error_msg("flex::fixed_ring - constructor() size exceeds capacity");
+    }
+#endif
   }
 
   template<class T, class Alloc>
@@ -194,8 +207,7 @@ namespace flex
   template<class T, class Alloc>
   inline typename ring_base<T, Alloc>::pointer ring_base<T, Alloc>::Allocate(size_type capacity)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_ring - capacity exceeded");
-    //The size allocated is 1 more than the capacity.  This is do to the fact that we don't want begin() to equal end().
+    //The size allocated is 1 more than the capacity.  This is due to the fact that we don't want begin() to equal end().
     //Therefore there will always be one allocated element that is unused.
     return mAllocator.allocate(capacity + 1);
   }
@@ -204,6 +216,15 @@ namespace flex
   inline void ring_base<T, Alloc>::DestroyAndDeallocate()
   {
     flex::destruct_range(mBegin, mEnd);
+
+#ifndef FLEX_RELEASE
+    if (FLEX_UNLIKELY(mFixed))
+    {
+      mFixed = false;
+      flex::error_msg("flex::fixed_ring - capacity exceeded");
+    }
+    else
+#endif
 
     //Once again, the allocated size is one more than capacity.  Increment capacity by one when deallocating.
     mAllocator.deallocate(mBegin.mLeftBound, (mBegin.mRightBound - mBegin.mLeftBound) + 1);
