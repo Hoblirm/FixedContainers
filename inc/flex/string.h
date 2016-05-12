@@ -689,21 +689,26 @@ namespace flex
 
 #if FLEX_HAS_CXX11
   template <typename T, typename Allocator>
-  basic_string<T, Allocator>::basic_string(this_type&& x)
-  : mBegin(x.mBegin),
-  mEnd(x.mEnd),
-  mCapacity(x.mCapacity),
-  mAllocator(x.mAllocator)
+  basic_string<T, Allocator>::basic_string(this_type&& x) :
+  mFixed(false), mBegin(NULL),mEnd(NULL), mCapacity(NULL)
   {
-    x.AllocateSelf();
+    if(!mFixed && !x.mFixed) // If we can borrow from x...
+    {
+      mBegin = x.mBegin; // It's OK if x.mBegin is NULL.
+      mEnd = x.mEnd;
+      mCapacity = x.mCapacity;
+      x.AllocateSelf();
+    }
+    else if(x.mBegin)
+    {
+      RangeInitialize(x.mBegin, x.mEnd);
+      // Let x destruct its own items.
+    }
   }
 
   template <typename T, typename Allocator>
-  basic_string<T, Allocator>::basic_string(this_type&& x, const allocator_type& allocator)
-  : mBegin(NULL),
-  mEnd(NULL),
-  mCapacity(NULL),
-  mAllocator(allocator)
+  basic_string<T, Allocator>::basic_string(this_type&& x, const allocator_type& allocator) :
+  mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
   {
     if(!mFixed && !x.mFixed) // If we can borrow from x...
     {
