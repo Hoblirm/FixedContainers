@@ -138,6 +138,16 @@ public:
     str b(8, '8');
     TS_ASSERT_EQUALS(b.size(), 8);
     TS_ASSERT_EQUALS(b.c_str(), "88888888");
+
+    /*
+     * Case3: Size exceeds capacity
+     */
+    TS_ASSERT(!errno);
+    str c(17, '1');
+    TS_ASSERT(errno);
+    errno = 0;
+    TS_ASSERT_EQUALS(c.size(), 17);
+    TS_ASSERT_EQUALS(c.c_str(), "11111111111111111");
   }
 
   void test_range_constructor()
@@ -320,6 +330,17 @@ public:
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 4);
     TS_ASSERT_EQUALS(a.c_str(), "4444");
+
+    /*
+     * Case2: Size exceeds capacity
+     */
+    str b("0123");
+    TS_ASSERT(!errno);
+    b.assign(17, '1');
+    TS_ASSERT(errno);
+    errno = 0;
+    TS_ASSERT_EQUALS(b.size(), 17);
+    TS_ASSERT_EQUALS(b.c_str(), "11111111111111111");
   }
 
   void test_assign_range()

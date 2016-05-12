@@ -2186,7 +2186,17 @@ namespace flex
   inline basic_string<T, Allocator>::basic_string(pointer new_begin, pointer new_end, size_type capacity) :
       mFixed(true), mBegin(new_begin), mEnd(new_end), mCapacity(mBegin + capacity)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(mEnd > mCapacity, "flex::fixed_string - constructor() size exceeds capacity");
+#ifndef FLEX_RELEASE
+    if (FLEX_UNLIKELY((mEnd + 1) > mCapacity))
+    {
+      size_type n = new_end - new_begin;
+      mFixed = false;
+      mBegin = DoAllocate(n + 1); //We need +1 to account for null terminator
+      mEnd = mCapacity = mBegin + n;
+
+      flex::error_msg("flex::fixed_string - constructor() size exceeds capacity");
+    }
+#endif
   }
 
   template<typename T, typename Allocator>
@@ -2200,13 +2210,20 @@ namespace flex
   inline typename basic_string<T, Allocator>::value_type*
   basic_string<T, Allocator>::DoAllocate(size_type n)
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_string - capacity exceeded");
     return (value_type*) mAllocator.allocate(n);
   }
 
   template<typename T, typename Allocator>
   inline void basic_string<T, Allocator>::DoFree(value_type* p, size_type n)
   {
+#ifndef FLEX_RELEASE
+    if (FLEX_UNLIKELY(mFixed))
+    {
+      mFixed = false;
+      flex::error_msg("flex::fixed_string - capacity exceeded");
+    }
+    else
+#endif
     if (p)
       mAllocator.deallocate(p, n);
   }
@@ -2222,7 +2239,6 @@ namespace flex
   inline void basic_string<T, Allocator>::AllocateSelf()
   {
     FLEX_ASSERT(gEmptyString.mUint32 == 0);
-    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_string - capacity exceeded");
     mBegin = const_cast<value_type*>(GetEmptyString(value_type())); // In const_cast-int this, we promise not to modify it.
     mEnd = mBegin;
     mCapacity = mBegin + 1; // When we are using gEmptyString, mCapacity is always mEnd + 1. This is an important distinguising characteristic.
