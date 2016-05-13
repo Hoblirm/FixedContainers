@@ -193,11 +193,11 @@ namespace flex
     };
 
   protected:
-    bool mFixed;
     value_type* mBegin; // Begin of string.
     value_type* mEnd; // End of string. *mEnd is always '0', as we 0-terminate our string. mEnd is always < mCapacity.
     value_type* mCapacity; // End of allocated space, including the space needed to store the trailing '0' char. mCapacity is always at least mEnd + 1. To consider: rename this to mpAllocEnd, thus avoiding confusion with the public capacity() function.
     allocator_type mAllocator; // To do: Use base class optimization to make this go away.
+    bool mFixed;
 
   public:
     // Constructor, destructor
@@ -610,28 +610,28 @@ namespace flex
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string() :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator()
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(), mFixed(false)
   {
     AllocateSelf();
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(const allocator_type& allocator) :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator), mFixed(false)
   {
     AllocateSelf();
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(const this_type& x) :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(x.mAllocator)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(x.mAllocator), mFixed(false)
   {
     RangeInitialize(x.mBegin, x.mEnd);
   }
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(const this_type& x, size_type position, size_type n) :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(x.mAllocator)
+     mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(x.mAllocator), mFixed(false)
   {
     FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(x.mEnd - x.mBegin),
         "flex::basic_string - substring constructor has invalid position"); // 21.4.2 p4
@@ -641,21 +641,21 @@ namespace flex
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(const value_type* p, size_type n, const allocator_type& allocator) :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator), mFixed(false)
   {
     RangeInitialize(p, p + n);
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(const value_type* p, const allocator_type& allocator) :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator), mFixed(false)
   {
     RangeInitialize(p);
   }
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(size_type n, value_type c, const allocator_type& allocator) :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator), mFixed(false)
   {
     SizeInitialize(n, c);
   }
@@ -664,7 +664,7 @@ namespace flex
   template<class InputIterator>
   inline basic_string<T, Allocator>::basic_string(InputIterator pBegin, InputIterator pEnd,
       const allocator_type& allocator) :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator), mFixed(false)
   {
     RangeInitialize(pBegin, pEnd);
   }
@@ -673,7 +673,7 @@ namespace flex
 // initialize but also doesn't collide with any other constructor declaration.
   template<typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(CtorDoNotInitialize /*unused*/, size_type n, const allocator_type& allocator) :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator), mFixed(false)
   {
     // Note that we do not call SizeInitialize here.
     AllocateSelf(n + 1); // '+1' so that we have room for the terminating 0.
@@ -682,7 +682,7 @@ namespace flex
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(std::initializer_list<value_type> init, const allocator_type& allocator) :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator), mFixed(false)
   {
     RangeInitialize(init.begin(), init.end());
   }
@@ -690,7 +690,7 @@ namespace flex
 #if FLEX_HAS_CXX11
   template <typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(this_type&& x) :
-  mFixed(false), mBegin(NULL),mEnd(NULL), mCapacity(NULL)
+  mBegin(NULL),mEnd(NULL), mCapacity(NULL), mFixed(false)
   {
     if(!mFixed && !x.mFixed) // If we can borrow from x...
     {
@@ -708,7 +708,7 @@ namespace flex
 
   template <typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(this_type&& x, const allocator_type& allocator) :
-  mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator)
+  mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(allocator), mFixed(false)
   {
     if(!mFixed && !x.mFixed) // If we can borrow from x...
     {
@@ -1001,26 +1001,29 @@ namespace flex
   template<typename T, typename Allocator>
   inline void basic_string<T, Allocator>::shrink_to_fit()
   {
-    size_type n = size();
-    if (n != capacity()) // If there is any capacity change...
+    if (!mFixed)
     {
-      if (n)
+      size_type n = size();
+      if (n != capacity()) // If there is any capacity change...
       {
-        pointer pNewBegin = DoAllocate(n + 1); // We need the + 1 to accomodate the trailing 0.
-        pointer pNewEnd = pNewBegin;
+        if (n)
+        {
+          pointer pNewBegin = DoAllocate(n + 1); // We need the + 1 to accomodate the trailing 0.
+          pointer pNewEnd = pNewBegin;
 
-        pNewEnd = CharStringUninitializedCopy(mBegin, mEnd, pNewBegin);
-        *pNewEnd = 0;
+          pNewEnd = CharStringUninitializedCopy(mBegin, mEnd, pNewBegin);
+          *pNewEnd = 0;
 
-        DeallocateSelf();
-        mBegin = pNewBegin;
-        mEnd = pNewEnd;
-        mCapacity = pNewBegin + (n + 1);
-      }
-      else
-      {
-        DeallocateSelf();
-        AllocateSelf();
+          DeallocateSelf();
+          mBegin = pNewBegin;
+          mEnd = pNewEnd;
+          mCapacity = pNewBegin + (n + 1);
+        }
+        else
+        {
+          DeallocateSelf();
+          AllocateSelf();
+        }
       }
     }
   }
@@ -2189,7 +2192,7 @@ namespace flex
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(pointer new_begin, pointer new_end, size_type capacity) :
-      mFixed(true), mBegin(new_begin), mEnd(new_end), mCapacity(mBegin + capacity)
+      mBegin(new_begin), mEnd(new_end), mCapacity(mBegin + capacity), mFixed(true)
   {
 #ifndef FLEX_RELEASE
     if (FLEX_UNLIKELY((mEnd + 1) > mCapacity))
@@ -2206,7 +2209,7 @@ namespace flex
 
   template<typename T, typename Allocator>
   inline basic_string<T, Allocator>::basic_string(pointer new_begin, size_type n, bool fixed) :
-      mFixed(fixed), mBegin(new_begin), mEnd(new_begin + n), mCapacity(mEnd)
+      mBegin(new_begin), mEnd(new_begin + n), mCapacity(mEnd), mFixed(fixed)
   {
 
   }

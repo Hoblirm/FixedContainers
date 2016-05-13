@@ -27,14 +27,14 @@ namespace flex
     typedef Alloc allocator_type;
 
   protected:
-    allocator_type mAllocator;
-    bool mFixed;
 
     //Since a ring iterator contains a left and right-bound pointer, these values are duplicated between mBegin and mEnd.
     //These two iterators could be replaced by four unique pointers, but it would make the code a bit more messy and would
     //require additional iterator construction within the functions.
     iterator mBegin;
     iterator mEnd;
+    allocator_type mAllocator;
+    bool mFixed;
 
     ring_base();
     ring_base(size_type n);
@@ -160,21 +160,21 @@ namespace flex
    */
   template<class T, class Alloc>
   inline ring_base<T, Alloc>::ring_base() :
-      mFixed(false), mBegin(NULL, NULL, NULL), mEnd(NULL, NULL, NULL)
+      mBegin(NULL, NULL, NULL), mEnd(NULL, NULL, NULL), mFixed(false)
 
   {
   }
 
   template<class T, class Alloc>
   inline ring_base<T, Alloc>::ring_base(size_type n) :
-      mFixed(false), mBegin(Allocate(n), n), mEnd(mBegin.mRightBound, mBegin.mPtr, mBegin.mRightBound)
+      mBegin(Allocate(n), n), mEnd(mBegin.mRightBound, mBegin.mPtr, mBegin.mRightBound), mFixed(false)
 
   {
   }
 
   template<class T, class Alloc>
   inline ring_base<T, Alloc>::ring_base(pointer new_begin, pointer new_end, pointer right_bound) :
-      mFixed(true), mBegin(new_begin, new_begin, right_bound), mEnd(new_end, new_begin, right_bound)
+      mBegin(new_begin, new_begin, right_bound), mEnd(new_end, new_begin, right_bound), mFixed(true)
 
   {
 #ifndef FLEX_RELEASE

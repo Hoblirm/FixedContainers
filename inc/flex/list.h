@@ -137,9 +137,6 @@ namespace flex
     void PushRangeToNodePool(iterator first, iterator last);
     void PurgeNodePool();
 
-    Alloc mAllocator;
-    bool mFixed;
-
     /*
      * The anchor node contains the head and tail pointers for the list.  It is type base_node_type, and doesn't take up
      * any space for a T value.  An anchor node provides various advantages over using a simple head and tail pointer.
@@ -149,6 +146,8 @@ namespace flex
     base_node_type mAnchor;
     size_type mSize;
     node_type* mNodePool;
+    Alloc mAllocator;
+    bool mFixed;
 
   private:
 
@@ -156,14 +155,14 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list() :
-      mFixed(false), mSize(0), mNodePool(NULL)
+      mSize(0), mNodePool(NULL), mFixed(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(size_type size, const T& val) :
-      mFixed(false), mSize(0), mNodePool(NULL)
+      mSize(0), mNodePool(NULL), mFixed(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), size, val);
@@ -171,7 +170,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(int size, const T& val) :
-      mFixed(false), mSize(0), mNodePool(NULL)
+      mSize(0), mNodePool(NULL), mFixed(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), (size_type) size, val);
@@ -180,7 +179,7 @@ namespace flex
   template<class T, class Alloc>
   template<typename InputIterator>
   inline list<T, Alloc>::list(InputIterator first, InputIterator last) :
-      mFixed(false), mSize(0), mNodePool(NULL)
+      mSize(0), mNodePool(NULL), mFixed(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), first, last);
@@ -188,7 +187,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(const list<T, Alloc> & obj) :
-      mFixed(false), mSize(0), mNodePool(NULL)
+      mSize(0), mNodePool(NULL), mFixed(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), obj.cbegin(), obj.cend());
@@ -197,7 +196,7 @@ namespace flex
 #ifdef FLEX_HAS_CXX11
   template<class T, class Alloc>
   inline list<T, Alloc>::list(list<T, Alloc> && obj):
-  mFixed(false), mSize(0), mNodePool(NULL)
+  mSize(0), mNodePool(NULL), mFixed(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     swap(std::move(obj));
@@ -206,7 +205,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(std::initializer_list<value_type> il) :
-      mFixed(false), mSize(0), mNodePool(NULL)
+      mSize(0), mNodePool(NULL), mFixed(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), il.begin(), il.end());
@@ -1258,7 +1257,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(node_type* first, node_type* last) :
-      mFixed(true), mSize(0), mNodePool(NULL)
+      mSize(0), mNodePool(NULL), mFixed(true)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     if (first != last)

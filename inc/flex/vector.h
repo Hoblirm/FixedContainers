@@ -28,11 +28,11 @@ namespace flex
     typedef Alloc allocator_type;
 
   protected:
-    Alloc mAllocator;
-    bool mFixed;
     iterator mBegin;
     iterator mEnd;
     pointer mCapacity;
+    Alloc mAllocator;
+    bool mFixed;
 
     vector_base();
     vector_base(size_type n);
@@ -156,21 +156,21 @@ namespace flex
    */
   template<class T, class Alloc>
   inline vector_base<T, Alloc>::vector_base() :
-      mFixed(false), mBegin(NULL), mEnd(NULL), mCapacity(NULL)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mFixed(false)
 
   {
   }
 
   template<class T, class Alloc>
   inline vector_base<T, Alloc>::vector_base(size_type n) :
-      mFixed(false), mBegin(Allocate(n)), mEnd(mBegin + n), mCapacity(mEnd)
+      mBegin(Allocate(n)), mEnd(mBegin + n), mCapacity(mEnd), mFixed(false)
 
   {
   }
 
   template<class T, class Alloc>
   inline vector_base<T, Alloc>::vector_base(pointer new_begin, pointer new_end, size_type capacity) :
-      mFixed(true), mBegin(new_begin), mEnd(new_end), mCapacity(mBegin + capacity)
+      mBegin(new_begin), mEnd(new_end), mCapacity(mBegin + capacity), mFixed(true)
 
   {
 #ifndef FLEX_RELEASE

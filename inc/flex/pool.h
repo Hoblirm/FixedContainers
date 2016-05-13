@@ -61,8 +61,8 @@ namespace flex
     size_type size() const;
 
   protected:
-    Alloc mAllocator;
     pool_link* mHead;
+    Alloc mAllocator;
     bool mFixed;
 
     pool(node_type* first, node_type* last);
