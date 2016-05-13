@@ -163,6 +163,17 @@ public:
       TS_ASSERT(is_container_valid(a));
 
     } //for: SIZE_COUNT
+
+    /*
+     * Case2: Size exceeds capacity
+     */
+
+    TS_ASSERT(!errno);
+    fixed_list_obj b(256);
+    TS_ASSERT(errno);
+    errno = 0;
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 256);
   }
 
   void test_fill_constructor(void)

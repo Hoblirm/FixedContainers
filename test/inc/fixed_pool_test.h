@@ -108,12 +108,15 @@ public:
     {
       v.push_back(a.allocate());
     }
-    TS_ASSERT_THROWS((obj* ) a.allocate(), std::out_of_range);
+    TS_ASSERT(!errno);
+    v.push_back(a.allocate());
+    TS_ASSERT(errno);
+    errno = 0;
 
     TS_ASSERT(is_container_valid(a));
 
     //Clean up to prevent memory leak.
-    for (int i = 0; i < 16; ++i)
+    for (int i = 0; i < 17; ++i)
     {
       a.deallocate(v.back());
       v.pop_back();
@@ -198,12 +201,15 @@ public:
   void test_reserve()
   {
     /*
-     * Case1: Ensure throw keeps container in valid state:
+     * Case1: Ensure reserves works in overflow condition
      */
     pool_obj a;
-    TS_ASSERT_THROWS(a.reserve(32), std::out_of_range);
+    TS_ASSERT(!errno);
+    a.reserve(32);
+    TS_ASSERT(errno);
+    errno = 0;
     TS_ASSERT(is_container_valid(a));
-    TS_ASSERT_EQUALS(a.size(), 16);
+    TS_ASSERT_EQUALS(a.size(), 48);
   }
 
 };

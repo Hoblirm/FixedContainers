@@ -27,8 +27,11 @@ namespace flex
 
     using base_type::mAnchor;
     using base_type::mNodePool;
+    using base_type::mAllocator;
+    using base_type::mOverflow;
     using base_type::assign;
     using base_type::begin;
+    using base_type::clear;
     using base_type::end;
     using base_type::insert;
 
@@ -43,6 +46,7 @@ namespace flex
     fixed_list(fixed_list<T, N, Alloc> && obj);
     fixed_list(list<T, Alloc> && obj);
 #endif
+    ~fixed_list();
 
     fixed_list<T, N, Alloc>& operator=(const fixed_list<T, N, Alloc>& obj);
     fixed_list<T, N, Alloc>& operator=(const list<T, Alloc>& obj);
@@ -130,6 +134,30 @@ namespace flex
     obj.clear();
   }
 #endif
+
+  template<class T, size_t N, class Alloc>
+  inline fixed_list<T, N, Alloc>::~fixed_list()
+  {
+#ifndef FLEX_RELEASE
+    if (FLEX_UNLIKELY(mOverflow))
+    {
+      //If the fixed list overflowed, we want to clean out the nodes that were allocated.
+      clear(); //Perform a clear which moves everything to the node pool
+      while (mNodePool != NULL)
+      {
+        node_type* next = static_cast<node_type*>(mNodePool->mNext);
+        //A node was allocated if it is outside the range of buffer.  Remember mBuffer + N
+        //denotes the end() iterator.  Therefore it is possible that an allocated node could be
+        //equal to it.
+        if ((mNodePool < (node_type*) mBuffer) || (mNodePool >= ((node_type*) mBuffer) + N))
+        {
+          mAllocator.deallocate(mNodePool, 1);
+        }
+        mNodePool = next;
+      }
+    }
+#endif
+  }
 
   template<class T, size_t N, class Alloc>
   inline fixed_list<T, N, Alloc>& fixed_list<T, N, Alloc>::operator=(const fixed_list<T, N, Alloc>& obj)

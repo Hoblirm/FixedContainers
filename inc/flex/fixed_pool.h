@@ -20,7 +20,13 @@ namespace flex
     typedef typename base_type::node_type node_type;
     typedef typename base_type::size_type size_type;
 
+    using base_type::mHead;
+    using base_type::mAllocator;
+    using base_type::mOverflow;
+    using base_type::allocate;
+
     fixed_pool();
+    ~fixed_pool();
 
     fixed_pool<T, N, Alloc>& operator=(const fixed_pool<T, N, Alloc>& obj);
 
@@ -40,6 +46,33 @@ namespace flex
   inline fixed_pool<T, N, Alloc>::fixed_pool() :
       pool<T, Alloc>((node_type*) mBuffer, (node_type*) mBuffer + N)
   {
+  }
+
+  template<class T, size_t N, class Alloc>
+  inline fixed_pool<T, N, Alloc>::~fixed_pool()
+  {
+#ifndef FLEX_RELEASE
+    if (FLEX_UNLIKELY(mOverflow))
+    {
+      //Only want to retrieve pointers when mHead is set (aka !empty()).
+      //Otherwise the pool will internally allocate new objects.
+      while (mHead)
+      {
+        //Do not confuse the mAllocator allocate/deallocate methods with the pool methods.  The pool's
+        //allocate() method is called to remove a pointer from the pool.  This is then deleted
+        //by mAllocator.  Think of the allocate() method as pool.pop_front().
+        node_type* ptr = (node_type*)allocate();
+
+        //A node was allocated if it is outside the range of buffer.  Remember mBuffer + N
+        //denotes the end() iterator.  Therefore it is possible that an allocated node could be
+        //equal to it.
+        if ((ptr < (node_type*) mBuffer) || (ptr >= ((node_type*) mBuffer) + N))
+        {
+          mAllocator.deallocate(ptr, 1);
+        }
+      }
+    }
+#endif
   }
 
   template<class T, size_t N, class Alloc>

@@ -64,6 +64,7 @@ namespace flex
     pool_link* mHead;
     Alloc mAllocator;
     bool mFixed;
+    bool mOverflow;
 
     pool(node_type* first, node_type* last);
 
@@ -72,13 +73,13 @@ namespace flex
 
   template<class T, class Alloc>
   inline pool<T, Alloc>::pool() :
-      mHead(NULL), mFixed(false)
+      mHead(NULL), mFixed(false), mOverflow(false)
   {
   }
 
   template<class T, class Alloc>
   inline pool<T, Alloc>::pool(size_type n) :
-      mHead(NULL), mFixed(false)
+      mHead(NULL), mFixed(false), mOverflow(false)
   {
     reserve(n);
   }
@@ -201,7 +202,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline pool<T, Alloc>::pool(node_type* first, node_type* last) :
-      mHead(NULL), mFixed(true)
+      mHead(NULL), mFixed(true), mOverflow(false)
   {
     for (node_type* it = first; it != last; ++it)
     {
@@ -213,7 +214,16 @@ namespace flex
   template<class T, class Alloc>
   inline void* pool<T, Alloc>::AllocateNewObject()
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "fixed_pool: exceeded capacity");
+#ifndef FLEX_RELEASE
+    if (FLEX_UNLIKELY(mFixed))
+    {
+      if (!mOverflow)
+      {
+        mOverflow = true;
+        flex::error_msg("fixed_pool: exceeded capacity");
+      }
+    }
+#endif
 
     return mAllocator.allocate(1);
   }

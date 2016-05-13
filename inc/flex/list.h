@@ -148,6 +148,7 @@ namespace flex
     node_type* mNodePool;
     Alloc mAllocator;
     bool mFixed;
+    bool mOverflow;
 
   private:
 
@@ -155,14 +156,14 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list() :
-      mSize(0), mNodePool(NULL), mFixed(false)
+      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(size_type size, const T& val) :
-      mSize(0), mNodePool(NULL), mFixed(false)
+      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), size, val);
@@ -170,7 +171,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(int size, const T& val) :
-      mSize(0), mNodePool(NULL), mFixed(false)
+      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), (size_type) size, val);
@@ -179,7 +180,7 @@ namespace flex
   template<class T, class Alloc>
   template<typename InputIterator>
   inline list<T, Alloc>::list(InputIterator first, InputIterator last) :
-      mSize(0), mNodePool(NULL), mFixed(false)
+      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), first, last);
@@ -187,7 +188,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(const list<T, Alloc> & obj) :
-      mSize(0), mNodePool(NULL), mFixed(false)
+      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), obj.cbegin(), obj.cend());
@@ -196,7 +197,7 @@ namespace flex
 #ifdef FLEX_HAS_CXX11
   template<class T, class Alloc>
   inline list<T, Alloc>::list(list<T, Alloc> && obj):
-  mSize(0), mNodePool(NULL), mFixed(false)
+  mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     swap(std::move(obj));
@@ -205,7 +206,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(std::initializer_list<value_type> il) :
-      mSize(0), mNodePool(NULL), mFixed(false)
+      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), il.begin(), il.end());
@@ -1257,7 +1258,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(node_type* first, node_type* last) :
-      mSize(0), mNodePool(NULL), mFixed(true)
+      mSize(0), mNodePool(NULL), mFixed(true), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     if (first != last)
@@ -1277,7 +1278,16 @@ namespace flex
   template<class T, class Alloc>
   inline typename list<T, Alloc>::node_type* list<T, Alloc>::AllocateNode()
   {
-    FLEX_THROW_OUT_OF_RANGE_IF(mFixed, "flex::fixed_list - exceeded capacity");
+#ifndef FLEX_RELEASE
+    if (FLEX_UNLIKELY(mFixed))
+    {
+      if (!mOverflow)
+      {
+        mOverflow = true;
+        flex::error_msg("flex::fixed_list - exceeded capacity");
+      }
+    }
+#endif
     return mAllocator.allocate(1);
   }
 
