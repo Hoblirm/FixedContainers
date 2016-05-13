@@ -146,6 +146,8 @@ namespace flex
     base_node_type mAnchor;
     size_type mSize;
     node_type* mNodePool;
+    node_type* mFixedBegin;
+    node_type* mFixedEnd;
     Alloc mAllocator;
     bool mFixed;
     bool mOverflow;
@@ -156,14 +158,14 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list() :
-      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
+      mSize(0), mNodePool(NULL), mFixedBegin(NULL), mFixedEnd(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
   }
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(size_type size, const T& val) :
-      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
+      mSize(0), mNodePool(NULL), mFixedBegin(NULL), mFixedEnd(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), size, val);
@@ -171,7 +173,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(int size, const T& val) :
-      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
+      mSize(0), mNodePool(NULL), mFixedBegin(NULL), mFixedEnd(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), (size_type) size, val);
@@ -180,7 +182,7 @@ namespace flex
   template<class T, class Alloc>
   template<typename InputIterator>
   inline list<T, Alloc>::list(InputIterator first, InputIterator last) :
-      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
+      mSize(0), mNodePool(NULL), mFixedBegin(NULL), mFixedEnd(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), first, last);
@@ -188,7 +190,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(const list<T, Alloc> & obj) :
-      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
+      mSize(0), mNodePool(NULL), mFixedBegin(NULL), mFixedEnd(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), obj.cbegin(), obj.cend());
@@ -197,7 +199,7 @@ namespace flex
 #ifdef FLEX_HAS_CXX11
   template<class T, class Alloc>
   inline list<T, Alloc>::list(list<T, Alloc> && obj):
-  mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
+  mSize(0), mNodePool(NULL), mFixedBegin(NULL), mFixedEnd(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     swap(std::move(obj));
@@ -206,7 +208,7 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(std::initializer_list<value_type> il) :
-      mSize(0), mNodePool(NULL), mFixed(false), mOverflow(false)
+      mSize(0), mNodePool(NULL), mFixedBegin(NULL), mFixedEnd(NULL), mFixed(false), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
     insert(begin(), il.begin(), il.end());
@@ -335,7 +337,7 @@ namespace flex
   template<class T, class Alloc>
   inline typename list<T, Alloc>::size_type list<T, Alloc>::capacity()
   {
-    return mSize + GetNodePoolSize();
+    return mSize + GetNodePoolSize() + (mFixedEnd - mFixedBegin);
   }
 
   template<class T, class Alloc>
@@ -472,7 +474,7 @@ namespace flex
   template<class T, class Alloc>
   inline bool list<T, Alloc>::full() const
   {
-    return (NULL == mNodePool);
+    return ((NULL == mNodePool) && (mFixedBegin == mFixedEnd));
   }
 
   template<class T, class Alloc>
@@ -1258,37 +1260,32 @@ namespace flex
 
   template<class T, class Alloc>
   inline list<T, Alloc>::list(node_type* first, node_type* last) :
-      mSize(0), mNodePool(NULL), mFixed(true), mOverflow(false)
+      mSize(0), mNodePool(NULL), mFixedBegin(first), mFixedEnd(last), mFixed(true), mOverflow(false)
   {
     mAnchor.mNext = mAnchor.mPrev = &mAnchor;
-    if (first != last)
-    {
-      mNodePool = first;
-      node_type* prev = first;
-      ++first;
-      for (; first != last; ++first)
-      {
-        prev->mNext = first;
-        prev = first;
-      }
-      prev->mNext = NULL;
-    }
   }
 
   template<class T, class Alloc>
   inline typename list<T, Alloc>::node_type* list<T, Alloc>::AllocateNode()
   {
-#ifndef FLEX_RELEASE
-    if (FLEX_UNLIKELY(mFixed))
+    if (mFixedBegin != mFixedEnd)
     {
-      if (!mOverflow)
-      {
-        mOverflow = true;
-        flex::error_msg("flex::fixed_list - exceeded capacity");
-      }
+      return mFixedBegin++;
     }
+    else
+    {
+#ifndef FLEX_RELEASE
+      if (FLEX_UNLIKELY(mFixed))
+      {
+        if (!mOverflow)
+        {
+          mOverflow = true;
+          flex::error_msg("flex::fixed_list - exceeded capacity");
+        }
+      }
 #endif
-    return mAllocator.allocate(1);
+      return mAllocator.allocate(1);
+    }
   }
 
   template<class T, class Alloc>
