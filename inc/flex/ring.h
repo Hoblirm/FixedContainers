@@ -3,6 +3,7 @@
 
 #include <flex/ring_iterator.h>
 #include <flex/allocator.h>
+#include <flex/initializer_list.h>
 
 #include <algorithm>
 #include <memory>

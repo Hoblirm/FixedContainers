@@ -2,6 +2,7 @@
 #define FLEX_VECTOR_H
 
 #include <flex/allocator.h>
+#include <flex/initializer_list.h>
 
 #include <algorithm>
 #include <memory>

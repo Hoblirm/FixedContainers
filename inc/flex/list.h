@@ -3,6 +3,7 @@
 
 #include <flex/list_iterator.h>
 #include <flex/allocator.h>
+#include <flex/initializer_list.h>
 
 namespace flex
 {
