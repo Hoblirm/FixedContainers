@@ -35,16 +35,25 @@ namespace flex
       {
         pointer p = base_type::allocate(num, hint);
         if (NULL != p)
-          mAllocatedPointers.insert(std::pair<void*, size_type>((void*) p, num));
+          mAllocatedPointers.insert(std::pair<pointer, size_type>(p, num));
         return p;
       }
 
+#ifdef FLEX_HAS_CXX11
+      template<class...Args>
+      void construct(pointer p, Args&&... args)
+      {
+        mConstructedPointers.insert(p);
+        base_type::construct(p, std::forward<Args>(args)...);
+      }
+#else
       // initialize elements of allocated storage p with value value
       void construct(pointer p, const T& value)
       {
         mConstructedPointers.insert(p);
         base_type::construct(p, value);
       }
+#endif
 
       // destroy elements of initialized storage p
       void destroy(pointer p)
@@ -61,17 +70,11 @@ namespace flex
         base_type::destroy(p);
       }
 
-      // deallocate storage p of deleted elements
-      void deallocate(pointer p, size_type num)
-      {
-        deallocate((void*) p, num);
-      }
-
-      inline void deallocate(void* p, size_type num)
+      inline void deallocate(pointer p, size_type num)
       {
         if (NULL != p)
         {
-          typename std::map<void*, size_type>::iterator it = mAllocatedPointers.find(p);
+          typename std::map<pointer, size_type>::iterator it = mAllocatedPointers.find(p);
           if (it == mAllocatedPointers.end())
           {
             throw std::runtime_error("flex::debug::allocator.deallocate() - invalid pointer");
@@ -97,12 +100,12 @@ namespace flex
         mConstructedPointers.clear();
       }
 
-      static std::map<void*, size_type> mAllocatedPointers;
-      static std::set<void*> mConstructedPointers;
+      static std::map<pointer, size_type> mAllocatedPointers;
+      static std::set<pointer> mConstructedPointers;
     };
 
-    template<class T> std::map<void*, typename allocator<T>::size_type> allocator<T>::mAllocatedPointers;
-    template<class T> std::set<void*> allocator<T>::mConstructedPointers;
+    template<class T> std::map<typename allocator<T>::pointer, typename allocator<T>::size_type> allocator<T>::mAllocatedPointers;
+    template<class T> std::set<typename allocator<T>::pointer> allocator<T>::mConstructedPointers;
   } //namespace debug
 } //namespace flex
 

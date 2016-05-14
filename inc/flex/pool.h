@@ -96,7 +96,7 @@ namespace flex
         //Do not confuse the mAllocator allocate/deallocate methods with the pool methods.  The pool's
         //allocate() method is called to remove a pointer from the pool.  This is then deleted
         //by mAllocator.  Think of the allocate() method as pool.pop_front().
-        mAllocator.deallocate(allocate(), 1);
+        mAllocator.deallocate((node_type*)allocate(), 1);
       }
     }
   }
