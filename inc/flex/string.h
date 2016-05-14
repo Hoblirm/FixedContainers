@@ -631,7 +631,7 @@ namespace flex
 
   template<typename T, typename Allocator>
   basic_string<T, Allocator>::basic_string(const this_type& x, size_type position, size_type n) :
-     mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(x.mAllocator), mFixed(false)
+      mBegin(NULL), mEnd(NULL), mCapacity(NULL), mAllocator(x.mAllocator), mFixed(false)
   {
     FLEX_THROW_OUT_OF_RANGE_IF(position > (size_type )(x.mEnd - x.mBegin),
         "flex::basic_string - substring constructor has invalid position"); // 21.4.2 p4
@@ -2696,8 +2696,7 @@ namespace flex
 
   // hash<string>
   //
-  // Defined hash functors that can be used in hashed containers.  These hash functions currently use a FNV hash
-  //may be worth considering comparing to the Murmur hash.
+  // Defined hash functors that can be used in hashed containers.  These hash functions currently use a FNV hash.
   template<typename T> struct hash;
 
   template<>
@@ -2708,7 +2707,7 @@ namespace flex
       const unsigned char* p = (const unsigned char*) x.c_str(); // To consider: limit p to at most 256 chars.
       unsigned int c, result = 2166136261U; // We implement an FNV-like string hash.
       while ((c = *p++) != 0) // Using '!=' disables compiler warnings.
-        result = (result * 16777619) ^ c;
+        result = (result ^ c) * 16777619;
       return (size_t) result;
     }
   };
@@ -2721,7 +2720,7 @@ namespace flex
       const char16_t* p = x.c_str();
       unsigned int c, result = 2166136261U;
       while ((c = *p++) != 0)
-        result = (result * 16777619) ^ c;
+        result = (result ^ c) * 16777619;
       return (size_t) result;
     }
   };
@@ -2734,7 +2733,7 @@ namespace flex
       const char32_t* p = x.c_str();
       unsigned int c, result = 2166136261U;
       while ((c = (unsigned int) *p++) != 0)
-        result = (result * 16777619) ^ c;
+        result = (result ^ c) * 16777619;
       return (size_t) result;
     }
   };
