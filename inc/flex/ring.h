@@ -1,7 +1,8 @@
 #ifndef FLEX_RING_H
 #define FLEX_RING_H
 
-#include <flex/ring_iterator.h>
+#include <flex/internal/ring_iterator.h>
+
 #include <flex/allocator.h>
 #include <flex/initializer_list.h>
 

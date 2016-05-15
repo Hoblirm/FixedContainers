@@ -1,5 +1,5 @@
-#ifndef FLEX_RING_ITERATOR_H
-#define FLEX_RING_ITERATOR_H
+#ifndef FLEX_INTERNAL_RING_ITERATOR_H
+#define FLEX_INTERNAL_RING_ITERATOR_H
 
 #include <iterator>
 
@@ -213,4 +213,4 @@ namespace flex
   }
 }    //namespace flex
 
-#endif /* FLEX_RING_ITERATOR_H */
+#endif /* FLEX_INTERNAL_RING_ITERATOR_H */

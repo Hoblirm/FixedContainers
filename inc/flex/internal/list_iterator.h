@@ -1,5 +1,5 @@
-#ifndef FLEX_LIST_ITERATOR_H
-#define FLEX_LIST_ITERATOR_H
+#ifndef FLEX_INTERNAL_LIST_ITERATOR_H
+#define FLEX_INTERNAL_LIST_ITERATOR_H
 
 #include <iterator>
 
@@ -202,4 +202,4 @@ namespace flex
 
 } //namespace flex
 
-#endif /* FLEX_LIST_ITERATOR_H */
+#endif /* FLEX_INTERNAL_LIST_ITERATOR_H */

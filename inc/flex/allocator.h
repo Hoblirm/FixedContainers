@@ -93,7 +93,7 @@ namespace flex
     }
 
     // deallocate storage p of deleted elements
-    inline void deallocate(pointer p, size_type num)
+    inline void deallocate(pointer p, size_type /*num*/)
     {
       ::operator delete((void*) p);
     }

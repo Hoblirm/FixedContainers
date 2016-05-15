@@ -1,7 +1,7 @@
 #ifndef FLEX_LIST_H
 #define FLEX_LIST_H
 
-#include <flex/list_iterator.h>
+#include <flex/internal/list_iterator.h>
 #include <flex/allocator.h>
 #include <flex/initializer_list.h>
 

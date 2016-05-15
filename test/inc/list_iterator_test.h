@@ -1,6 +1,6 @@
 #include <cxxtest/TestSuite.h>
 
-#include <flex/list_iterator.h>
+#include <flex/internal/list_iterator.h>
 
 using namespace flex;
 

@@ -1,6 +1,6 @@
 #include <cxxtest/TestSuite.h>
 
-#include <flex/ring_iterator.h>
+#include <flex/internal/ring_iterator.h>
 
 using namespace flex;
 
