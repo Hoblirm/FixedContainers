@@ -1378,6 +1378,7 @@ namespace flex
   template<class T, class Alloc>
   inline void list<T, Alloc>::PushRangeToNodePool(iterator first, iterator last)
   {
+    FLEX_ASSERT(first != last);
     //It is worth mentioning that this routine will put the list in an invalid
     //state if first==last.  It is expected that this method is only called in
     //a context in which first and last have been checked to not be equal.  The
