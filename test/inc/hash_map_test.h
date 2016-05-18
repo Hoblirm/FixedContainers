@@ -107,11 +107,27 @@ public:
     return true;
   }
 
-  void test_default_constructor(void)
+  void test_constructor_empty(void)
   {
+    /*
+     * Case1: Default Container
+     */
     hash_map a;
     TS_ASSERT(is_container_valid(a));
   }
 
+  void test_constructor_initializer_list(void)
+  {
+    /*
+     * Case1: Default Case
+     */
+    hash_map a({{0,10},{1,11},{2,12}});
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(),3);
+
+    TS_ASSERT_EQUALS(a[0],10);
+    TS_ASSERT_EQUALS(a[1],11);
+    TS_ASSERT_EQUALS(a[2],12);
+  }
 }
 ;
