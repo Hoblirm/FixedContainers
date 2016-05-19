@@ -213,6 +213,7 @@ public:
     TS_ASSERT_EQUALS((it++)->second, 10);
     TS_ASSERT_EQUALS((it++)->second, 11);
     TS_ASSERT_EQUALS((it++)->second, 12);
+    TS_ASSERT_EQUALS(it, a.end());
   }
 
   void test_begin_const(void)
@@ -222,6 +223,7 @@ public:
     TS_ASSERT_EQUALS((it++)->second, 10);
     TS_ASSERT_EQUALS((it++)->second, 11);
     TS_ASSERT_EQUALS((it++)->second, 12);
+    TS_ASSERT_EQUALS(it, a.cend());
   }
 
   void test_bucket(void)
@@ -237,5 +239,29 @@ public:
     hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
     TS_ASSERT_EQUALS(a.bucket_count(), 3);
   }
+
+  void test_bucket_size(void)
+  {
+    hash_map a( { { 0, 10 }, { 1, 11 }, { 3, 12 } });
+    TS_ASSERT_EQUALS(a.bucket_size(0), 2);
+    TS_ASSERT_EQUALS(a.bucket_size(1), 1);
+    TS_ASSERT_EQUALS(a.bucket_size(2), 0);
+  }
+
+  void test_cbegin(void)
+  {
+    hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
+    hash_map::const_iterator it = a.cbegin();
+    TS_ASSERT_EQUALS((it++)->second, 10);
+    TS_ASSERT_EQUALS((it++)->second, 11);
+    TS_ASSERT_EQUALS((it++)->second, 12);
+    TS_ASSERT_EQUALS(it, a.cend());
+  }
+
+  void test_clear(void)
+  {
+
+  }
+
 }
 ;
