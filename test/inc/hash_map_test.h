@@ -121,13 +121,64 @@ public:
     /*
      * Case1: Default Case
      */
-    hash_map a({{0,10},{1,11},{2,12}});
+    hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
     TS_ASSERT(is_container_valid(a));
-    TS_ASSERT_EQUALS(a.size(),3);
+    TS_ASSERT_EQUALS(a.size(), 3);
 
-    TS_ASSERT_EQUALS(a[0],10);
-    TS_ASSERT_EQUALS(a[1],11);
-    TS_ASSERT_EQUALS(a[2],12);
+    TS_ASSERT_EQUALS(a[0], 10);
+    TS_ASSERT_EQUALS(a[1], 11);
+    TS_ASSERT_EQUALS(a[2], 12);
   }
+
+  void test_constructor_range(void)
+  {
+    /*
+     * Case1: Default Case
+     */
+    hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
+    hash_map b(a.begin(), a.end());
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 3);
+
+    TS_ASSERT_EQUALS(b[0], 10);
+    TS_ASSERT_EQUALS(b[1], 11);
+    TS_ASSERT_EQUALS(b[2], 12);
+  }
+
+  void test_constructor_copy(void)
+  {
+    /*
+     * Case1: Default Case
+     */
+    hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
+    hash_map b(a);
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 3);
+
+    TS_ASSERT_EQUALS(b[0], 10);
+    TS_ASSERT_EQUALS(b[1], 11);
+    TS_ASSERT_EQUALS(b[2], 12);
+  }
+
+  void test_constructor_move(void)
+    {
+#ifdef FLEX_HAS_CXX11
+      /*
+       * Case1: Default Case
+       */
+      hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
+      clear_copy_flags(a);
+      hash_map b(std::move(a));
+      mark_move_only(b);
+      TS_ASSERT(is_container_valid(b));
+      TS_ASSERT_EQUALS(b.size(), 3);
+
+      TS_ASSERT_EQUALS(b[0], 10);
+      TS_ASSERT_EQUALS(b[1], 11);
+      TS_ASSERT_EQUALS(b[2], 12);
+#endif
+    }
+
+
 }
 ;

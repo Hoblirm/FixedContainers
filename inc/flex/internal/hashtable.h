@@ -103,6 +103,12 @@ namespace flex
       4294967291u // Sentinel so we don't have to test result of lower_bound
       };
 
+  /// kPrimeCount
+  ///
+  /// The number of prime numbers in gPrimeNumberArray.
+  ///
+  static const uint32_t kPrimeCount = (sizeof(gPrimeNumberArray) / sizeof(gPrimeNumberArray[0]) - 1);
+
   /// FLEX_MACRO_SWAP
   ///
   /// Use EASTL_MACRO_SWAP because GCC (at least v4.6-4.8) has a bug where it fails to compile eastl::swap(mpBucketArray, x.mpBucketArray).
@@ -471,16 +477,10 @@ namespace flex
       return mfMaxLoadFactor;
     }
 
-    /// kPrimeCount
-    ///
-    /// The number of prime numbers in gPrimeNumberArray.
-    ///
-    const uint32_t kPrimeCount = (sizeof(gPrimeNumberArray) / sizeof(gPrimeNumberArray[0]) - 1);
-
     /// GetPrevBucketCountOnly
     /// Return a bucket count no greater than nBucketCountHint.
     ///
-    uint32_t GetPrevBucketCountOnly(uint32_t nBucketCountHint)
+    static uint32_t GetPrevBucketCountOnly(uint32_t nBucketCountHint)
     {
       const uint32_t nPrime = *(std::upper_bound(gPrimeNumberArray, gPrimeNumberArray + kPrimeCount, nBucketCountHint)
           - 1);
@@ -1623,7 +1623,7 @@ namespace flex
     try
     {
 #endif
-      ::new ((void*) &pNode->mValue) value_type(key,mapped_type());
+      ::new ((void*) &pNode->mValue) value_type(key, mapped_type());
       pNode->mpNext = NULL;
       return pNode;
 #ifndef FLEX_RELEASE
@@ -2177,7 +2177,7 @@ namespace flex
     }
     catch(...)
     {
-      mAllocator.deallocate(pNode,sizeof(node_type));
+      mAllocator.deallocate((char*)pNode,sizeof(node_type));
       throw;
     }
 #endif
