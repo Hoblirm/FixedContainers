@@ -1623,7 +1623,7 @@ namespace flex
     try
     {
 #endif
-      ::new ((void*) &pNode->mValue) value_type(mapped_type(),key);
+      ::new ((void*) &pNode->mValue) value_type(key,mapped_type());
       pNode->mpNext = NULL;
       return pNode;
 #ifndef FLEX_RELEASE
