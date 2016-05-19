@@ -1156,8 +1156,10 @@ namespace flex
       return (size_type) std::distance(begin(n), end(n));
     }
 
-    //size_type bucket(const key_type& k) const FLEX_NOEXCEPT
-    //    { return bucket_index(k, (hash code here), (uint32_t)mnBucketCount); }
+    size_type bucket(const key_type& k) const FLEX_NOEXCEPT
+    {
+      return bucket_index(k, get_hash_code(k), (uint32_t) mnBucketCount);
+    }
 
   public:
     // Returns the ratio of element count to bucket count. A return value of 1 means

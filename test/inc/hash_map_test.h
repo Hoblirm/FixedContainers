@@ -161,24 +161,81 @@ public:
   }
 
   void test_constructor_move(void)
-    {
+  {
 #ifdef FLEX_HAS_CXX11
-      /*
-       * Case1: Default Case
-       */
-      hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
-      clear_copy_flags(a);
-      hash_map b(std::move(a));
-      mark_move_only(b);
-      TS_ASSERT(is_container_valid(b));
-      TS_ASSERT_EQUALS(b.size(), 3);
+    /*
+     * Case1: Default Case
+     */
+    hash_map a(
+        {
+          { 0, 10},
+          { 1, 11},
+          { 2, 12}});
+    clear_copy_flags(a);
+    hash_map b(std::move(a));
+    mark_move_only(b);
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 3);
 
-      TS_ASSERT_EQUALS(b[0], 10);
-      TS_ASSERT_EQUALS(b[1], 11);
-      TS_ASSERT_EQUALS(b[2], 12);
+    TS_ASSERT_EQUALS(b[0], 10);
+    TS_ASSERT_EQUALS(b[1], 11);
+    TS_ASSERT_EQUALS(b[2], 12);
 #endif
-    }
+  }
 
+  void test_at(void)
+  {
+    /*
+     * Currently not supported.
+     */
+//    /*
+//     * Case1: Default Case
+//     */
+//    hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
+//    TS_ASSERT_EQUALS(a.at(0), 10);
+//    TS_ASSERT_EQUALS(a.at(1), 11);
+//    TS_ASSERT_EQUALS(a.at(2), 12);
+//
+//    a.at(0) = 20;
+//    a.at(1) = 21;
+//    a.at(2) = 22;
+//    for (int i = 0; i < 3; ++i)
+//    {
+//      const obj val = a.at(i);
+//      TS_ASSERT_EQUALS(val, 20 + i);
+//    }
+  }
 
+  void test_begin(void)
+  {
+    hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
+    hash_map::iterator it = a.begin();
+    TS_ASSERT_EQUALS((it++)->second, 10);
+    TS_ASSERT_EQUALS((it++)->second, 11);
+    TS_ASSERT_EQUALS((it++)->second, 12);
+  }
+
+  void test_begin_const(void)
+  {
+    hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
+    hash_map::const_iterator it = a.begin();
+    TS_ASSERT_EQUALS((it++)->second, 10);
+    TS_ASSERT_EQUALS((it++)->second, 11);
+    TS_ASSERT_EQUALS((it++)->second, 12);
+  }
+
+  void test_bucket(void)
+  {
+    hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
+    TS_ASSERT_EQUALS(a.bucket(0), 0);
+    TS_ASSERT_EQUALS(a.bucket(1), 1);
+    TS_ASSERT_EQUALS(a.bucket(2), 2);
+  }
+
+  void test_bucket_count(void)
+  {
+    hash_map a( { { 0, 10 }, { 1, 11 }, { 2, 12 } });
+    TS_ASSERT_EQUALS(a.bucket_count(), 3);
+  }
 }
 ;
