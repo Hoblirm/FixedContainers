@@ -367,6 +367,7 @@ namespace flex
   {
     typedef Pair argument_type;
     typedef typename Pair::first_type result_type;
+    typedef typename Pair::second_type mapped_type;
 
     const result_type& operator()(const Pair& x) const
     {
@@ -990,7 +991,7 @@ namespace flex
   public:
     typedef Key key_type;
     typedef Value value_type;
-    typedef typename ExtractKey::result_type mapped_type;
+    typedef typename ExtractKey::mapped_type mapped_type;
     typedef hash_code_base<Key, Value, ExtractKey, Equal, H1, H2, H, bCacheHashCode> hash_code_base_type;
     typedef typename hash_code_base_type::hash_code_t hash_code_t;
     typedef Allocator allocator_type;
