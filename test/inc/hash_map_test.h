@@ -617,7 +617,9 @@ public:
     /*
      * Case2: Insert into map with available capacity
      */
+    flex::allocation_guard::enable();
     a.insert(pairs + 3, pairs + 4);
+    flex::allocation_guard::disable();
     TS_ASSERT(is_container_valid(a));
     TS_ASSERT_EQUALS(a.size(), 4);
     TS_ASSERT_EQUALS(a[2], 12);
@@ -698,6 +700,109 @@ public:
     TS_ASSERT_EQUALS(a.get_max_load_factor(), 0.5f);
   }
 
+  void test_operator_assignment(void)
+  {
+    /*
+     * Case1: Test empty map
+     */
+    hash_map a;
+    hash_map b( { { 0, 10 }, { 1, 11 }, { 2, 12 }, { 4, 14 } });
+    a = b;
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 10);
+    TS_ASSERT_EQUALS(a[1], 11);
+    TS_ASSERT_EQUALS(a[2], 12);
+    TS_ASSERT_EQUALS(a[4], 14);
+
+    /*
+     * Case2: Test populated map
+     */
+    hash_map c( { { 4, 14 }, { 5, 15 } });
+    flex::allocation_guard::enable();
+    a = c;
+    flex::allocation_guard::disable();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 2);
+    TS_ASSERT_EQUALS(a[4], 14);
+    TS_ASSERT_EQUALS(a[5], 15);
+  }
+
+  void test_operator_assignment_move(void)
+  {
+#ifdef FLEX_HAS_CXX11
+    /*
+     * Case1: Test empty map
+     */
+    hash_map a;
+    hash_map b(
+        {
+          { 0, 10},
+          { 1, 11},
+          { 2, 12},
+          { 4, 14}});
+    clear_copy_flags(b);
+    a = std::move(b);
+    mark_move_only(a);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 10);
+    TS_ASSERT_EQUALS(a[1], 11);
+    TS_ASSERT_EQUALS(a[2], 12);
+    TS_ASSERT_EQUALS(a[4], 14);
+
+    /*
+     * Case2: Test populated map
+     */
+    hash_map c(
+        {
+          { 4, 14},
+          { 5, 15},});
+    clear_copy_flags(c);
+    flex::allocation_guard::enable();
+    a = std::move(c);
+    flex::allocation_guard::disable();
+    mark_move_only(a);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 2);
+    TS_ASSERT_EQUALS(a[4], 14);
+    TS_ASSERT_EQUALS(a[5], 15);
+#endif
+  }
+  void test_operator_assignment_initializer(void)
+  {
+    /*
+     * Case1: Test empty map
+     */
+    hash_map a;
+    a =
+    {
+      { 0, 10},
+      { 1, 11},
+      { 2, 12},
+      { 4, 14}};
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 10);
+    TS_ASSERT_EQUALS(a[1], 11);
+    TS_ASSERT_EQUALS(a[2], 12);
+    TS_ASSERT_EQUALS(a[4], 14);
+
+    /*
+     * Case2: Test populated map
+     */
+    flex::allocation_guard::enable();
+    a =
+    {
+      { 4, 14},
+      { 5, 15}};
+    flex::allocation_guard::disable();
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 2);
+    TS_ASSERT_EQUALS(a[4], 14);
+    TS_ASSERT_EQUALS(a[5], 15);
+  }
+
   void test_operator_dereference(void)
   {
     /*
@@ -716,6 +821,97 @@ public:
       TS_ASSERT_EQUALS(a[pairs[i].first], pairs[i].second);
     }
 
+  }
+
+  void test_rehash()
+  {
+    /*
+     * Case1: Empty container
+     */
+    hash_map a;
+    a.rehash(2);
+    TS_ASSERT_EQUALS(a.bucket_count(), 2);
+
+    /*
+     * Case2: Populated container
+     */
+    flex::allocation_guard::enable();
+    a =
+    {
+      { 0,10},
+      { 1,11}};
+    flex::allocation_guard::disable();
+    a.rehash(4);
+    TS_ASSERT_EQUALS(a.bucket_count(), 4);
+  }
+
+  void test_reserve()
+  {
+    /*
+     * Case1: Empty container
+     */
+    hash_map a;
+    a.set_max_load_factor(0.5f);
+    a.reserve(2);
+    TS_ASSERT_EQUALS(a.bucket_count(), 4);
+
+    /*
+     * Case2: Populated container
+     */
+    flex::allocation_guard::enable();
+    a =
+    {
+      { 0,10},
+      { 1,11}};
+    flex::allocation_guard::disable();
+    a.reserve(4);
+    TS_ASSERT_EQUALS(a.bucket_count(), 8);
+  }
+
+  void test_swap()
+  {
+    /*
+     * Case1: Test empty map
+     */
+    hash_map a;
+    hash_map b( { { 0, 10 }, { 1, 11 }, { 2, 12 }, { 4, 14 } });
+    a.swap(b);
+    TS_ASSERT(is_container_valid(b));
+    TS_ASSERT_EQUALS(b.size(), 0);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 4);
+    TS_ASSERT_EQUALS(a[0], 10);
+    TS_ASSERT_EQUALS(a[1], 11);
+    TS_ASSERT_EQUALS(a[2], 12);
+    TS_ASSERT_EQUALS(a[4], 14);
+
+    /*
+     * Case2: Test populated map
+     */
+    hash_map c( { { 4, 14 }, { 5, 15 } });
+    flex::allocation_guard::enable();
+    a.swap(c);
+    flex::allocation_guard::disable();
+    TS_ASSERT(is_container_valid(c));
+    TS_ASSERT_EQUALS(c.size(), 4);
+    TS_ASSERT_EQUALS(c[0], 10);
+    TS_ASSERT_EQUALS(c[1], 11);
+    TS_ASSERT_EQUALS(c[2], 12);
+    TS_ASSERT_EQUALS(c[4], 14);
+    TS_ASSERT(is_container_valid(a));
+    TS_ASSERT_EQUALS(a.size(), 2);
+    TS_ASSERT_EQUALS(a[4], 14);
+    TS_ASSERT_EQUALS(a[5], 15);
+  }
+
+  void test_relational_operators()
+  {
+    hash_map a = { { 0, 10 }, { 1, 11 }, { 2, 12 } };
+    hash_map b = { { 1, 11 }, { 2, 12 }, { 0, 10 } };
+    hash_map c = { { 1, 21 }, { 2, 22 }, { 0, 20 } };
+
+    TS_ASSERT(a == b);
+    TS_ASSERT(b != c);
   }
 }
 ;

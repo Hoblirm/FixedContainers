@@ -1249,6 +1249,7 @@ namespace flex
     void clear(bool clearBuckets); // If clearBuckets is true, we free the bucket memory and set the bucket count back to the newly constructed count.
     void reset_lose_memory() FLEX_NOEXCEPT; // This is a unilateral reset to an initially empty state. No destructors are called, no deallocation occurs.
     void rehash(size_type nBucketCount);
+    void reserve(size_type n);
 
   public:
     iterator find(const key_type& key);
@@ -2856,6 +2857,13 @@ namespace flex
     // Note that we unilaterally use the passed in bucket count; we do not attempt migrate it
     // up to the next prime number. We leave it at the user's discretion to do such a thing.
     DoRehash(nBucketCount);
+  }
+
+  template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
+      typename RP, bool bC, bool bM, bool bU>
+  inline void hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::reserve(size_type n)
+  {
+    rehash(n / rehash_base<RP, hashtable>::get_max_load_factor());
   }
 
   template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
