@@ -91,9 +91,16 @@
 #include <ctype.h>              // toupper, etc.
 #include <wchar.h>
 #include <stdint.h>
-#include <uchar.h>
-typedef char char8_t;
 #include <string.h> // strlen, etc.
+
+typedef char char8_t;
+#ifdef FLEX_HAS_CXX11
+typedef <uchar.h>
+#else
+typedef uint16_t char16_t;
+typedef uint32_t char32_t;
+#endif
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // FLEX_STRING_INITIAL_CAPACITY
