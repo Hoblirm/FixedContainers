@@ -906,9 +906,9 @@ public:
 
   void test_relational_operators()
   {
-    hash_map a = { { 0, 10 }, { 1, 11 }, { 2, 12 } };
-    hash_map b = { { 1, 11 }, { 2, 12 }, { 0, 10 } };
-    hash_map c = { { 1, 21 }, { 2, 22 }, { 0, 20 } };
+    hash_map a({ { 0, 10 }, { 1, 11 }, { 2, 12 } });
+    hash_map b({ { 1, 11 }, { 2, 12 }, { 0, 10 } });
+    hash_map c({ { 1, 21 }, { 2, 22 }, { 0, 20 } });
 
     TS_ASSERT(a == b);
     TS_ASSERT(b != c);
