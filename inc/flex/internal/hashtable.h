@@ -1180,6 +1180,11 @@ namespace flex
          return mnElementCount == 0;
       }
 
+      size_type capacity() const FLEX_NOEXCEPT
+      {
+         return mRehashPolicy.mnNextResize;
+      }
+      
       size_type size() const FLEX_NOEXCEPT
       {
          return mnElementCount;
@@ -3001,12 +3006,11 @@ namespace flex
    typename RP, bool bC, bool bM, bool bU>
    inline void hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::reserve(size_type n)
    {
-      size_type current_capacity = mnBucketCount * rehash_base<RP, hashtable>::get_max_load_factor();
+      size_type current_capacity = capacity();
       if (n > current_capacity)
       {
          DoFillNodePool(n - current_capacity);
-         //New bucket count must be 2 or greater.
-         rehash((n / rehash_base<RP, hashtable>::get_max_load_factor()) + 2);
+         rehash(mRehashPolicy.GetBucketCount(n));
       }
    }
 
@@ -3017,11 +3021,10 @@ namespace flex
       if (!mFixed)
       {
          DoPurgeNodePool();
-         size_type current_capacity = mnBucketCount * rehash_base<RP, hashtable>::get_max_load_factor();
+         size_type current_capacity = capacity();
          if (mnElementCount < current_capacity)
          {
-            //New bucket count must be 2 or greater.
-            rehash((mnElementCount/rehash_base<RP, hashtable>::get_max_load_factor()) + 2);
+            rehash(mRehashPolicy.GetBucketCount(mnElementCount));
          }
       }
    }
