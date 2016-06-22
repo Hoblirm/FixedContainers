@@ -1184,7 +1184,7 @@ namespace flex
       {
          return mRehashPolicy.mnNextResize;
       }
-      
+
       size_type size() const FLEX_NOEXCEPT
       {
          return mnElementCount;
@@ -1369,6 +1369,9 @@ namespace flex
       {
          return irt;
       }
+
+      char* DoAllocate(size_type n);
+      node_type* DoAllocNode();
 
       node_type* DoAllocateNodeFromKey(const key_type& key);
       void DoFreeNode(node_type* pNode);
@@ -1667,26 +1670,56 @@ namespace flex
    inline hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::~hashtable()
    {
       clear();
-      DoPurgeNodePool();
-      DoFreeBuckets(mpBucketArray, mnBucketCount);
+      if (!mFixed)
+      {
+         DoPurgeNodePool();
+         DoFreeBuckets(mpBucketArray, mnBucketCount);
+      }
    }
 
    template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
    typename RP, bool bC, bool bM, bool bU>
-   typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
-   hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocateNodeFromKey(const key_type& key)
+   inline char* hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocate(size_type n)
    {
-      node_type* pNode;
-
-      if (NULL == mNodePool)
+#ifndef FLEX_RELEASE
+      if (FLEX_UNLIKELY(mFixed))
       {
-         pNode = (node_type*) mAllocator.allocate(sizeof (node_type));
+         if (!mOverflow)
+         {
+            mOverflow = true;
+            flex::error_msg("flex::fixed_hashtable - exceeded capacity");
+         }
+      }
+#endif
+      return mAllocator.allocate(n);
+   }
+
+   template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
+   typename RP, bool bC, bool bM, bool bU>
+   inline typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type* hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocNode()
+   {
+      if (NULL != mNodePool)
+      {
+         node_type* pNode = mNodePool;
+         mNodePool = static_cast<node_type*> (mNodePool->mpNext);
+         return pNode;
+      }
+      else if (mFixedBegin != mFixedEnd)
+      {
+         return mFixedBegin++;
       }
       else
       {
-         pNode = mNodePool;
-         mNodePool = static_cast<node_type*> (mNodePool->mpNext);
+         return (node_type*) DoAllocate(sizeof (node_type));
       }
+   }
+
+   template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
+   typename RP, bool bC, bool bM, bool bU>
+   inline typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
+   hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocateNodeFromKey(const key_type& key)
+   {
+      node_type* pNode = DoAllocNode();
 
 #ifndef FLEX_RELEASE
       try
@@ -1714,7 +1747,7 @@ namespace flex
 
    template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
    typename RP, bool bC, bool bM, bool bU>
-   void hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoFreeNodes(node_type** pNodeArray, size_type n)
+   inline void hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoFreeNodes(node_type** pNodeArray, size_type n)
    {
       for (size_type i = 0; i < n; ++i)
       {
@@ -1731,14 +1764,14 @@ namespace flex
 
    template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
    typename RP, bool bC, bool bM, bool bU>
-   typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type**
+   inline typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type**
    hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocateBuckets(size_type n)
    {
       // We allocate one extra bucket to hold a sentinel, an arbitrary
       // non-null pointer. Iterator increment relies on this.
       FLEX_ASSERT(n > 1); // We reserve an mnBucketCount of 1 for the shared gpEmptyBucketArray.
       FLEX_ASSERT(kHashtableAllocFlagBuckets == 0x00400000); // Currently we expect this to be so, because the allocator has a copy of this enum.
-      node_type* * const pBucketArray = (node_type**) mAllocator.allocate((n + 1) * sizeof (node_type*));
+      node_type* * const pBucketArray = (node_type**) DoAllocate((n + 1) * sizeof (node_type*));
       //std::fill(pBucketArray, pBucketArray + n, (node_type*)NULL);
       memset(pBucketArray, 0, n * sizeof (node_type*));
       pBucketArray[n] = reinterpret_cast<node_type*> ((uintptr_t) ~0);
@@ -1759,7 +1792,7 @@ namespace flex
 
    template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
    typename RP, bool bC, bool bM, bool bU>
-   void hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::swap(this_type& x)
+   inline void hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::swap(this_type& x)
    {
       if (mAllocator == x.mAllocator) // If allocators are equivalent...
       {
@@ -2234,17 +2267,7 @@ namespace flex
    typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
    hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocateNode(Args && ... args)
    {
-      node_type * pNode;
-
-      if (NULL == mNodePool)
-      {
-         pNode = (node_type*) mAllocator.allocate(sizeof (node_type));
-      }
-      else
-      {
-         pNode = mNodePool;
-         mNodePool = static_cast<node_type*> (mNodePool->mpNext);
-      }
+      node_type* pNode = DoAllocNode();
 
 #ifndef FLEX_RELEASE
       try
@@ -2414,17 +2437,7 @@ namespace flex
    typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
    hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocateNode(value_type && value)
    {
-      node_type * pNode;
-
-      if (NULL == mNodePool)
-      {
-         pNode = (node_type*) mAllocator.allocate(sizeof (node_type));
-      }
-      else
-      {
-         pNode = mNodePool;
-         mNodePool = static_cast<node_type*> (mNodePool->mpNext);
-      }
+      node_type* pNode = DoAllocNode();
 
 #ifndef FLEX_RELEASE
       try
@@ -2587,17 +2600,7 @@ namespace flex
    typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
    hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocateNode(const value_type& value)
    {
-      node_type * pNode;
-
-      if (NULL == mNodePool)
-      {
-         pNode = (node_type*) mAllocator.allocate(sizeof (node_type));
-      }
-      else
-      {
-         pNode = mNodePool;
-         mNodePool = static_cast<node_type*> (mNodePool->mpNext);
-      }
+      node_type* pNode = DoAllocNode();
 
 #ifndef FLEX_RELEASE
       try
@@ -2626,7 +2629,7 @@ namespace flex
 
       if (NULL == mNodePool)
       {
-         pNode = (node_type*) mAllocator.allocate(sizeof (node_type));
+         pNode = (node_type*) DoAllocate(sizeof (node_type));
       }
       else
       {
@@ -2654,7 +2657,7 @@ namespace flex
    {
       for (; n; --n)
       {
-         node_type* node_ptr = (node_type*)mAllocator.allocate(sizeof(node_type));
+         node_type* node_ptr = (node_type*) DoAllocate(sizeof (node_type));
          node_ptr->mpNext = mNodePool;
          mNodePool = node_ptr;
       }
@@ -2676,7 +2679,7 @@ namespace flex
       while (mNodePool != NULL)
       {
          node_type* next = static_cast<node_type*> (mNodePool->mpNext);
-         mAllocator.deallocate((char*)mNodePool, sizeof(node_type));
+         mAllocator.deallocate((char*) mNodePool, sizeof (node_type));
          mNodePool = next;
       }
    }
