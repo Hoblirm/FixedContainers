@@ -76,7 +76,7 @@ namespace flex
     typedef typename base_type::iterator iterator;
 
     using base_type::insert;
-
+      
   public:
     /// hash_map
     ///
@@ -103,11 +103,18 @@ namespace flex
       // Empty
     }
 
+    hash_map(size_type nBucketCount, const Hash& hashFunction, const Predicate& predicate, const allocator_type& allocator, node_type** bucket_ptr, node_type* fixed_begin, node_type* fixed_end) :
+        base_type(nBucketCount, hashFunction, mod_range_hashing(), default_ranged_hash(), predicate,
+            use_first<std::pair<const Key, T> >(), allocator, bucket_ptr, fixed_begin, fixed_end)
+    {
+      // Empty
+    }
+    
     hash_map(const this_type& x) :
         base_type(x)
     {
     }
-
+    
 #if FLEX_HAS_CXX11
     hash_map(this_type&& x)
     : base_type(std::move(x))
@@ -229,7 +236,7 @@ namespace flex
     typedef typename base_type::iterator iterator;
 
     using base_type::insert;
-
+      
   public:
     /// hash_multimap
     ///

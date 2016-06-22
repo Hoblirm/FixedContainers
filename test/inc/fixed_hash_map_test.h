@@ -1,6 +1,6 @@
 #include <cxxtest/TestSuite.h>
 
-#include "flex/hash_map.h"
+#include "flex/fixed_hash_map.h"
 #include "flex/debug/allocator.h"
 #include "flex/debug/obj.h"
 
@@ -8,28 +8,22 @@
 
 using namespace flex;
 
-class hash_map_test : public CxxTest::TestSuite
+class fixed_hash_map_test : public CxxTest::TestSuite
 {
    typedef flex::debug::obj obj;
-   typedef flex::hash_map<int, obj, std::hash<int>, std::equal_to<int>, flex::debug::allocator<char> > hash_map;
-
+   typedef flex::fixed_hash_map<int, obj, 128, 129, std::hash<int>, std::equal_to<int>, flex::debug::allocator<char> > hash_map;
 public:
 
    void setUp()
    {
-      flex::debug::allocator<char>::clear();
+      flex::allocation_guard::enable();
       errno = 0;
    }
 
    void tearDown()
    {
       TS_ASSERT(!errno);
-
-      //This ensures that all objs constructed by the container have their destructors called.
-      TS_ASSERT(flex::debug::allocator<char>::mConstructedPointers.empty());
-
-      //This ensures that all memory allocated by the container is properly freed.
-      TS_ASSERT(flex::debug::allocator<char>::mAllocatedPointers.empty());
+      flex::allocation_guard::disable();
    }
 
    void mark_move_only(hash_map& c)
@@ -54,6 +48,7 @@ public:
    {
       size_t size = 0;
       int max_key = INT_MIN;
+
       for (hash_map::iterator it = c.begin(); it != c.end(); ++it)
       {
          if (it->second.init != obj::INIT_KEY)
@@ -62,11 +57,13 @@ public:
                     obj::INIT_KEY);
             return false;
          }
+
          if (it->second.move_only && it->second.was_copied)
          {
             printf("Error: Expected (!(hash[%d].move_only && hash[%d].was_copied)\n", it->first, it->first);
             return false;
          }
+
          if (it->first > max_key)
          {
             max_key = it->first;
@@ -255,16 +252,6 @@ public:
       TS_ASSERT_EQUALS(a.bucket(2), 2);
    }
 
-   void test_bucket_count(void)
-   {
-      hash_map a({
-         { 0, 10},
-         { 1, 11},
-         { 2, 12}
-      });
-      TS_ASSERT_EQUALS(a.bucket_count(), 3);
-   }
-
    void test_bucket_size(void)
    {
       hash_map a({
@@ -272,9 +259,10 @@ public:
          { 1, 11},
          { 3, 12}
       });
-      TS_ASSERT_EQUALS(a.bucket_size(0), 2);
+      TS_ASSERT_EQUALS(a.bucket_size(0), 1);
       TS_ASSERT_EQUALS(a.bucket_size(1), 1);
       TS_ASSERT_EQUALS(a.bucket_size(2), 0);
+      TS_ASSERT_EQUALS(a.bucket_size(3), 1);
    }
 
    void test_cbegin(void)
@@ -773,41 +761,6 @@ public:
    {
       hash_map a;
       hash_map::key_equal key_eq = a.key_eq();
-   }
-
-   void test_load_factor(void)
-   {
-      /*
-       * Case1: Empty map
-       */
-      hash_map a;
-      TS_ASSERT_EQUALS(a.size(), 0);
-      TS_ASSERT_EQUALS(a.bucket_count(), 1);
-      TS_ASSERT_EQUALS(a.load_factor(), 0.0f);
-      TS_ASSERT_EQUALS(a.get_max_load_factor(), 1.0f);
-
-      /*
-       * Case2: Populated map
-       */
-      a.insert({
-         { 0, 0},
-         { 1, 1},
-         { 2, 2},
-         { 3, 3}
-      });
-      TS_ASSERT_EQUALS(a.size(), 4);
-      TS_ASSERT_EQUALS(a.bucket_count(), 5);
-      TS_ASSERT_EQUALS(a.load_factor(), 0.8f);
-      TS_ASSERT_EQUALS(a.get_max_load_factor(), 1.0f);
-
-      /*
-       * Case3: Modified max_load_factor
-       */
-      a.set_max_load_factor(0.5f);
-      TS_ASSERT_EQUALS(a.size(), 4);
-      TS_ASSERT_EQUALS(a.bucket_count(), 11);
-      TS_ASSERT_EQUALS(a.load_factor(), 4.0f / 11.0f);
-      TS_ASSERT_EQUALS(a.get_max_load_factor(), 0.5f);
    }
 
    void test_operator_assignment(void)
