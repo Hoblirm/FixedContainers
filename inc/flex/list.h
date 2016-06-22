@@ -1361,7 +1361,7 @@ namespace flex
   {
     for (; n; --n)
     {
-      node_type* node_ptr = mAllocator.allocate(1);
+      node_type* node_ptr = AllocateNode();
       node_ptr->mNext = mNodePool;
       mNodePool = node_ptr;
     }
