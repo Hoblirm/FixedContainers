@@ -63,7 +63,7 @@ namespace flex
       using base_type::mNodePool;
       using base_type::mOverflow;
       using base_type::clear;
-      
+
    protected:
       node_type* mBucketBuffer[bucketCount + 1]; // '+1' because the hash table needs a null terminating bucket.
 
@@ -335,14 +335,12 @@ namespace flex
    // global operators
    ///////////////////////////////////////////////////////////////////////
 
-   //   template <typename Key, typename T, size_t nodeCount, size_t bucketCount, bool bEnableOverflow, typename Hash, typename Predicate, bool bCacheHashCode>
-   //   inline void swap(fixed_hash_map<Key, T, nodeCount, bucketCount, bEnableOverflow, Hash, Predicate, bCacheHashCode>& a,
-   //           fixed_hash_map<Key, T, nodeCount, bucketCount, bEnableOverflow, Hash, Predicate, bCacheHashCode>& b)
-   //   {
-   //      a.swap(b);
-   //   }
-
-
+   template <typename Key, typename T, size_t nodeCount, size_t bucketCount, typename Hash, typename Predicate, typename Allocator, bool bCacheHashCode>
+   inline void swap(fixed_hash_map<Key, T, nodeCount, bucketCount, Hash, Predicate, Allocator, bCacheHashCode>& a,
+           fixed_hash_map<Key, T, nodeCount, bucketCount, Hash, Predicate, Allocator, bCacheHashCode>& b)
+   {
+      a.swap(b);
+   }
 
 
    ///////////////////////////////////////////////////////////////////////
