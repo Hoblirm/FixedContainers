@@ -60,13 +60,17 @@ namespace flex
       };
 
       using base_type::mAllocator;
-
+      using base_type::mNodePool;
+      using base_type::mOverflow;
+      using base_type::clear;
+      
    protected:
       node_type* mBucketBuffer[bucketCount + 1]; // '+1' because the hash table needs a null terminating bucket.
 
 #ifdef FLEX_HAS_CXX11
       typename std::aligned_storage<sizeof (node_type), alignof(node_type)>::type mNodeBuffer[nodeCount];
 #else
+
       union
       {
          char mNodeBuffer[nodeCount * sizeof (node_type)];
@@ -90,6 +94,8 @@ namespace flex
 #endif
       fixed_hash_map(std::initializer_list<value_type> ilist);
 
+      ~fixed_hash_map();
+
       this_type& operator=(const this_type& x);
       this_type& operator=(std::initializer_list<value_type> ilist);
 #if FLEX_HAS_CXX11
@@ -103,7 +109,7 @@ namespace flex
       size_type max_size() const;
 
    }; // fixed_hash_map
-   
+
 
 
    /// fixed_hash_multimap
@@ -188,7 +194,7 @@ namespace flex
    fixed_hash_map(const Hash& hashFunction,
            const Predicate& predicate)
    : base_type(prime_rehash_policy::GetPrevBucketCountOnly(bucketCount), hashFunction,
-   predicate, fixed_allocator_type(), mBucketBuffer, (node_type*)mNodeBuffer,((node_type*)mNodeBuffer) + nodeCount)
+   predicate, fixed_allocator_type(), mBucketBuffer, (node_type*) mNodeBuffer, ((node_type*) mNodeBuffer) + nodeCount)
    {
       FLEX_ASSERT((nodeCount >= 1) && (bucketCount >= 2));
       base_type::set_max_load_factor(10000.f); // Set it so that we will never resize.
@@ -201,7 +207,7 @@ namespace flex
            const Hash& hashFunction,
            const Predicate& predicate)
    : base_type(prime_rehash_policy::GetPrevBucketCountOnly(bucketCount), hashFunction,
-   predicate, fixed_allocator_type(), mBucketBuffer, (node_type*)mNodeBuffer,((node_type*)mNodeBuffer) + nodeCount)
+   predicate, fixed_allocator_type(), mBucketBuffer, (node_type*) mNodeBuffer, ((node_type*) mNodeBuffer) + nodeCount)
    {
       FLEX_ASSERT((nodeCount >= 1) && (bucketCount >= 2));
       base_type::set_max_load_factor(10000.f); // Set it so that we will never resize.
@@ -213,7 +219,7 @@ namespace flex
    inline fixed_hash_map<Key, T, nodeCount, bucketCount, Hash, Predicate, Allocator, bCacheHashCode>::
    fixed_hash_map(const this_type& x)
    : base_type(prime_rehash_policy::GetPrevBucketCountOnly(bucketCount), x.hash_function(),
-   x.equal_function(), fixed_allocator_type(), mBucketBuffer, (node_type*)mNodeBuffer,((node_type*)mNodeBuffer) + nodeCount)
+   x.equal_function(), fixed_allocator_type(), mBucketBuffer, (node_type*) mNodeBuffer, ((node_type*) mNodeBuffer) + nodeCount)
    {
       FLEX_ASSERT((nodeCount >= 1) && (bucketCount >= 2));
       base_type::set_max_load_factor(10000.f); // Set it so that we will never resize.
@@ -228,7 +234,7 @@ namespace flex
    inline fixed_hash_map<Key, T, nodeCount, bucketCount, Hash, Predicate, Allocator, bCacheHashCode>::
    fixed_hash_map(this_type && x)
    : base_type(prime_rehash_policy::GetPrevBucketCountOnly(bucketCount), x.hash_function(),
-   x.equal_function(), fixed_allocator_type(), mBucketBuffer, (node_type*)mNodeBuffer,((node_type*)mNodeBuffer) + nodeCount)
+   x.equal_function(), fixed_allocator_type(), mBucketBuffer, (node_type*) mNodeBuffer, ((node_type*) mNodeBuffer) + nodeCount)
    {
       FLEX_ASSERT((nodeCount >= 1) && (bucketCount >= 2));
       base_type::set_max_load_factor(10000.f); // Set it so that we will never resize.
@@ -241,12 +247,37 @@ namespace flex
    inline fixed_hash_map<Key, T, nodeCount, bucketCount, Hash, Predicate, Allocator, bCacheHashCode>::
    fixed_hash_map(std::initializer_list<value_type> ilist)
    : base_type(prime_rehash_policy::GetPrevBucketCountOnly(bucketCount), Hash(),
-   Predicate(), fixed_allocator_type(), mBucketBuffer, (node_type*)mNodeBuffer,((node_type*)mNodeBuffer) + nodeCount)
+   Predicate(), fixed_allocator_type(), mBucketBuffer, (node_type*) mNodeBuffer, ((node_type*) mNodeBuffer) + nodeCount)
    {
       FLEX_ASSERT((nodeCount >= 1) && (bucketCount >= 2));
       base_type::set_max_load_factor(10000.f); // Set it so that we will never resize.
 
       base_type::insert(ilist.begin(), ilist.end());
+   }
+
+   template <typename Key, typename T, size_t nodeCount, size_t bucketCount, typename Hash, typename Predicate, typename Allocator, bool bCacheHashCode>
+   inline fixed_hash_map<Key, T, nodeCount, bucketCount, Hash, Predicate, Allocator, bCacheHashCode>::
+   ~fixed_hash_map()
+   {
+#ifndef FLEX_RELEASE
+      if (FLEX_UNLIKELY(mOverflow))
+      {
+         //If the fixed list overflowed, we want to clean out the nodes that were allocated.
+         clear(); //Perform a clear which moves everything to the node pool
+         while (mNodePool != NULL)
+         {
+            node_type* next = static_cast<node_type*> (mNodePool->mpNext);
+            //A node was allocated if it is outside the range of buffer.  Remember mNodeBuffer + nodeCount
+            //denotes the end() iterator.  Therefore it is possible that an allocated node could be
+            //equal to it.
+            if ((mNodePool < (node_type*) mNodeBuffer) || (mNodePool >= ((node_type*) mNodeBuffer) + nodeCount))
+            {
+               mAllocator.deallocate((char*) mNodePool, sizeof (node_type));
+            }
+            mNodePool = next;
+         }
+      }
+#endif
    }
 
    template <typename Key, typename T, size_t nodeCount, size_t bucketCount, typename Hash, typename Predicate, typename Allocator, bool bCacheHashCode>
@@ -304,12 +335,12 @@ namespace flex
    // global operators
    ///////////////////////////////////////////////////////////////////////
 
-//   template <typename Key, typename T, size_t nodeCount, size_t bucketCount, bool bEnableOverflow, typename Hash, typename Predicate, bool bCacheHashCode>
-//   inline void swap(fixed_hash_map<Key, T, nodeCount, bucketCount, bEnableOverflow, Hash, Predicate, bCacheHashCode>& a,
-//           fixed_hash_map<Key, T, nodeCount, bucketCount, bEnableOverflow, Hash, Predicate, bCacheHashCode>& b)
-//   {
-//      a.swap(b);
-//   }
+   //   template <typename Key, typename T, size_t nodeCount, size_t bucketCount, bool bEnableOverflow, typename Hash, typename Predicate, bool bCacheHashCode>
+   //   inline void swap(fixed_hash_map<Key, T, nodeCount, bucketCount, bEnableOverflow, Hash, Predicate, bCacheHashCode>& a,
+   //           fixed_hash_map<Key, T, nodeCount, bucketCount, bEnableOverflow, Hash, Predicate, bCacheHashCode>& b)
+   //   {
+   //      a.swap(b);
+   //   }
 
 
 

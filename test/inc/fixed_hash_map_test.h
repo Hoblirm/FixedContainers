@@ -906,8 +906,9 @@ public:
        * Case1: Empty container
        */
       hash_map a;
+      size_t prev_bucket_count = a.bucket_count();
       a.rehash(2);
-      TS_ASSERT_EQUALS(a.bucket_count(), 2);
+      TS_ASSERT_EQUALS(a.bucket_count(), prev_bucket_count);
 
       /*
        * Case2: Populated container
@@ -916,8 +917,9 @@ public:
          { 0, 10},
          { 1, 11}
       };
+      prev_bucket_count = a.bucket_count();
       a.rehash(4);
-      TS_ASSERT_EQUALS(a.bucket_count(), 4);
+     TS_ASSERT_EQUALS(a.bucket_count(), prev_bucket_count);
    }
 
    void test_reserve()
@@ -955,7 +957,7 @@ public:
       size_t prev_bucket_count = a.bucket_count();
       a.shrink_to_fit();
       TS_ASSERT(is_container_valid(a));
-      TS_ASSERT_LESS_THAN(a.bucket_count(), prev_bucket_count);
+      TS_ASSERT_EQUALS(a.bucket_count(), prev_bucket_count);
    }
 
    void test_swap()

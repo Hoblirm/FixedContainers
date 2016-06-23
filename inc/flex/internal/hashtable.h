@@ -1080,7 +1080,7 @@ namespace flex
 
       hashtable(size_type nBucketCount, const H1&, const H2&, const H&, const Equal&, const ExtractKey&,
               const allocator_type& allocator, node_type** bucket_ptr, node_type* fixed_begin, node_type* fixed_end);
-      
+
       template<typename FowardIterator>
       hashtable(FowardIterator first, FowardIterator last, size_type nBucketCount, const H1&, const H2&, const H&,
               const Equal&, const ExtractKey&, const allocator_type& allocator = allocator_type()); // allocator arg removed because VC7.1 fails on the default arg. To do: Make a second version of this function without a default arg.
@@ -1491,12 +1491,12 @@ namespace flex
    mpBucketArray(bucket_ptr), rehash_base<RP, hashtable>(), hash_code_base<K, V, EK, Eq, H1, H2, H, bC>(ek, eq, h1, h2, h), mnBucketCount(0), mnElementCount(
    0), mRehashPolicy(), mAllocator(allocator), mNodePool(NULL), mFixedBegin(fixed_begin), mFixedEnd(fixed_end), mFixed(true), mOverflow(false)
    {
-         FLEX_ASSERT(nBucketCount < 10000000);
-         mnBucketCount = (size_type) mRehashPolicy.GetNextBucketCount((uint32_t) nBucketCount);      
-         memset(mpBucketArray, 0, nBucketCount * sizeof (node_type*));
-         mpBucketArray[nBucketCount] = reinterpret_cast<node_type*> ((uintptr_t) ~0);
+      FLEX_ASSERT(nBucketCount < 10000000);
+      mnBucketCount = (size_type) mRehashPolicy.GetNextBucketCount((uint32_t) nBucketCount);
+      memset(mpBucketArray, 0, nBucketCount * sizeof (node_type*));
+      mpBucketArray[nBucketCount] = reinterpret_cast<node_type*> ((uintptr_t) ~0);
    }
-   
+
    template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
    typename RP, bool bC, bool bM, bool bU>
    template<typename FowardIterator>
@@ -1712,37 +1712,16 @@ namespace flex
 
    template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
    typename RP, bool bC, bool bM, bool bU>
-   inline typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type* hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocNode()
-   {
-      if (NULL != mNodePool)
-      {
-         node_type* pNode = mNodePool;
-         mNodePool = static_cast<node_type*> (mNodePool->mpNext);
-         return pNode;
-      }
-      else if (mFixedBegin != mFixedEnd)
-      {
-         return mFixedBegin++;
-      }
-      else
-      {
-         return (node_type*) DoAllocate(sizeof (node_type));
-      }
-   }
-
-   template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
-   typename RP, bool bC, bool bM, bool bU>
    inline typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
    hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocateNodeFromKey(const key_type& key)
    {
-      node_type* pNode = DoAllocNode();
+      node_type* pNode = allocate_uninitialized_node();
 
 #ifndef FLEX_RELEASE
       try
       {
 #endif
          ::new ((void*) &pNode->mValue) value_type(key, mapped_type());
-         pNode->mpNext = NULL;
          return pNode;
 #ifndef FLEX_RELEASE
       }
@@ -2283,14 +2262,13 @@ namespace flex
    typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
    hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocateNode(Args && ... args)
    {
-      node_type* pNode = DoAllocNode();
+      node_type* pNode = allocate_uninitialized_node();
 
 #ifndef FLEX_RELEASE
       try
       {
 #endif
          ::new((void*) &pNode->mValue) value_type(std::forward<Args > (args)...);
-         pNode->mpNext = NULL;
          return pNode;
 #ifndef FLEX_RELEASE
       }
@@ -2453,14 +2431,13 @@ namespace flex
    typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
    hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocateNode(value_type && value)
    {
-      node_type* pNode = DoAllocNode();
+      node_type* pNode = allocate_uninitialized_node();
 
 #ifndef FLEX_RELEASE
       try
       {
 #endif
          ::new((void*) &pNode->mValue) value_type(std::move(value));
-         pNode->mpNext = NULL;
          return pNode;
 #ifndef FLEX_RELEASE
       }
@@ -2616,14 +2593,13 @@ namespace flex
    typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
    hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::DoAllocateNode(const value_type& value)
    {
-      node_type* pNode = DoAllocNode();
+      node_type* pNode = allocate_uninitialized_node();
 
 #ifndef FLEX_RELEASE
       try
       {
 #endif
          ::new ((void*) &pNode->mValue) value_type(value);
-         pNode->mpNext = NULL;
          return pNode;
 #ifndef FLEX_RELEASE
       }
@@ -2637,20 +2613,25 @@ namespace flex
 
    template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
    typename RP, bool bC, bool bM, bool bU>
-   typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
+   inline typename hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::node_type*
    hashtable<K, V, A, EK, Eq, H1, H2, H, RP, bC, bM, bU>::allocate_uninitialized_node()
    {
       // We don't wrap this in try/catch because users of this function are expected to do that themselves as needed.
       node_type * pNode;
 
-      if (NULL == mNodePool)
-      {
-         pNode = (node_type*) DoAllocate(sizeof (node_type));
-      }
-      else
+      if (NULL != mNodePool)
       {
          pNode = mNodePool;
          mNodePool = static_cast<node_type*> (mNodePool->mpNext);
+      }
+      else if (mFixedBegin != mFixedEnd)
+      {
+         pNode = mFixedBegin;
+         ++mFixedBegin;
+      }
+      else
+      {
+         pNode = (node_type*) DoAllocate(sizeof (node_type));
       }
 
       // Leave pNode->mValue uninitialized.
@@ -2673,7 +2654,18 @@ namespace flex
    {
       for (; n; --n)
       {
-         node_type* node_ptr = (node_type*) DoAllocate(sizeof (node_type));
+         node_type* node_ptr;
+
+         if (mFixedBegin != mFixedEnd)
+         {
+            node_ptr = mFixedBegin;
+            ++mFixedBegin;
+         }
+         else
+         {
+            node_ptr = (node_type*) DoAllocate(sizeof (node_type));
+         }
+
          node_ptr->mpNext = mNodePool;
          mNodePool = node_ptr;
       }
@@ -3018,7 +3010,10 @@ namespace flex
    {
       // Note that we unilaterally use the passed in bucket count; we do not attempt migrate it
       // up to the next prime number. We leave it at the user's discretion to do such a thing.
-      DoRehash(nBucketCount);
+      if (FLEX_LIKELY(!mFixed))
+      {
+         DoRehash(nBucketCount);
+      }
    }
 
    template<typename K, typename V, typename A, typename EK, typename Eq, typename H1, typename H2, typename H,
