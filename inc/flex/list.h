@@ -222,8 +222,10 @@ namespace flex
 
     if (!mFixed)
     {
-      for (iterator it = begin(); it != end(); ++it)
+      for (iterator it = begin(); it != end(); )
       {
+		iterator tmp = it;
+		++it;
         mAllocator.deallocate(it.mNode, 1);
       }
 
